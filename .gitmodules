@@ -1,0 +1,6 @@
+[submodule "DynamicTTree"]
+	path = DynamicTTree
+	url = https://github.com/simonepigazzini/DynamicTTree
+[submodule "CfgManager"]
+	path = CfgManager
+	url = https://github.com/simonepigazzini/CfgManager
