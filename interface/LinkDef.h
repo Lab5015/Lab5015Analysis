@@ -13,8 +13,6 @@
 //#pragma link C++ class vector<vector<vector<float> > >+;
 #pragma link C++ class vector<vector<vector<int> > >+;
 #pragma link C++ class vector<vector<vector<float> > >+;
-#pragma link C++ class TrackPar+;
-#pragma link C++ class vector<TrackPar>+;
 
 #endif
 

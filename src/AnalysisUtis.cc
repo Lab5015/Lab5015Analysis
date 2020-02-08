@@ -21,4 +21,15 @@ float DeltaR(const float& eta1, const float& phi1,
                DeltaPhi(phi1,phi2)*DeltaPhi(phi1,phi2) );
 }
 
-
+float FindXMaximum(TH1F* histo, const float& xMin, const float& xMax)
+{
+  float max = -999999999.;
+  int binMax = -1;
+  for(int bin = 1; bin <= histo->GetNbinsX(); ++bin)
+  {
+    if( histo->GetBinCenter(bin) < xMin ) continue;
+    if( histo->GetBinCenter(bin) > xMax ) continue;
+    if( histo->GetBinContent(bin) > max ) { max = histo->GetBinContent(bin); binMax = bin; };
+  }
+  return histo->GetBinCenter(binMax);
+}

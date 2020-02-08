@@ -37,7 +37,7 @@ DICTHDRS  =  $(patsubst $(LINKDEF),,$(HDRS)) $(LINKDEF)
 ARCH  =  $(shell root-config --arch)
 
 ROOTCFLAGS    = $(shell root-config --cflags)
-ROOTGLIBS     = $(shell root-config --glibs) -lGenVector -lFoam -lMinuit -lTMVA -lMLP -lXMLIO  -lTreePlayer
+ROOTGLIBS     = $(shell root-config --glibs) -lMinuit -lTreePlayer
 
 
 

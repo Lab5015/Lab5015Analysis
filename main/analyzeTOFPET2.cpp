@@ -1,5 +1,4 @@
 #include "interface/FitUtils.h"
-#include "interface/TreeUtils.h"
 #include "interface/SetTDRStyle.h"
 #include "CfgManager/interface/CfgManager.h"
 #include "CfgManager/interface/CfgManagerT.h"
@@ -8,6 +7,9 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <time.h>
+#include <stdio.h>
+#include <sys/stat.h>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -123,14 +125,14 @@ int main(int argc, char** argv)
   system(Form("mkdir -p %s/energyRatio/",plotDir.c_str()));
   system(Form("mkdir -p %s/CTR/",plotDir.c_str()));
   system(Form("mkdir -p %s/CTR_energyCorr/",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s/qfine/",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s/tot/",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s/totRatio/",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s/energy/",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s/energyRatio/",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s/CTR/",plotDir.c_str()));
-  system(Form("cp /afs/cern.ch/user/a/abenagli/public/index.php %s/CTR_energyCorr/",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s/qfine/",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s/tot/",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s/totRatio/",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s/energy/",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s/energyRatio/",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s/CTR/",plotDir.c_str()));
+  system(Form("cp /var/www/html/index.php %s/CTR_energyCorr/",plotDir.c_str()));
   
   
   //--- open files and make the tree chain
@@ -142,6 +144,7 @@ int main(int argc, char** argv)
   
   std::stringstream ss(runs);
   std::string token;
+  time_t timesec;
   while( std::getline(ss,token,',') )
     {
       std::stringstream ss2(token);
@@ -156,9 +159,15 @@ int main(int argc, char** argv)
       for(int run = runMin; run <= runMax; ++run)
 	{
 	  //std::string fileName = Form("%s/*%04d*.root",inputDir.c_str(),run);
-	  std::string fileName = Form("%s/*%s*%d*.root",inputDir.c_str(),fileBaseName.c_str(),run);
+	  std::string fileName = Form("%s/*%d*%s*.root",inputDir.c_str(),run,fileBaseName.c_str());
 	  std::cout << ">>> Adding flle " << fileName << std::endl;
 	  tree -> Add(fileName.c_str());
+          
+          struct stat t_stat;
+          stat(Form("/data/TOFPET2/raw/run%04d.rawf",run), &t_stat);
+          struct tm * timeinfo = localtime(&t_stat.st_mtime);
+          timesec = mktime(timeinfo);
+          std::cout << "Time and date of raw file of run" << run << ": " << asctime(timeinfo);
 	}
     }
   
@@ -176,10 +185,10 @@ int main(int argc, char** argv)
   
   std::vector<unsigned int> bars = opts.GetOpt<std::vector<unsigned int> >("Channels.bars");
   std::vector<std::pair<std::pair<int,int>,std::pair<unsigned int,unsigned int> > > barsVec;
-  for(unsigned int ii = 0; ii < bars.size()/4; ++ii)
-  {
-    barsVec.push_back( std::make_pair(std::make_pair(bars.at(0+ii*4),bars.at(1+ii*4)),std::make_pair(bars.at(2+ii*4),bars.at(3+ii*4))) );
-  }
+  // for(unsigned int ii = 0; ii < bars.size()/4; ++ii)
+  // {
+  //   barsVec.push_back( std::make_pair(std::make_pair(bars.at(0+ii*4),bars.at(1+ii*4)),std::make_pair(bars.at(2+ii*4),bars.at(3+ii*4))) );
+  // }
   
   
   //--- get cuts per bar / Vov
@@ -234,6 +243,38 @@ int main(int argc, char** argv)
   
   
   //--- define histograms
+  std::string outFileName = opts.GetOpt<std::string>("Output.outFileName");
+  TFile* outFile = TFile::Open(Form("%s.root",outFileName.c_str()),"RECREATE");
+  outFile -> cd();
+  
+  
+  TTree* outTree = new TTree("data","data");
+  unsigned long long int t_time = timesec;
+  unsigned int t_arrayID1;
+  unsigned int t_barID1;
+  unsigned int t_lrID1;
+  unsigned int t_chID1;
+  unsigned int t_arrayID2;
+  unsigned int t_barID2;
+  unsigned int t_lrID2;
+  unsigned int t_chID2;
+  float t_Vov;
+  float t_th;
+  float t_tRes;
+  float t_tResErr;
+  outTree -> Branch("time",      &t_time,        "time/l");
+  outTree -> Branch("arrayID1",  &t_arrayID1,"arrayID1/i");
+  outTree -> Branch("barID1",    &t_barID1,    "barID1/i");
+  outTree -> Branch("lrID1",     &t_lrID1,      "lrID1/i");
+  outTree -> Branch("chID1",     &t_chID1,      "chID1/i");
+  outTree -> Branch("arrayID2",  &t_arrayID2,"arrayID2/i");
+  outTree -> Branch("barID2",    &t_barID2,    "barID2/i");
+  outTree -> Branch("lrID2",     &t_lrID2,      "lrID2/i");
+  outTree -> Branch("chID2",     &t_chID2,      "chID2/i");
+  outTree -> Branch("tRes",      &t_tRes,        "tRes/F");
+  outTree -> Branch("tResErr",   &t_tResErr,  "tResErr/F");
+  
+  
   std::map<std::string,int> VovLabels;
   std::map<std::string,int> thLabels;
   std::vector<std::string> stepLabels;
@@ -318,11 +359,11 @@ int main(int argc, char** argv)
         h2_energy_corr[label12] = new TH2F(Form("h2_energy_corr_%s",label12.c_str()),"",200,0.,50.,200,0.,50.);
         h1_energyRatio[label12] = new TH1F(Form("h1_energyRatio_%s",label12.c_str()),"",1000,0.,5.);
         
-        h1_deltaT_raw[label12] = new TH1F(Form("h1_deltaT_raw_%s",label12.c_str()),"",1250,-2500.,2500.);
-        h1_deltaT[label12] = new TH1F(Form("h1_deltaT_%s",label12.c_str()),"",1250,-2500,2500.);
+        h1_deltaT_raw[label12] = new TH1F(Form("h1_deltaT_raw_%s",label12.c_str()),"",1250,-5000.,5000.);
+        h1_deltaT[label12] = new TH1F(Form("h1_deltaT_%s",label12.c_str()),"",1250,-5000,5000.);
         p1_deltaT_vs_energyRatio[label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",label12.c_str()),"",1000,0.,5.);
         
-        h1_deltaT_energyCorr[label12] = new TH1F(Form("h1_deltaT_energyCorr_%s",label12.c_str()),"",1250,-2500.,2500.);
+        h1_deltaT_energyCorr[label12] = new TH1F(Form("h1_deltaT_energyCorr_%s",label12.c_str()),"",1250,-5000.,5000.);
       }
     }
     for(auto bar : barsVec)
@@ -591,7 +632,8 @@ int main(int argc, char** argv)
       h1_energy[label] -> SetLineColor(kRed);
       h1_energy[label] -> Draw();
       max1 = FindXMaximum(h1_energy[label],cut_energyAcc[ch][Vov],100.);
-      h1_energy[label] -> GetXaxis() -> SetRangeUser(0.1*max1,2.5*max1);
+      // h1_energy[label] -> GetXaxis() -> SetRangeUser(0.1*max1,2.5*max1);
+      h1_energy[label] -> GetXaxis() -> SetRangeUser(0.,40.);
       fitFunc1 = new TF1("fitFunc1","gaus",max1-cut_energyFitMin[ch][Vov]*max1,max1+cut_energyFitMax[ch][Vov]*max1);
       h1_energy[label] -> Fit(fitFunc1,"QNRS+");
       fitFunc1 -> SetLineColor(kBlack);
@@ -984,6 +1026,9 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
   
+  eventsSingle.clear();
+  eventsCoinc.clear();
+  
   
   
   
@@ -1121,7 +1166,7 @@ int main(int argc, char** argv)
   
   //------------------------
   //--- 3rd loop over events
-  for(auto mapIt : eventsSingle)
+  for(auto mapIt : eventsSingle2)
   {
     std::string label = mapIt.first;
     
@@ -1148,7 +1193,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
   
-  for(auto mapIt : eventsCoinc)
+  for(auto mapIt : eventsCoinc2)
   {
     std::string label = mapIt.first;
     
@@ -1323,6 +1368,9 @@ int main(int argc, char** argv)
     std::string VovLabel(Form("Vov%.1f",Vov));
     std::string thLabel(Form("th%02.0f",th));
     
+    t_Vov = Vov;
+    t_th = th;
+    
     int pairsIt = 0;
     for(auto pair : pairsVec)
     {
@@ -1331,6 +1379,15 @@ int main(int argc, char** argv)
       std::string label1(Form("ch%d_%s",ch1,stepLabel.c_str()));
       std::string label2(Form("ch%d_%s",ch2,stepLabel.c_str()));
       std::string label12 = Form("ch%d-ch%d_%s",ch1,ch2,stepLabel.c_str());
+      
+      t_arrayID1 = opts.GetOpt<unsigned int>(Form("ch%d.arrayID",ch1));
+      t_barID1   = opts.GetOpt<unsigned int>(Form("ch%d.barID",ch1));
+      t_lrID1    = opts.GetOpt<unsigned int>(Form("ch%d.lrID",ch1));
+      t_chID1    = ch1;
+      t_arrayID2 = opts.GetOpt<unsigned int>(Form("ch%d.arrayID",ch2));
+      t_barID2   = opts.GetOpt<unsigned int>(Form("ch%d.barID",ch2));
+      t_lrID2    = opts.GetOpt<unsigned int>(Form("ch%d.lrID",ch2));
+      t_chID2    = ch2;
       
       
       //--------------------------------------------------------
@@ -1353,6 +1410,10 @@ int main(int argc, char** argv)
       fitFunc -> SetLineColor(kBlue);
       fitFunc -> SetLineWidth(2);
       fitFunc -> Draw("same");
+      
+      t_tRes    = fitFunc -> GetParameter(2);
+      t_tResErr = fitFunc -> GetParError(2);
+      outTree -> Fill();
       
       FindSmallestInterval(vals,h1_deltaT_energyCorr[label12],0.68);
       float mean = vals[0];
@@ -1862,4 +1923,11 @@ int main(int argc, char** argv)
   }
   
   
+  
+  int bytes = outFile -> Write();
+  std::cout << "============================================"  << std::endl;
+  std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
+  std::cout << "nr of KB written:  " << int(bytes/1024.)       << std::endl;
+  std::cout << "nr of MB written:  " << int(bytes/1024./1024.) << std::endl;
+  std::cout << "============================================"  << std::endl;
 }
