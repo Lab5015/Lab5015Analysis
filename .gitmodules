@@ -1,0 +1,3 @@
+[submodule "CfgManager"]
+	path = CfgManager
+	url = https://github.com/Lab5015/CfgManager
