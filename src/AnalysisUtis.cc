@@ -25,11 +25,18 @@ float FindXMaximum(TH1F* histo, const float& xMin, const float& xMax)
 {
   float max = -999999999.;
   int binMax = -1;
-  for(int bin = 1; bin <= histo->GetNbinsX(); ++bin)
+  for(int bin = 2; bin <= histo->GetNbinsX()-1; ++bin)
   {
     if( histo->GetBinCenter(bin) < xMin ) continue;
     if( histo->GetBinCenter(bin) > xMax ) continue;
-    if( histo->GetBinContent(bin) > max ) { max = histo->GetBinContent(bin); binMax = bin; };
+    if( histo->GetBinContent(bin) > max )
+      {
+	float delta = ( 0.5*(histo->GetBinContent(bin-1)+histo->GetBinContent(bin+1)) - histo->GetBinContent(bin) ) / histo->GetBinContent(bin);
+	if( fabs(delta) < 0.2 )
+	  {
+	    max = histo->GetBinContent(bin); binMax = bin;
+ 	  }
+      };
   }
   return histo->GetBinCenter(binMax);
 }
