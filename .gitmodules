@@ -1,3 +1,6 @@
 [submodule "CfgManager"]
 	path = CfgManager
 	url = https://github.com/Lab5015/CfgManager
+[submodule "DynamicTTree"]
+	path = DynamicTTree
+	url = https://github.com/Lab5015/DynamicTTree
