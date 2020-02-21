@@ -24,6 +24,7 @@
 
 struct channel
 {
+  std::string array;
   int arrayID;
   int barID;
   int lrID;
@@ -61,12 +62,12 @@ int main(int argc, char** argv)
   time_t timesec;
   for(auto fileBaseName : fileBaseNames)
   {
-    std::string fileName = Form("%s/%s_t.root",inputDir.c_str(),fileBaseName.c_str());
+    std::string fileName = Form("%s/%s_events.root",inputDir.c_str(),fileBaseName.c_str());
     std::cout << ">>> Adding flle " << fileName << std::endl;
     tree -> Add(fileName.c_str());
     
     struct stat t_stat;
-    stat(Form("/data/TOFPET2/raw/%s.rawf",fileBaseName.c_str()), &t_stat);
+    stat(Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_FNAL_Feb2020/TOFHIR/RawData/%s.rawf",fileBaseName.c_str()), &t_stat);
     struct tm * timeinfo = localtime(&t_stat.st_mtime);
     timesec = mktime(timeinfo);
     std::cout << "Time and date of raw file of run " << fileBaseName << ": " << asctime(timeinfo);
@@ -74,7 +75,6 @@ int main(int argc, char** argv)
   
   std::string plotDir = opts.GetOpt<std::string>("Output.plotDir");
   system(Form("mkdir -p %s",plotDir.c_str()));
-  system(Form("cp /var/www/html/index.php %s",plotDir.c_str()));
   
   
   
@@ -109,21 +109,17 @@ int main(int argc, char** argv)
     for(int ii = 0; ii < 32; ++ii)
     {
       int chID = channelMapping[ii] + offset;
-      channels_key[chID] = {arrayID,(ii/2),(ii%2)};
+      channels_key[chID] = {array,arrayID,(ii/2),(ii%2)};
     }
   }
   
   
   //--- define branches
-  unsigned int channelID[256];
-  unsigned int channelCount[256];
   float energy[256];
   float qfine[256];
   float tot[256];
   
   tree -> SetBranchStatus("*",0);
-  tree -> SetBranchStatus("channelID",   1); tree -> SetBranchAddress("channelID",   channelID);
-  tree -> SetBranchStatus("channelCount",1); tree -> SetBranchAddress("channelCount",channelCount);
   tree -> SetBranchStatus("energy",      1); tree -> SetBranchAddress("energy",      energy);
   tree -> SetBranchStatus("qfine",       1); tree -> SetBranchAddress("qfine",       qfine);
   tree -> SetBranchStatus("tot",         1); tree -> SetBranchAddress("tot",         tot);
@@ -162,17 +158,18 @@ int main(int argc, char** argv)
   {
     if( mapIt.second.lrID != 0 ) continue;
     
+    std::string array = mapIt.second.array;
     int arrayID = mapIt.second.arrayID;
     int barID = mapIt.second.barID;
     
-    std::string label_L = Form("h1_energy_array%d_bar%02d_L",arrayID,barID);
-    std::string label_R = Form("h1_energy_array%d_bar%02d_R",arrayID,barID);
+    std::string label_L = Form("h1_energy_%s_bar%02d_L",array.c_str(),barID);
+    std::string label_R = Form("h1_energy_%s_bar%02d_R",array.c_str(),barID);
     
-    h1_energy[label_L] = new TH1F(label_L.c_str(),"",300,0.,30.);
-    h1_energy[label_R] = new TH1F(label_R.c_str(),"",300,0.,30.);
+    h1_energy[label_L] = new TH1F(label_L.c_str(),"",500,0.,50.);
+    h1_energy[label_R] = new TH1F(label_R.c_str(),"",500,0.,50.);
     
-    std::string label_LR = Form("h2_energy_array%d_bar%02d_LRCorr",arrayID,barID);
-    h2_energy_LRCorr[label_LR] = new TH2F(label_LR.c_str(),"",300,0.,30.,300,0.,30.);
+    std::string label_LR = Form("h2_energy_%s_bar%02d_LRCorr",array.c_str(),barID);
+    h2_energy_LRCorr[label_LR] = new TH2F(label_LR.c_str(),"",500,0.,50.,500,0.,50.);
   }
   
   
@@ -188,14 +185,15 @@ int main(int argc, char** argv)
     for(auto mapIt: channels_key)
     {
       int chID    = mapIt.first;
+      std::string array = mapIt.second.array;
       int arrayID = mapIt.second.arrayID;
       int barID   = mapIt.second.barID;
       int lrID    = mapIt.second.lrID;
       
-      if( channelCount[chID] == 1 && qfine[chID] > 13 )
+      if( qfine[chID] > 13 )
       {
-        if( lrID == 0 ) h1_energy[Form("h1_energy_array%d_bar%02d_L",arrayID,barID)] -> Fill( energy[chID] );
-        else            h1_energy[Form("h1_energy_array%d_bar%02d_R",arrayID,barID)] -> Fill( energy[chID] );
+        if( lrID == 0 ) h1_energy[Form("h1_energy_%s_bar%02d_L",array.c_str(),barID)] -> Fill( energy[chID] );
+        else            h1_energy[Form("h1_energy_%s_bar%02d_R",array.c_str(),barID)] -> Fill( energy[chID] );
         
         if( lrID == 0 )
         {
@@ -207,7 +205,7 @@ int main(int argc, char** argv)
             {
               int chID2 = mapIt2.first;
               
-              h2_energy_LRCorr[Form("h2_energy_array%d_bar%02d_LRCorr",arrayID,barID)] -> Fill( energy[chID],energy[chID2] );
+              h2_energy_LRCorr[Form("h2_energy_%s_bar%02d_LRCorr",array.c_str(),barID)] -> Fill( energy[chID],energy[chID2] );
             }
           }
         }
@@ -225,13 +223,17 @@ int main(int argc, char** argv)
     TGraphErrors* g_511keV_L = new TGraphErrors();
     TGraphErrors* g_511keV_R = new TGraphErrors();
     
+    float maxN = -999.;
+    TGraphErrors* g_N_L = new TGraphErrors();
+    TGraphErrors* g_N_R = new TGraphErrors();
+    
     
     for(int barIt = 0; barIt < 16; ++barIt)
     {
       // t_arrayID = arrayIt;
       // t_barID = barIt;
       
-      TCanvas* c1 = new TCanvas("c1","c1",1200,600);
+      TCanvas* c1 = new TCanvas(Form("c1_bar%d",barIt),Form("c1_bar%d",barIt),1200,600);
       c1 -> Divide(2,1);
       
       c1 -> cd(1);
@@ -253,6 +255,13 @@ int main(int argc, char** argv)
       h1_energy[label_L] -> Draw("hist");
       h1_energy[label_R] -> SetLineColor(kBlue);
       h1_energy[label_R] -> Draw("hist,sames");
+      
+      g_N_L -> SetPoint(g_N_L->GetN(),barIt,h1_energy[label_L]->GetEntries());
+      g_N_L -> SetPointError(g_N_L->GetN()-1,0,sqrt(h1_energy[label_L]->GetEntries()));
+      if( h1_energy[label_L]->GetEntries() > maxN ) maxN = h1_energy[label_L]->GetEntries();
+      g_N_R -> SetPoint(g_N_R->GetN(),barIt,h1_energy[label_R]->GetEntries());
+      g_N_R -> SetPointError(g_N_R->GetN()-1,0,sqrt(h1_energy[label_R]->GetEntries()));
+      if( h1_energy[label_R]->GetEntries() > maxN ) maxN = h1_energy[label_R]->GetEntries();
       
       
       std::vector<std::string> labels;
@@ -287,63 +296,6 @@ int main(int argc, char** argv)
           g_511keV_R -> SetPoint(g_511keV_R->GetN(),barIt,f_gaus -> GetParameter(1));
           g_511keV_R -> SetPointError(g_511keV_R->GetN()-1,0,f_gaus -> GetParError(1));
         }
-        
-        // t_peak1 = f_gaus -> GetParameter(1);
-        // t_peak1Err = f_gaus -> GetParError(1);
-        // t_sigma1 = f_gaus -> GetParameter(2);
-        // t_sigma1Err = f_gaus -> GetParError(2);
-        
-        // outTree -> Fill();
-        
-        // // -- fit whole 22Na spectrum
-        // std::string comptonScattering2 = " 1./(1 + exp( [1] * (x -[2]) ) )";
-        // std::string emissionPeak2 = "[3] * exp(-pow(x-[4],2)/(2*[5]*[5]))";
-        // std::string backScattering2 = "[15] * exp(-pow(x-[16],2)/(2*[17]*[17]))";
-        
-        // std::string comptonScattering1 = "[6]/(1 + exp( [7] * (x -[8]) ) )";
-        // std::string emissionPeak1 = "[9] * exp(-pow(x-[10],2)/(2*[11]*[11]))";
-        // std::string backScattering1 = "[12] * exp(-pow(x-[13],2)/(2*[14]*[14]))";
-        
-        // std::string megafit ="[0]*("
-        //   + comptonScattering2 + " + "
-        //   + emissionPeak2      + " + "
-        //   + backScattering2    + " + "
-        //   + comptonScattering1 + " + "
-        //   + emissionPeak1      + " + "
-        //   + backScattering1    + ")" ;
-        
-        // TF1* f_megafit = new TF1("f_megafit", megafit.c_str(),5.,30.);
-        
-        
-        // // *** compton scattering
-        // //f_megafit->SetParameter(7, 0.1);
-        // f_megafit -> SetParameter(8, peak1);
-        
-        // //f_megafit->SetParameter(1, 0.1);
-        // f_megafit -> SetParameter(2, peak1*2.5*0.7);
-        
-        
-        // // *** emission peak
-        // f_megafit->FixParameter(10, peak1);
-        // f_megafit->FixParameter(11, peak1sigma);
-        
-        // f_megafit->SetParameter(4, peak1*2.5*0.7);
-        // f_megafit->SetParameter(5, peak1sigma/sqrt(2.5));
-        
-        
-        // // *** backscatter peak
-        // f_megafit->FixParameter(12, 0);
-        // f_megafit->SetParameter(13, peak1*0.35);
-        // f_megafit->SetParameter(14, peak1sigma/sqrt(0.35));
-        
-        // //f_megafit->SetParameter(15, 0);
-        // f_megafit->SetParameter(16, peak1*0.35);
-        // f_megafit->SetParameter(17, peak1sigma/sqrt(0.35));
-        
-        // histo -> Fit(f_megafit,"QNRS+");
-        // f_megafit -> SetLineColor(kGreen);
-        // f_megafit -> SetLineWidth(3);
-        // f_megafit -> Draw("same");
       }
       
       
@@ -351,7 +303,6 @@ int main(int argc, char** argv)
       
       std::string label_LR = Form("h2_energy_%s_bar%02d_LRCorr", array.c_str(),barIt);
       h2_energy_LRCorr[label_LR] -> Draw("COLZ");
-      
       
       c1 -> Print(Form("%s/c1_energy__%s__bar%02d.png",plotDir.c_str(),array.c_str(),barIt));
       delete c1;
@@ -372,6 +323,23 @@ int main(int argc, char** argv)
     g_511keV_R -> Draw("P,same");
     
     c2 -> Print(Form("%s/c2_energy__%s.png",plotDir.c_str(),array.c_str()));
+    
+    
+    TCanvas* c3 = new TCanvas("c3","c3");
+    
+    hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,17.,1.2*maxN) );
+    hPad -> SetTitle(";bar ID;number of events");
+    hPad -> Draw();
+    gPad -> SetGridy();
+    
+    g_N_L -> SetMarkerStyle(20);
+    g_N_L -> SetMarkerColor(kRed);
+    g_N_L -> Draw("P,same");
+    g_N_R -> SetMarkerColor(kBlue);
+    g_N_R -> SetMarkerStyle(21);
+    g_N_R -> Draw("P,same");
+    
+    c3 -> Print(Form("%s/c3_N__%s.png",plotDir.c_str(),array.c_str()));
   }
   
   

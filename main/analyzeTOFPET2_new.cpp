@@ -108,19 +108,23 @@ int main(int argc, char** argv)
       for(int run = runMin; run <= runMax; ++run)
 	{
 	  //std::string fileName = Form("%s/*%04d*.root",inputDir.c_str(),run);
-	  std::string fileName = Form("%s/%s%04d_t.root",inputDir.c_str(),fileBaseName.c_str(),run);
-	  std::cout << ">>> Adding flle " << fileName << std::endl;
+	  std::string fileName = Form("%s/%s%04d_events.root",inputDir.c_str(),fileBaseName.c_str(),run);
+	  std::cout << ">>> Adding file " << fileName << std::endl;
 	  tree -> Add(fileName.c_str());
           
           struct stat t_stat;
-          stat(Form("/data/TOFPET2/raw/run%04d.rawf",run), &t_stat);
+          stat(Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_FNAL_Feb2020/TOFHIR/RawData/run%04d.rawf",run), &t_stat);
           struct tm * timeinfo = localtime(&t_stat.st_mtime);
           timesec = mktime(timeinfo);
           std::cout << "Time and date of raw file of run" << run << ": " << asctime(timeinfo);
 	}
     }
   
+  //--- track position cuts
+  float cut_Xmin = opts.GetOpt<float>("TrackCuts.Xmin");
+  float cut_Xmax = opts.GetOpt<float>("TrackCuts.Xmax");
   
+
   //--- define channels
   std::vector<std::string> channels = opts.GetOpt<std::vector<std::string> >("Channels.channels");
   
@@ -165,19 +169,22 @@ int main(int argc, char** argv)
   
   //--- define branches
   float step1, step2;
-  unsigned int channelCount[256];
   float tot[256];
   float qfine[256];
   float energy[256];
   long long time[256];
+  float xIntercept;
+  int ntracks;
   tree -> SetBranchStatus("*",0);
   tree -> SetBranchStatus("step1",       1); tree -> SetBranchAddress("step1",       &step1);
   tree -> SetBranchStatus("step2",       1); tree -> SetBranchAddress("step2",       &step2);
-  tree -> SetBranchStatus("channelCount",1); tree -> SetBranchAddress("channelCount", channelCount);
+  tree -> SetBranchStatus("step2",       1); tree -> SetBranchAddress("step2",       &step2);
   tree -> SetBranchStatus("qfine",       1); tree -> SetBranchAddress("qfine",        qfine);
   tree -> SetBranchStatus("tot",         1); tree -> SetBranchAddress("tot",          tot);
   tree -> SetBranchStatus("energy",      1); tree -> SetBranchAddress("energy",       energy);
   tree -> SetBranchStatus("time",        1); tree -> SetBranchAddress("time",         time);
+  tree -> SetBranchStatus("xIntercept",  1); tree -> SetBranchAddress("xIntercept",  &xIntercept);
+  tree -> SetBranchStatus("ntracks",     1); tree -> SetBranchAddress("ntracks",     &ntracks);
   
   
   //--- define histograms
@@ -251,6 +258,10 @@ int main(int argc, char** argv)
     tree -> GetEntry(entry);
     if( entry%10000 == 0 ) std::cout << ">>> 1st loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
     
+    // selection on track position
+    if (xIntercept < cut_Xmin || xIntercept > cut_Xmax) continue;
+
+
     float vth1 = float(int(step2/10000)-1);;
     // float vth2 = float(int((step2-10000*vth1)/100)-1);
     // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
@@ -259,7 +270,7 @@ int main(int argc, char** argv)
     std::string thLabel = Form("th%02.0f",vth1);
     std::string stepLabel = Form("Vov%.1f_th%02.0f",step1,vth1);
     
-        
+    
     //--- create histograms, if needed
     for(auto ch : channels)
     {
@@ -268,12 +279,12 @@ int main(int argc, char** argv)
       if( h1_tot[label] == NULL )
       {
         h1_qfine[label] = new TH1F(Form("h1_qfine_%s",label.c_str()),"",512,-0.5,511.5);
-        h2_qfine_vs_tot[label] = new TH2F(Form("h2_qfine_vs_tot_%s",label.c_str()),"",100,0.,500,256,-0.5,255.5);
+        h2_qfine_vs_tot[label] = new TH2F(Form("h2_qfine_vs_tot_%s",label.c_str()),"",100,0.,500,512,-0.5,511.5);
         
         h1_tot[label] = new TH1F(Form("h1_tot_%s",label.c_str()),"",2000,0.,1000.);
         
-        h1_energy[label] = new TH1F(Form("h1_energy_%s",label.c_str()),"",1000,-10.,40.);
-        h1_energy_cut[label] = new TH1F(Form("h1_energy_cut_%s",label.c_str()),"",1000,-10.,40.);
+        h1_energy[label] = new TH1F(Form("h1_energy_%s",label.c_str()),"",1000,0.,50.);
+        h1_energy_cut[label] = new TH1F(Form("h1_energy_cut_%s",label.c_str()),"",1000,0.,50.);
         
         VovLabels[VovLabel] += 1;
         thLabels[thLabel] += 1;
@@ -298,7 +309,6 @@ int main(int argc, char** argv)
         
         h1_deltaT_raw[label12] = new TH1F(Form("h1_deltaT_raw_%s",label12.c_str()),"",1250,-5000.,5000.);
         h1_deltaT[label12] = new TH1F(Form("h1_deltaT_%s",label12.c_str()),"",1250,-5000,5000.);
-        p1_deltaT_vs_energyRatio[label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",label12.c_str()),"",1000,0.,5.);
         
         h1_deltaT_energyCorr[label12] = new TH1F(Form("h1_deltaT_energyCorr_%s",label12.c_str()),"",1250,-5000.,5000.);
       }
@@ -311,12 +321,10 @@ int main(int argc, char** argv)
       int chID = opts.GetOpt<int>(Form("%s.chID",ch.c_str()));
       std::string label = Form("%s_%s",ch.c_str(),stepLabel.c_str());
       
-      float qfine1  = channelCount[int(chID)] == 1 ? qfine[int(chID)]     : -1.;
-      float tot1    = channelCount[int(chID)] == 1 ? tot[int(chID)]/1000. : -1.;
-      float energy1 = channelCount[int(chID)] == 1 ? energy[int(chID)]    : -1.;
+      float qfine1  = qfine[int(chID)];
+      float tot1    = tot[int(chID)]/1000.;
+      float energy1 = energy[int(chID)];
       
-      if( channelCount[int(chID)] != 1 ) continue;
-
       h1_qfine[label] -> Fill( qfine1 );
       h1_tot[label] -> Fill( tot1 );
       h2_qfine_vs_tot[label] -> Fill( tot1,qfine1 );
@@ -345,10 +353,10 @@ int main(int argc, char** argv)
       if( isBar1 == 0 )
       {
         int chID1 = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));        
-        qfine1    = channelCount[int(chID1)] == 1 ? qfine[int(chID1)]     : -1.;
-        tot1      = channelCount[int(chID1)] == 1 ? tot[int(chID1)]/1000. : -1.;
-        energy1   = channelCount[int(chID1)] == 1 ? energy[int(chID1)]    : -1.;
-        time1     = channelCount[int(chID1)] == 1 ? time[int(chID1)]      : -1.;
+        qfine1    = qfine[int(chID1)];
+        tot1      = tot[int(chID1)]/1000.;
+        energy1   = energy[int(chID1)];
+        time1     = time[int(chID1)];
       }
       else
       {
@@ -357,15 +365,15 @@ int main(int argc, char** argv)
         std::string channelR = opts.GetOpt<std::string>(Form("%s.channelR",ch1.c_str()));
         int chIDR = opts.GetOpt<int>(Form("%s.chID",channelR.c_str()));
         
-        qfine1L  = channelCount[int(chIDL)] == 1 ? qfine[int(chIDL)]     : -1.;
-        tot1L    = channelCount[int(chIDL)] == 1 ? tot[int(chIDL)]/1000. : -1.;
-        energy1L = channelCount[int(chIDL)] == 1 ? energy[int(chIDL)]    : -1.;
-        time1L   = channelCount[int(chIDL)] == 1 ? time[int(chIDL)]      : -1.;
+        qfine1L  = qfine[int(chIDL)];
+        tot1L    = tot[int(chIDL)]/1000.;
+        energy1L = energy[int(chIDL)];
+        time1L   = time[int(chIDL)];
         
-        qfine1R  = channelCount[int(chIDR)] == 1 ? qfine[int(chIDR)]     : -1.;
-        tot1R    = channelCount[int(chIDR)] == 1 ? tot[int(chIDR)]/1000. : -1.;
-        energy1R = channelCount[int(chIDR)] == 1 ? energy[int(chIDR)]    : -1.;
-        time1R   = channelCount[int(chIDR)] == 1 ? time[int(chIDR)]      : -1.;
+        qfine1R  = qfine[int(chIDR)];
+        tot1R    = tot[int(chIDR)]/1000.;
+        energy1R = energy[int(chIDR)];
+        time1R   = time[int(chIDR)];
         
         qfine1    = 0.5*(qfine1L+qfine1R);
         tot1      = 0.5*(tot1L+tot1R);
@@ -381,10 +389,10 @@ int main(int argc, char** argv)
       if( isBar2 == 0 )
       {
         int chID2 = opts.GetOpt<int>(Form("%s.chID",ch2.c_str()));        
-        qfine2    = channelCount[int(chID2)] == 1 ? qfine[int(chID2)]     : -1.;
-        tot2      = channelCount[int(chID2)] == 1 ? tot[int(chID2)]/1000. : -1.;
-        energy2   = channelCount[int(chID2)] == 1 ? energy[int(chID2)]    : -1.;
-        time2     = channelCount[int(chID2)] == 1 ? time[int(chID2)]      : -1.;
+        qfine2    = qfine[int(chID2)];
+        tot2      = tot[int(chID2)]/1000.;
+        energy2   = energy[int(chID2)];
+        time2     = time[int(chID2)];
       }
       else
       {
@@ -393,15 +401,15 @@ int main(int argc, char** argv)
         std::string channelR = opts.GetOpt<std::string>(Form("%s.channelR",ch2.c_str()));
         int chIDR = opts.GetOpt<int>(Form("%s.chID",channelR.c_str()));        
         
-        qfine2L  = channelCount[int(chIDL)] == 1 ? qfine[int(chIDL)]     : -1.;
-        tot2L    = channelCount[int(chIDL)] == 1 ? tot[int(chIDL)]/1000. : -1.;
-        energy2L = channelCount[int(chIDL)] == 1 ? energy[int(chIDL)]    : -1.;
-        time2L   = channelCount[int(chIDL)] == 1 ? time[int(chIDL)]      : -1.;
+        qfine2L  = qfine[int(chIDL)];
+        tot2L    = tot[int(chIDL)]/1000.;
+        energy2L = energy[int(chIDL)];
+        time2L   = time[int(chIDL)];
         
-        qfine2R  = channelCount[int(chIDR)] == 1 ? qfine[int(chIDR)]     : -1.;
-        tot2R    = channelCount[int(chIDR)] == 1 ? tot[int(chIDR)]/1000. : -1.;
-        energy2R = channelCount[int(chIDR)] == 1 ? energy[int(chIDR)]    : -1.;
-        time2R   = channelCount[int(chIDR)] == 1 ? time[int(chIDR)]      : -1.;
+        qfine2R  = qfine[int(chIDR)];
+        tot2R    = tot[int(chIDR)]/1000.;
+        energy2R = energy[int(chIDR)];
+        time2R   = time[int(chIDR)];
         
         qfine2    = 0.5*(qfine2L+qfine2R);
         tot2      = 0.5*(tot2L+tot2R);
@@ -425,7 +433,7 @@ int main(int argc, char** argv)
         if( coincidenceCh == "NULL" ) continue;
         
         int coincidenceID = opts.GetOpt<int>(Form("%s.chID",coincidenceCh.c_str()));
-        float coincidenceEnergy = channelCount[int(coincidenceID)] == 1 ? energy[int(coincidenceID)] : -1.;
+        float coincidenceEnergy = energy[int(coincidenceID)];
         if( coincidenceEnergy < cut_energyAcc[coincidenceID][step1] ) accept = false;
       }
       if( !accept ) continue;
@@ -490,8 +498,10 @@ int main(int argc, char** argv)
       float max1 = FindXMaximum(h1_energy[label],cut_energyAcc[chID][Vov],50.);
       TF1* fitFunc = new TF1("fitFunc","gaus",max1-cut_energyFitMin[chID][Vov]*max1,max1+cut_energyFitMax[chID][Vov]*max1);
       h1_energy[label] -> Fit(fitFunc,"QRS+");
-      cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc->GetMaximumX()-cut_energyFitMin[chID][Vov]*fitFunc->GetMaximumX();
-      cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc->GetMaximumX()+cut_energyFitMax[chID][Vov]*fitFunc->GetMaximumX();
+      // cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc->GetMaximumX()-cut_energyFitMin[chID][Vov]*fitFunc->GetMaximumX();
+      // cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc->GetMaximumX()+cut_energyFitMax[chID][Vov]*fitFunc->GetMaximumX();
+      cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = cut_energyAcc[chID][Vov];
+      cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = 100.;
     }
   }
   
@@ -665,6 +675,14 @@ int main(int argc, char** argv)
       long long deltaT = anEvent.time2 - anEvent.time1;
       
       h1_deltaT[anEvent.label12] -> Fill( deltaT );
+
+      if( !p1_deltaT_vs_energyRatio[anEvent.label12] )
+      {
+        float xMin = h1_energyRatio[anEvent.label12]->GetMean() - 3.*h1_energyRatio[anEvent.label12]->GetRMS();
+        float xMax = h1_energyRatio[anEvent.label12]->GetMean() + 3.*h1_energyRatio[anEvent.label12]->GetRMS();
+        p1_deltaT_vs_energyRatio[anEvent.label12] =  new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent.label12.c_str()),"",100,xMin,xMax);
+      }
+      
       if( ( deltaT > timeLow ) &&
           ( deltaT < timeHig ) )
         p1_deltaT_vs_energyRatio[anEvent.label12] -> Fill( anEvent.energy2/anEvent.energy1,anEvent.time2-anEvent.time1 );    
@@ -694,7 +712,7 @@ int main(int argc, char** argv)
       
       float fitXMin = h1_energyRatio[label12]->GetMean() - 2.*h1_energyRatio[label12]->GetRMS();
       float fitXMax = h1_energyRatio[label12]->GetMean() + 2.*h1_energyRatio[label12]->GetRMS();
-      fitFunc_energyCorr[label12] = new TF1(Form("fitFunc_energyCorr_%s",label12.c_str()),"pol4",fitXMin,fitXMax);
+      fitFunc_energyCorr[label12] = new TF1(Form("fitFunc_energyCorr_%s",label12.c_str()),"pol5",fitXMin,fitXMax);
       p1_deltaT_vs_energyRatio[label12] -> Fit(fitFunc_energyCorr[label12],"QRS+");
     }
   }
