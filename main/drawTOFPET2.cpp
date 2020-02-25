@@ -827,7 +827,7 @@ int main(int argc, char** argv)
         fitFunc2 -> SetParameter(5,fitFunc->GetParameter(2));
         fitFunc2 -> SetParameter(6,fitFunc->GetParameter(0)/3.);
         //fitFunc2 -> FixParameter(7,fitFunc->GetParameter(1)+360.);
-	fitFunc2 -> SetParameter(7,fitFunc->GetParameter(1)+350.);
+	fitFunc2 -> FixParameter(7,fitFunc->GetParameter(1)+350.);
         fitFunc2 -> SetParameter(8,fitFunc->GetParameter(2));
         histo -> Fit(fitFunc2,"QNRSL+");
         
