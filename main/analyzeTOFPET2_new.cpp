@@ -123,6 +123,8 @@ int main(int argc, char** argv)
   //--- track position cuts
   float cut_Xmin = opts.GetOpt<float>("TrackCuts.Xmin");
   float cut_Xmax = opts.GetOpt<float>("TrackCuts.Xmax");
+  float cut_Ymin = opts.GetOpt<float>("TrackCuts.Ymin");
+  float cut_Ymax = opts.GetOpt<float>("TrackCuts.Ymax");
   
 
   //--- define channels
@@ -174,6 +176,7 @@ int main(int argc, char** argv)
   float energy[256];
   long long time[256];
   float xIntercept;
+  float yIntercept;
   int ntracks;
   tree -> SetBranchStatus("*",0);
   tree -> SetBranchStatus("step1",       1); tree -> SetBranchAddress("step1",       &step1);
@@ -184,6 +187,7 @@ int main(int argc, char** argv)
   tree -> SetBranchStatus("energy",      1); tree -> SetBranchAddress("energy",       energy);
   tree -> SetBranchStatus("time",        1); tree -> SetBranchAddress("time",         time);
   tree -> SetBranchStatus("xIntercept",  1); tree -> SetBranchAddress("xIntercept",  &xIntercept);
+  tree -> SetBranchStatus("yIntercept",  1); tree -> SetBranchAddress("yIntercept",  &yIntercept);
   tree -> SetBranchStatus("ntracks",     1); tree -> SetBranchAddress("ntracks",     &ntracks);
   
   
@@ -260,6 +264,7 @@ int main(int argc, char** argv)
     
     // selection on track position
     if (xIntercept < cut_Xmin || xIntercept > cut_Xmax) continue;
+    if (yIntercept < cut_Ymin || yIntercept > cut_Ymax) continue;
 
 
     float vth1 = float(int(step2/10000)-1);;
@@ -515,20 +520,20 @@ int main(int argc, char** argv)
   for(auto mapIt : events)
   {
     std::string label = mapIt.first;
-    float Vov = map_Vovs[label];
-        
+
     nEntries = mapIt.second.size();
     for(int entry = 0; entry < nEntries; ++entry)
     {
       if( entry%1000 == 0 ) std::cout << ">>> 2nd loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
       Event anEvent = mapIt.second.at(entry);
       
+      float Vov = map_Vovs[anEvent.stepLabel.c_str()];
       
       if( anEvent.isBar1 == 0 )
       {
         int chID1 = opts.GetOpt<int>(Form("%s.chID",anEvent.ch1.c_str()));
-        
-        if( anEvent.qfine1 < cut_qfineAcc[chID1][Vov] ) continue;
+
+	if( anEvent.qfine1 < cut_qfineAcc[chID1][Vov] ) continue;
         if( anEvent.tot1 < cut_totAcc[chID1][Vov] ) continue;
         if( anEvent.energy1 < cut_energyMin[Form("%s_%s",anEvent.ch1.c_str(),anEvent.stepLabel.c_str())] ) continue;
         if( anEvent.energy1 > cut_energyMax[Form("%s_%s",anEvent.ch1.c_str(),anEvent.stepLabel.c_str())] ) continue;
@@ -678,9 +683,17 @@ int main(int argc, char** argv)
 
       if( !p1_deltaT_vs_energyRatio[anEvent.label12] )
       {
-        float xMin = h1_energyRatio[anEvent.label12]->GetMean() - 3.*h1_energyRatio[anEvent.label12]->GetRMS();
+	/*float xMin = h1_energyRatio[anEvent.label12]->GetMean() - 3.*h1_energyRatio[anEvent.label12]->GetRMS();
         float xMax = h1_energyRatio[anEvent.label12]->GetMean() + 3.*h1_energyRatio[anEvent.label12]->GetRMS();
         p1_deltaT_vs_energyRatio[anEvent.label12] =  new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent.label12.c_str()),"",100,xMin,xMax);
+	*/
+
+	float maxX = FindXMaximum(h1_energyRatio[anEvent.label12],0.,5.);
+	TF1* fitFunc = new TF1("fitFunc","gaus(0)",maxX-1*h1_energyRatio[anEvent.label12]->GetRMS(),maxX+1*h1_energyRatio[anEvent.label12]->GetRMS());
+	h1_energyRatio[anEvent.label12] -> Fit(fitFunc,"QRS+");
+	float xMin = fitFunc->GetParameter(1) - 3.*fitFunc->GetParameter(2);
+	float xMax = fitFunc->GetParameter(1) + 3.*fitFunc->GetParameter(2);
+	p1_deltaT_vs_energyRatio[anEvent.label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent.label12.c_str()),"",100,xMin,xMax);
       }
       
       if( ( deltaT > timeLow ) &&
@@ -710,10 +723,19 @@ int main(int argc, char** argv)
       std::string label2(Form("%s_%s",ch2.c_str(),stepLabel.c_str()));
       std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
       
-      float fitXMin = h1_energyRatio[label12]->GetMean() - 2.*h1_energyRatio[label12]->GetRMS();
-      float fitXMax = h1_energyRatio[label12]->GetMean() + 2.*h1_energyRatio[label12]->GetRMS();
+      //float fitXMin = h1_energyRatio[label12]->GetMean() - 2.*h1_energyRatio[label12]->GetRMS();
+      //float fitXMax = h1_energyRatio[label12]->GetMean() + 2.*h1_energyRatio[label12]->GetRMS();
+
+      TF1* fitFunc = (TF1*)( h1_energyRatio[label12]->GetFunction("fitFunc"));
+      float fitXMin = fitFunc->GetParameter(1) - 2.*fitFunc->GetParameter(2);
+      float fitXMax = fitFunc->GetParameter(1) + 2.*fitFunc->GetParameter(2);
+
       fitFunc_energyCorr[label12] = new TF1(Form("fitFunc_energyCorr_%s",label12.c_str()),"pol5",fitXMin,fitXMax);
       p1_deltaT_vs_energyRatio[label12] -> Fit(fitFunc_energyCorr[label12],"QRS+");
+      if (fitFunc_energyCorr[label12]->GetChisquare()==0 || fitFunc_energyCorr[label12]->GetChisquare()/fitFunc_energyCorr[label12]->GetNDF()>10) {
+	p1_deltaT_vs_energyRatio[label12] -> Fit(fitFunc_energyCorr[label12],"QRSWFN");
+	p1_deltaT_vs_energyRatio[label12] -> Fit(fitFunc_energyCorr[label12],"QRS+");
+      }
     }
   }
   
@@ -733,7 +755,7 @@ int main(int argc, char** argv)
       Event anEvent = mapIt.second.at(entry);
       
       long long deltaT = anEvent.time2-anEvent.time1;
-      
+     
       float energyCorr = fitFunc_energyCorr[label]->Eval(anEvent.energy2/anEvent.energy1) -
                          fitFunc_energyCorr[label]->Eval(h1_energyRatio[anEvent.label12]->GetMean());
       h1_deltaT_energyCorr[label] -> Fill( deltaT - energyCorr );
