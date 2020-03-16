@@ -1540,7 +1540,7 @@ int main(int argc, char** argv)
 
       c3 = new TCanvas(Form("c_dVdt_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_dVdt_%s-%s",ch1.c_str(),ch2.c_str()));
       TH1F *hPad3 = (TH1F*)( gPad->DrawFrame(-0.5,0.,64,400.) );
-      hPad3 -> SetTitle("; threshold [DAC]; dV/dt [a.u.]");
+      hPad3 -> SetTitle("; threshold [DAC]; dV/dt [DAC/ns]");
       hPad3 -> Draw();
       gPad -> SetGridy();
       
