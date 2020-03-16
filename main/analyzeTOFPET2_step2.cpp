@@ -63,6 +63,7 @@ int main(int argc, char** argv)
   system(Form("mkdir -p %s/CTR_energyCorr/",plotDir.c_str()));
   
   system(Form("cp /afs/cern.ch/user/m/malberti/www/index.php %s",plotDir.c_str()));
+  system(Form("cp /afs/cern.ch/user/m/malberti/www/index.php %s/tracker/",plotDir.c_str()));
   system(Form("cp /afs/cern.ch/user/m/malberti/www/index.php %s/qfine/",plotDir.c_str()));
   system(Form("cp /afs/cern.ch/user/m/malberti/www/index.php %s/tot/",plotDir.c_str()));
   system(Form("cp /afs/cern.ch/user/m/malberti/www/index.php %s/totRatio/",plotDir.c_str()));
@@ -71,6 +72,24 @@ int main(int argc, char** argv)
   system(Form("cp /afs/cern.ch/user/m/malberti/www/index.php %s/CTR/",plotDir.c_str()));
   system(Form("cp /afs/cern.ch/user/m/malberti/www/index.php %s/CTR_energyCorr/",plotDir.c_str()));
   
+  std::map<std::string, int> color;
+  color["Vov2.0"] = 632;
+  color["Vov3.0"] = 800;
+  color["Vov4.0"] = 416;
+  color["Vov5.0"] = 432;
+  color["Vov6.0"] = 600;
+  color["Vov8.0"] = 880;
+ 
+
+  /* std::map<float, int> color;
+  color[2.0] = 632;
+  color[3.0] = 800;
+  color[4.0] = 416;
+  color[5.0] = 432;
+  color[6.0] = 600;
+  color[8.0] = 880;
+  */
+
   //--- open files and make the tree chain
   std::string inputDir = opts.GetOpt<std::string>("Input.inputDir");
   std::string fileBaseName = opts.GetOpt<std::string>("Input.fileBaseName");
@@ -840,7 +859,7 @@ int main(int argc, char** argv)
       
       if( h1_deltaT[anEvent->label12] == NULL )
       {
-        h1_deltaT[anEvent->label12] = new TH1F(Form("h1_deltaT_%s",anEvent->label12.c_str()),"",1000,-5000,5000.);
+        h1_deltaT[anEvent->label12] = new TH1F(Form("h1_deltaT_%s",anEvent->label12.c_str()),"",1250,-5000,5000.);
       }
       
       h1_deltaT[anEvent->label12] -> Fill( deltaT );
@@ -966,7 +985,7 @@ int main(int argc, char** argv)
       
       if( h1_deltaT_energyCorr[label] == NULL )
       {
-        h1_deltaT_energyCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_%s",anEvent->label12.c_str()),"",1000,-5000.,5000.);
+        h1_deltaT_energyCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
       }
       
       h1_deltaT_energyCorr[label] -> Fill( deltaT - energyCorr );
@@ -1281,8 +1300,8 @@ int main(int argc, char** argv)
         // fitFunc2 -> SetParameter(6,fitFunc->GetParameter(0)/3.);
         // fitFunc2 -> FixParameter(7,fitFunc->GetParameter(1)+350.);
         // fitFunc2 -> SetParameter(8,fitFunc->GetParameter(2));
-        fitXMin2 = fitFunc->GetParameter(1)-fabs(1.*fitFunc->GetParameter(2));
-        fitXMax2 = fitFunc->GetParameter(1)+fabs(1.*fitFunc->GetParameter(2));
+        fitXMin2 = fitFunc->GetParameter(1)-fabs(1.0*fitFunc->GetParameter(2));
+        fitXMax2 = fitFunc->GetParameter(1)+fabs(1.0*fitFunc->GetParameter(2));
         fitFunc2 = new TF1(Form("fitFunc2_energyCorr_%s",label12.c_str()),"gaus(0)",fitXMin2,fitXMax2);
         fitFunc2 -> SetParameter(0,fitFunc->GetParameter(0));
         fitFunc2 -> SetParameter(1,fitFunc->GetParameter(1));
@@ -1462,29 +1481,30 @@ int main(int argc, char** argv)
       int iter = 0;
       for(auto mapIt : VovLabels)
       {
+	std::string vov = mapIt.first.c_str();
         std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
         TGraph* g_effSigma = g_tRes_effSigma_vs_th[label];
         TGraph* g_gaus = g_tRes_gaus_vs_th[label];
         TGraph* g_energyCorr_effSigma = g_tRes_energyCorr_effSigma_vs_th[label];
         TGraph* g_energyCorr_gaus = g_tRes_energyCorr_gaus_vs_th[label];
         
-        g_effSigma -> SetLineColor(1+iter);
-        g_effSigma -> SetMarkerColor(1+iter);
-        g_effSigma -> SetMarkerStyle(25);
+        g_effSigma -> SetLineColor(color[vov]);
+        g_effSigma -> SetMarkerColor(color[vov]);
+	g_effSigma -> SetMarkerStyle(25);
         // g_effSigma -> Draw("PL,same");
         
-        g_gaus -> SetLineColor(1+iter);
-        g_gaus -> SetMarkerColor(1+iter);
-        g_gaus -> SetMarkerStyle(25);
+	g_gaus -> SetLineColor(color[vov]);
+	g_gaus -> SetMarkerColor(color[vov]);
+	g_gaus -> SetMarkerStyle(25);
         g_gaus -> Draw("PL,same");
         
-        g_energyCorr_effSigma -> SetLineColor(1+iter);
-        g_energyCorr_effSigma -> SetMarkerColor(1+iter);
+	g_energyCorr_effSigma -> SetLineColor(color[vov]);
+        g_energyCorr_effSigma -> SetMarkerColor(color[vov]);
         g_energyCorr_effSigma -> SetMarkerStyle(20);
         // g_energyCorr_effSigma -> Draw("PL,same");
         
-        g_energyCorr_gaus -> SetLineColor(1+iter);
-        g_energyCorr_gaus -> SetMarkerColor(1+iter);
+	g_energyCorr_gaus -> SetLineColor(color[vov]);
+        g_energyCorr_gaus -> SetMarkerColor(color[vov]);
         g_energyCorr_gaus -> SetMarkerStyle(20);
         g_energyCorr_gaus -> Draw("PL,same");
         
@@ -1492,7 +1512,7 @@ int main(int argc, char** argv)
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.04);
-        latex -> SetTextColor(kBlack+iter);
+	latex -> SetTextColor(color[vov]);
         latex -> Draw("same");
         
         ++iter;
@@ -1533,6 +1553,7 @@ int main(int argc, char** argv)
       iter = 0;
       for(auto mapIt : VovLabels)
       {
+	std::string vov = mapIt.first.c_str();
         std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
         TGraphErrors* g_slewRate_final = new TGraphErrors();
         TGraph* g_slewRate = g_slewRate_vs_th[label];
@@ -1547,8 +1568,8 @@ int main(int argc, char** argv)
         }
         
 	c->cd();
-        g_slewRate_final -> SetLineColor(1+iter);
-        g_slewRate_final -> SetMarkerColor(1+iter);
+	g_slewRate_final -> SetLineColor(color[vov]);
+        g_slewRate_final -> SetMarkerColor(color[vov]);
         g_slewRate_final -> SetMarkerStyle(20);
         g_slewRate_final -> Draw("PL,same");
 
@@ -1556,7 +1577,7 @@ int main(int argc, char** argv)
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.04);
-        latex -> SetTextColor(kBlack+iter);
+	latex -> SetTextColor(color[vov]);
         latex -> Draw("same");
 
 
@@ -1573,8 +1594,8 @@ int main(int argc, char** argv)
         }
         
 	c2->cd();
-        g_slewRateNormalized_final -> SetLineColor(1+iter);
-        g_slewRateNormalized_final -> SetMarkerColor(1+iter);
+	g_slewRateNormalized_final -> SetLineColor(color[vov]);
+        g_slewRateNormalized_final -> SetMarkerColor(color[vov]);
         g_slewRateNormalized_final -> SetMarkerStyle(20);
         g_slewRateNormalized_final -> Draw("PL,same");
 
@@ -1608,8 +1629,8 @@ int main(int argc, char** argv)
 	  }
 	
 	c3->cd();
-        g_dVdt_vs_th[label] -> SetLineColor(1+iter);
-        g_dVdt_vs_th[label] -> SetMarkerColor(1+iter);
+	g_dVdt_vs_th[label] -> SetLineColor(color[vov]);
+        g_dVdt_vs_th[label] -> SetMarkerColor(color[vov]);
         g_dVdt_vs_th[label] -> SetMarkerStyle(20);
         g_dVdt_vs_th[label] -> Draw("PL,same");
 
@@ -1617,10 +1638,8 @@ int main(int argc, char** argv)
 
 
         c4->cd();
-        g_tRes_noise_vs_th[label] -> SetLineColor(1+iter);                                                                                                                      
-        g_tRes_noise_vs_th[label] -> SetMarkerColor(1+iter);                                                                                                                    
-        //g_tRes_noise_vs_th[label] -> SetLineColor(color[vov]);
-        //g_tRes_noise_vs_th[label] -> SetMarkerColor(color[vov]);
+        g_tRes_noise_vs_th[label] -> SetLineColor(color[vov]);
+        g_tRes_noise_vs_th[label] -> SetMarkerColor(color[vov]);
         g_tRes_noise_vs_th[label] -> SetMarkerStyle(20);
         g_tRes_noise_vs_th[label] -> Draw("PL,same");
 
@@ -1669,6 +1688,7 @@ int main(int argc, char** argv)
 	int iter = 0;
 	for(auto mapIt : VovLabels)
 	  {
+	    std::string vov = mapIt.first.c_str();
 	    std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
 	    g_tRes_gaus_vs_dVdt[label] = new TGraphErrors();
 	    g_tRes_energyCorr_gaus_vs_dVdt[label] = new TGraphErrors();
@@ -1684,13 +1704,13 @@ int main(int argc, char** argv)
 	      }
 	  
 	
-	    g_tRes_gaus_vs_dVdt[label] -> SetLineColor(1+iter);
-	    g_tRes_gaus_vs_dVdt[label] -> SetMarkerColor(1+iter);
+	    g_tRes_gaus_vs_dVdt[label] -> SetLineColor(color[vov]);
+	    g_tRes_gaus_vs_dVdt[label] -> SetMarkerColor(color[vov]);
 	    g_tRes_gaus_vs_dVdt[label] -> SetMarkerStyle(25);
 	    //g_tRes_gaus_vs_dVdt[label] -> Draw("PL,same");
 	    
-	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetLineColor(1+iter);
-	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetMarkerColor(1+iter);
+	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetLineColor(color[vov]);
+	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetMarkerColor(color[vov]);
 	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetMarkerStyle(20);
 	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> Draw("PL,same");
 	    
@@ -1698,7 +1718,7 @@ int main(int argc, char** argv)
 	    latex -> SetNDC();
 	    latex -> SetTextFont(42);
 	    latex -> SetTextSize(0.04);
-	    latex -> SetTextColor(kBlack+iter);
+	    latex -> SetTextColor(color[vov]);
 	    latex -> Draw("same");
 	    
 	    ++iter;
@@ -1762,10 +1782,8 @@ int main(int argc, char** argv)
                 g_tRes_noise_corr_vs_th[label]->SetPoint(point,th,y);
               }
 
-            //g_tRes_noise_corr_vs_th[label] -> SetLineColor(color[vov]);
-            //g_tRes_noise_corr_vs_th[label] -> SetMarkerColor(color[vov]);
-	    g_tRes_noise_corr_vs_th[label] -> SetLineColor(iter+1);
-	    g_tRes_noise_corr_vs_th[label] -> SetMarkerColor(iter+1);
+            g_tRes_noise_corr_vs_th[label] -> SetLineColor(color[vov]);
+            g_tRes_noise_corr_vs_th[label] -> SetMarkerColor(color[vov]);
             g_tRes_noise_corr_vs_th[label] -> SetMarkerStyle(20);
             g_tRes_noise_corr_vs_th[label] -> Draw("PL,same");
 
@@ -1773,8 +1791,7 @@ int main(int argc, char** argv)
             latex -> SetNDC();
             latex -> SetTextFont(42);
             latex -> SetTextSize(0.04);
-            //latex -> SetTextColor(color[vov]);
-	    latex -> SetTextColor(iter+1);
+            latex -> SetTextColor(color[vov]);
             latex -> Draw("same");
 
             ++iter;
@@ -2085,8 +2102,9 @@ int main(int argc, char** argv)
   
   for(auto mapIt: g_slewRate_vs_th)           mapIt.second -> Write(Form("g_slewRate_vs_th_%s",           mapIt.first.c_str()));
   for(auto mapIt: g_slewRateNormalized_vs_th) mapIt.second -> Write(Form("g_slewRateNormalized_vs_th_%s", mapIt.first.c_str()));
-  for(auto mapIt:  g_dVdt_vs_th)              mapIt.second -> Write(Form(" g_dVdt_vs_th_%s",              mapIt.first.c_str()));
-  
+  for(auto mapIt: g_dVdt_vs_th)               mapIt.second -> Write(Form("g_dVdt_vs_th_%s",               mapIt.first.c_str()));
+  for(auto mapIt: g_tRes_noise_vs_th)         mapIt.second -> Write(Form("g_tRes_noise_vs_th_%s",              mapIt.first.c_str()));
+   
   int bytes = outFile -> Write();
   std::cout << "============================================"  << std::endl;
   std::cout << "nr of  B written:  " << int(bytes)             << std::endl;

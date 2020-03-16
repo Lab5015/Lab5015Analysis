@@ -2,9 +2,11 @@
 #define ANALYSIS_UTILS_H
 
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <cmath>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <map>
 
@@ -13,6 +15,88 @@
 #define PI 3.14159265359
 
 
+
+class EventClass : public TObject {
+
+public:
+  std::string stepLabel;
+  std::string ch1;
+  std::string ch2;
+  std::string label1;
+  std::string label2;
+  std::string label12;
+  float x;
+  float y;
+  int isBar1;
+  int isBar2;
+  int isHorizontal1;
+  int isHorizontal2;
+  float qfine1;
+  float qfine1L;
+  float qfine1R;
+  float qfine2;
+  float qfine2L;
+  float qfine2R;
+  float tot1;
+  float tot1L;
+  float tot1R;
+  float tot2;
+  float tot2L;
+  float tot2R;
+  float energy1;
+  float energy1L;
+  float energy1R;
+  float energy2;
+  float energy2L;
+  float energy2R;
+  long long time1;
+  long long time2;
+  
+  ClassDef(EventClass,1);
+};
+
+
+struct Event
+{
+  std::string stepLabel;
+  std::string ch1;
+  std::string ch2;
+  std::string label1;
+  std::string label2;
+  std::string label12;
+  float x;
+  float y;
+  int isBar1;
+  int isBar2;
+  int isHorizontal1;
+  int isHorizontal2;
+  float qfine1;
+  float qfine1L;
+  float qfine1R;
+  float qfine2;
+  float qfine2L;
+  float qfine2R;
+  float tot1;
+  float tot1L;
+  float tot1R;
+  float tot2;
+  float tot2L;
+  float tot2R;
+  float energy1;
+  float energy1L;
+  float energy1R;
+  float energy2;
+  float energy2L;
+  float energy2R;
+  long long time1;
+  long long time2;
+};
+
+
+
+void TrackProcess(float* cpu, float* mem, float* vsz, float* rss);
+
+std::vector<std::string> GetTokens(const std::string& input, const char& sep);
 
 float DeltaEta(const float& eta1, const float& eta2);
 float DeltaPhi(const float& phi1, const float& phi2);

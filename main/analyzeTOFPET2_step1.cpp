@@ -275,7 +275,9 @@ int main(int argc, char** argv)
       float tot1    = tot[int(chID)]/1000.;
       float energy1 = energy[int(chID)];
       
-      p2_eff_vs_XY[label] -> Fill( xIntercept,yIntercept,energy1>cut_energyAcc[chID][step1] );
+      //p2_eff_vs_XY[label] -> Fill( xIntercept,yIntercept,energy1>cut_energyAcc[chID][step1] );
+      int weight = (energy1>cut_energyAcc[chID][step1]) && (qfine1 > cut_qfineAcc[chID][step1]) && (tot1 > cut_totAcc[chID][step1]);
+      p2_eff_vs_XY[label] -> Fill( xIntercept,yIntercept,weight );
       h1_qfine[label] -> Fill( qfine1 );
       h1_tot[label] -> Fill( tot1 );
       h2_qfine_vs_tot[label] -> Fill( tot1,qfine1 );
