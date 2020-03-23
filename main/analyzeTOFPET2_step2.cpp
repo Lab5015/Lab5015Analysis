@@ -1205,72 +1205,6 @@ int main(int argc, char** argv)
           tRes_energyCorr_effSigma_bestTh[label_bestTh_vs_Vov][Vov] = effSigma*corr;
         }
     
-
-	// -- pulse shape 
-	/*if (abs(fitFunc2->GetParameter(1)) < 2500.){
-	  g_slewRate_vs_th[label_vs_th] -> SetPoint(g_slewRate_vs_th[label_vs_th]->GetN(),fitFunc2->GetParameter(1),th);
-	  g_slewRate_vs_th[label_vs_th] -> SetPointError(g_slewRate_vs_th[label_vs_th]->GetN()-1,fitFunc2->GetParError(1),0.);
-	}
-	else{ // for cases at very low thr when most of the events fall one clock later.
-	  TF1 *fitFuncTmp = new TF1(Form("fitFuncTmp_%s",label12.c_str()),"gaus", -5000, 5000);
-	  histo->GetXaxis()->SetRange(-2500., 2500.);
-	  fitFuncTmp -> SetParameters(1,histo->GetMean(),histo->GetRMS());
-	  fitFuncTmp -> SetRange(-2500, 2500.);
-	  TCanvas *ctmp = new TCanvas("ctmp","ctmp");
-	  ctmp->cd();
-	  histo -> Fit(fitFuncTmp,"QNRL","");
-	  histo -> Fit(fitFuncTmp,"QNRL","",fitFuncTmp->GetParameter(1)-fitFuncTmp->GetParameter(2),fitFuncTmp->GetParameter(1)+fitFuncTmp->GetParameter(2));
-	  histo -> Fit(fitFuncTmp,"QNRL","",fitFuncTmp->GetParameter(1)-2.*fitFuncTmp->GetParameter(2),fitFuncTmp->GetParameter(1)+2.*fitFuncTmp->GetParameter(2));
-	  histo -> Fit(fitFuncTmp,"QNRL","",fitFuncTmp->GetParameter(1)-1.5*fitFuncTmp->GetParameter(2),fitFuncTmp->GetParameter(1)+1.5*fitFuncTmp->GetParameter(2));
-	  g_slewRate_vs_th[label_vs_th] -> SetPoint(g_slewRate_vs_th[label_vs_th]->GetN(),fitFuncTmp->GetParameter(1),th);
-          g_slewRate_vs_th[label_vs_th] -> SetPointError(g_slewRate_vs_th[label_vs_th]->GetN()-1,fitFuncTmp->GetParError(1),0.);
-	  delete fitFuncTmp;
-	  delete ctmp;
-	}
-	// normalize pulse shape to mip amplitude
-	TCanvas *ctemp = new TCanvas("ctemp","ctemp");
-	ctemp->cd();
-	fLandau1 = new TF1("fLandau1","landau", 0, 50);
-	fLandau2 = new TF1("fLandau2","landau", 0, 50);
-	int isBar1 = opts.GetOpt<int>(Form("%s.isBar",ch1.c_str()));
-	int isBar2 = opts.GetOpt<int>(Form("%s.isBar",ch2.c_str()));
-	if (!isBar1 && !isBar2){
-	  hamp = (TH1F*)( inFile->Get(Form("h1_energy_%s",label1.c_str())) );
-	  int chID = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));
-	  float max1 = FindXMaximum(hamp,cut_energyAcc[chID][Vov],100.);
-	  fLandau1->SetRange(max1*0.1, max1*1.5);
-	  hamp->Fit(fLandau1,"QRN");
-	  norm = fLandau1->GetParameter(1);
-	}
-	else if (isBar1 || isBar2){
-	  std::string channelL, channelR;
-	  if (isBar1){
-	    channelL= opts.GetOpt<std::string>(Form("%s.channelL",ch1.c_str()));
-	    channelR = opts.GetOpt<std::string>(Form("%s.channelR",ch1.c_str()));
-	  }
-	  if (isBar2){
-	    channelL = opts.GetOpt<std::string>(Form("%s.channelL",ch2.c_str()));
-	    channelR = opts.GetOpt<std::string>(Form("%s.channelR",ch2.c_str()));
-	  }
-	  int chIDL = opts.GetOpt<int>(Form("%s.chID",channelL.c_str()));
-	  int chIDR = opts.GetOpt<int>(Form("%s.chID",channelR.c_str()));
-	  
-	  hampL = (TH1F*)( inFile->Get(Form("h1_energy_%s_%s_%s",channelL.c_str(),VovLabel.c_str(), thLabel.c_str())) );
-	  hampR = (TH1F*)( inFile->Get(Form("h1_energy_%s_%s_%s",channelR.c_str(), VovLabel.c_str(), thLabel.c_str())) );
-	  float max1 = FindXMaximum(hampL,cut_energyAcc[chIDL][Vov],100.);
-          fLandau1->SetRange(max1*0.1, max1*1.5);
-	  hampL->Fit(fLandau1,"QR");
-	  float max2 = FindXMaximum(hampR,cut_energyAcc[chIDR][Vov],100.);
-          fLandau2->SetRange(max2*0.1, max2*1.5);
-          hampR->Fit(fLandau2,"QR");
-	  norm = 0.5 * (fLandau1->GetParameter(1) + fLandau2->GetParameter(1) );
-	}
-	
-	delete ctemp;
-	g_slewRateNormalized_vs_th[label_vs_th] -> SetPoint(g_slewRateNormalized_vs_th[label_vs_th]->GetN(),fitFunc2->GetParameter(1),th/norm);
-        g_slewRateNormalized_vs_th[label_vs_th] -> SetPointError(g_slewRateNormalized_vs_th[label_vs_th]->GetN()-1,fitFunc2->GetParError(1),0.);
-	*/
-
     
         
 	// -- raw delta T
@@ -1956,7 +1890,7 @@ int main(int argc, char** argv)
   }  
   
   
-  /*
+  
   for(auto stepLabel : stepLabels)
   {
     for(auto pair : pairsVec)
@@ -1985,15 +1919,20 @@ int main(int argc, char** argv)
   
   //------------------------
   //--- 5th loop over events
-  for(auto mapIt : events2)
+  for(auto mapIt : trees)
   {
     std::string label = mapIt.first;
     
-    nEntries = mapIt.second.size();
+    EventClass* anEvent = new EventClass();
+    mapIt.second -> SetBranchAddress("event",&anEvent);
+    
+    int nEntries = mapIt.second->GetEntries();
     for(int entry = 0; entry < nEntries; ++entry)
     {
       if( entry%1000 == 0 ) std::cout << ">>> 5th loop (" << label << "): reading entry " << entry << " / " << nEntries << "\r" << std::flush;
-      Event anEvent = mapIt.second.at(entry);
+      mapIt.second -> GetEntry(entry);
+
+      if( !accept[label][entry] ) continue;
       
       float timeLow = CTRMeans[anEvent->label12] - 2.* CTRSigmas[anEvent->label12];
       float timeHig = CTRMeans[anEvent->label12] + 2.* CTRSigmas[anEvent->label12];
@@ -2047,16 +1986,21 @@ int main(int argc, char** argv)
   
   //------------------------
   //--- 6th loop over events
-  for(auto mapIt : events2)
+  for(auto mapIt : trees)
   {
     std::string label = mapIt.first;
-    
-    nEntries = mapIt.second.size();
+
+    EventClass* anEvent = new EventClass();
+    mapIt.second -> SetBranchAddress("event",&anEvent);
+
+    int nEntries = mapIt.second->GetEntries();
     for(int entry = 0; entry < nEntries; ++entry)
     {
       if( entry%1000 == 0 ) std::cout << ">>> 6th loop (" << label << "): reading entry " << entry << " / " << nEntries << "\r" << std::flush;
-      Event anEvent = mapIt.second.at(entry);
+      mapIt.second -> GetEntry(entry);
       
+      if( !accept[label][entry] ) continue;
+
       long long deltaT = anEvent->time2-anEvent->time1;
       
       float energyCorr = fitFunc_energyCorr[label]->Eval(anEvent->energy2/anEvent->energy1) -
@@ -2065,15 +2009,22 @@ int main(int argc, char** argv)
       float posCorr = 0.;
       
       if( (anEvent->isHorizontal1!=-1 && anEvent->isHorizontal1==1) || (anEvent->isHorizontal2!=-1 && anEvent->isHorizontal2==1) ) 
-        posCorr = fitFunc_posCorr[label]->Eval(anEvent->x) - fitFunc_posCorr[label]->Eval(0.5*(cut_Xmin+cut_Xmax));
+	//  posCorr = fitFunc_posCorr[label]->Eval(anEvent->x) - fitFunc_posCorr[label]->Eval(0.5*(cut_Xmin+cut_Xmax));
+	posCorr = fitFunc_posCorr[label]->Eval(anEvent->x) - fitFunc_posCorr[label]->Eval(p1_deltaT_energyCorr_vs_pos[anEvent->label12] -> GetMean(1)); 
       if( (anEvent->isHorizontal1!=-1 && anEvent->isHorizontal1==0) || (anEvent->isHorizontal2!=-1 && anEvent->isHorizontal2==0) ) 
-        posCorr = fitFunc_posCorr[label]->Eval(anEvent->y) - fitFunc_posCorr[label]->Eval(0.5*(cut_Ymin+cut_Ymax));
+        //posCorr = fitFunc_posCorr[label]->Eval(anEvent->y) - fitFunc_posCorr[label]->Eval(0.5*(cut_Ymin+cut_Ymax));
+	posCorr = fitFunc_posCorr[label]->Eval(anEvent->y) - fitFunc_posCorr[label]->Eval(p1_deltaT_energyCorr_vs_pos[anEvent->label12] -> GetMean(1)); 
       
+      if( h1_deltaT_energyCorr_posCorr[label] == NULL )
+	{
+	  h1_deltaT_energyCorr_posCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_posCorr_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
+	}
+
       h1_deltaT_energyCorr_posCorr[label] -> Fill( deltaT - energyCorr - posCorr );
     }
     std::cout << std::endl;
   }
-  */
+ 
   
   
   outFile -> cd();
