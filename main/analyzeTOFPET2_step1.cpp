@@ -104,6 +104,7 @@ int main(int argc, char** argv)
   
   //--- get cuts per bar / Vov
   std::map<unsigned int,std::map<float,float> > cut_qfineAcc;
+  std::map<unsigned int,std::map<float,float> > cut_qfineMax;
   std::map<unsigned int,std::map<float,float> > cut_totAcc;
   std::map<unsigned int,std::map<float,float> > cut_energyAcc;
   std::map<unsigned int,std::map<float,float> > cut_energyFitMin;
@@ -113,6 +114,7 @@ int main(int argc, char** argv)
     int chID = opts.GetOpt<int>(Form("%s.chID",ch.c_str()));
     std::vector<float> Vovs          = opts.GetOpt<std::vector<float> >(Form("%s.Vovs",ch.c_str()));
     std::vector<float> qfineMins     = opts.GetOpt<std::vector<float> >(Form("%s.qfineMins",ch.c_str()));
+    std::vector<float> qfineMaxs     = opts.GetOpt<std::vector<float> >(Form("%s.qfineMaxs",ch.c_str()));
     std::vector<float> totMins       = opts.GetOpt<std::vector<float> >(Form("%s.totMins",ch.c_str()));
     std::vector<float> energyMins    = opts.GetOpt<std::vector<float> >(Form("%s.energyMins",ch.c_str()));
     std::vector<float> energyFitMins = opts.GetOpt<std::vector<float> >(Form("%s.energyFitMins",ch.c_str()));
@@ -121,6 +123,7 @@ int main(int argc, char** argv)
     for(auto Vov : Vovs)
     {
       cut_qfineAcc[chID][Vov]     = qfineMins.at(iter);
+      cut_qfineMax[chID][Vov]     = qfineMaxs.at(iter);
       cut_totAcc[chID][Vov]       = totMins.at(iter);
       cut_energyAcc[chID][Vov]    = energyMins.at(iter);
       cut_energyFitMin[chID][Vov] = energyFitMins.at(iter);
@@ -283,6 +286,7 @@ int main(int argc, char** argv)
       h2_qfine_vs_tot[label] -> Fill( tot1,qfine1 );
       
       if( qfine1 < cut_qfineAcc[chID][step1] ) continue;
+      if( qfine1 > cut_qfineMax[chID][step1] ) continue;
       if( tot1 < cut_totAcc[chID][step1] ) continue;
       
       h1_energy[label] -> Fill( energy1 );

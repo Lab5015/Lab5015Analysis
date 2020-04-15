@@ -117,6 +117,7 @@ int main(int argc, char** argv)
   
   //--- get cuts per bar / Vov
   std::map<unsigned int,std::map<float,float> > cut_qfineAcc;
+  std::map<unsigned int,std::map<float,float> > cut_qfineMax;
   std::map<unsigned int,std::map<float,float> > cut_totAcc;
   std::map<unsigned int,std::map<float,float> > cut_energyAcc;
   std::map<unsigned int,std::map<float,float> > cut_energyFitMin;
@@ -127,6 +128,7 @@ int main(int argc, char** argv)
     int chID = opts.GetOpt<int>(Form("%s.chID",ch.c_str()));
     std::vector<float> Vovs          = opts.GetOpt<std::vector<float> >(Form("%s.Vovs",ch.c_str()));
     std::vector<float> qfineMins     = opts.GetOpt<std::vector<float> >(Form("%s.qfineMins",ch.c_str()));
+    std::vector<float> qfineMaxs     = opts.GetOpt<std::vector<float> >(Form("%s.qfineMaxs",ch.c_str()));
     std::vector<float> totMins       = opts.GetOpt<std::vector<float> >(Form("%s.totMins",ch.c_str()));
     std::vector<float> energyMins    = opts.GetOpt<std::vector<float> >(Form("%s.energyMins",ch.c_str()));
     std::vector<float> energyFitMins = opts.GetOpt<std::vector<float> >(Form("%s.energyFitMins",ch.c_str()));
@@ -136,6 +138,7 @@ int main(int argc, char** argv)
     for(auto Vov : Vovs)
     {
       cut_qfineAcc[chID][Vov]     = qfineMins.at(iter);
+      cut_qfineMax[chID][Vov]     = qfineMaxs.at(iter);
       cut_totAcc[chID][Vov]       = totMins.at(iter);
       cut_energyAcc[chID][Vov]    = energyMins.at(iter);
       cut_energyFitMin[chID][Vov] = energyFitMins.at(iter);
@@ -731,6 +734,7 @@ int main(int argc, char** argv)
         int chID1 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch1.c_str()));
         
         if( anEvent->qfine1 < cut_qfineAcc[chID1][Vov] ) continue;
+        if( anEvent->qfine1 > cut_qfineMax[chID1][Vov] ) continue;
         if( anEvent->tot1 < cut_totAcc[chID1][Vov] ) continue;
         if( anEvent->energy1 < cut_energyMin[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy1 > cut_energyMax[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
@@ -743,11 +747,13 @@ int main(int argc, char** argv)
         int chIDR = opts.GetOpt<int>(Form("%s.chID",channelR.c_str()));
         
         if( anEvent->qfine1L < cut_qfineAcc[chIDL][Vov] ) continue;
+        if( anEvent->qfine1L > cut_qfineMax[chIDL][Vov] ) continue;
         if( anEvent->tot1L < cut_totAcc[chIDL][Vov] ) continue;
         if( anEvent->energy1L < cut_energyMin[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy1L > cut_energyMax[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
         
         if( anEvent->qfine1R < cut_qfineAcc[chIDR][Vov] ) continue;
+        if( anEvent->qfine1R > cut_qfineMax[chIDR][Vov] ) continue;
         if( anEvent->tot1R < cut_totAcc[chIDR][Vov] ) continue;
         if( anEvent->energy1R < cut_energyMin[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy1R > cut_energyMax[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
@@ -759,6 +765,7 @@ int main(int argc, char** argv)
         int chID2 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch2.c_str()));
         
         if( anEvent->qfine2 < cut_qfineAcc[chID2][Vov] ) continue;
+        if( anEvent->qfine2 > cut_qfineMax[chID2][Vov] ) continue;
         if( anEvent->tot2 < cut_totAcc[chID2][Vov] ) continue;
         if( anEvent->energy2 < cut_energyMin[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy2 > cut_energyMax[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
@@ -771,11 +778,13 @@ int main(int argc, char** argv)
         int chIDR = opts.GetOpt<int>(Form("%s.chID",channelR.c_str()));
         
         if( anEvent->qfine2L < cut_qfineAcc[chIDL][Vov] ) continue;
+        if( anEvent->qfine2L > cut_qfineMax[chIDL][Vov] ) continue;
         if( anEvent->tot2L < cut_totAcc[chIDL][Vov] ) continue;
         if( anEvent->energy2L < cut_energyMin[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy2L > cut_energyMax[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
 
         if( anEvent->qfine2R < cut_qfineAcc[chIDR][Vov] ) continue;
+        if( anEvent->qfine2R > cut_qfineMax[chIDR][Vov] ) continue;
         if( anEvent->tot2R < cut_totAcc[chIDR][Vov] ) continue;
         if( anEvent->energy2R < cut_energyMin[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy2R > cut_energyMax[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
