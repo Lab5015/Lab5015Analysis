@@ -1125,8 +1125,8 @@ int main(int argc, char** argv)
         // //fitFunc2 -> FixParameter(7,fitFunc->GetParameter(1)+360.);
 	// fitFunc2 -> FixParameter(7,fitFunc->GetParameter(1)+350.);
         // fitFunc2 -> SetParameter(8,fitFunc->GetParameter(2));
-        float fitXMin2 = fitFunc->GetParameter(1)-fabs(1.0*fitFunc->GetParameter(2));
-        float fitXMax2 = fitFunc->GetParameter(1)+fabs(1.0*fitFunc->GetParameter(2));
+        float fitXMin2 = fitFunc->GetParameter(1)-fabs(1.5*fitFunc->GetParameter(2));
+        float fitXMax2 = fitFunc->GetParameter(1)+fabs(1.5*fitFunc->GetParameter(2));
         TF1* fitFunc2 = new TF1(Form("fitFunc2_energyCorr_%s",label12.c_str()),"gaus(0)",fitXMin2,fitXMax2);
         fitFunc2 -> SetParameter(0,fitFunc->GetParameter(0));
         fitFunc2 -> SetParameter(1,fitFunc->GetParameter(1));
@@ -1243,8 +1243,8 @@ int main(int argc, char** argv)
         // fitFunc2 -> SetParameter(6,fitFunc->GetParameter(0)/3.);
         // fitFunc2 -> FixParameter(7,fitFunc->GetParameter(1)+350.);
         // fitFunc2 -> SetParameter(8,fitFunc->GetParameter(2));
-        fitXMin2 = fitFunc->GetParameter(1)-fabs(1.0*fitFunc->GetParameter(2));
-        fitXMax2 = fitFunc->GetParameter(1)+fabs(1.0*fitFunc->GetParameter(2));
+        fitXMin2 = fitFunc->GetParameter(1)-fabs(1.5*fitFunc->GetParameter(2));
+        fitXMax2 = fitFunc->GetParameter(1)+fabs(1.5*fitFunc->GetParameter(2));
         fitFunc2 = new TF1(Form("fitFunc2_energyCorr_%s",label12.c_str()),"gaus(0)",fitXMin2,fitXMax2);
         fitFunc2 -> SetParameter(0,fitFunc->GetParameter(0));
         fitFunc2 -> SetParameter(1,fitFunc->GetParameter(1));

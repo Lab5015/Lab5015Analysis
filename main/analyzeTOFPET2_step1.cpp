@@ -227,8 +227,10 @@ int main(int argc, char** argv)
       {
         p2_eff_vs_XY[label] = new TProfile2D(Form("p2_eff_vs_XY_%s",label.c_str()),"",200,-10.,40.,200,0.,50.);
   
-        h1_qfine[label] = new TH1F(Form("h1_qfine_%s",label.c_str()),"",512,-0.5,511.5);
-        h2_qfine_vs_tot[label] = new TH2F(Form("h2_qfine_vs_tot_%s",label.c_str()),"",100,0.,500,512,-0.5,511.5);
+        //h1_qfine[label] = new TH1F(Form("h1_qfine_%s",label.c_str()),"",512,-0.5,511.5);
+        //h2_qfine_vs_tot[label] = new TH2F(Form("h2_qfine_vs_tot_%s",label.c_str()),"",100,0.,500,512,-0.5,511.5);
+	h1_qfine[label] = new TH1F(Form("h1_qfine_%s",label.c_str()),"",520,-0.5,519.5);
+        h2_qfine_vs_tot[label] = new TH2F(Form("h2_qfine_vs_tot_%s",label.c_str()),"",130,0.,650,520,-0.5,519.5);
         
         h1_tot[label] = new TH1F(Form("h1_tot_%s",label.c_str()),"",2000,0.,1000.);
         
