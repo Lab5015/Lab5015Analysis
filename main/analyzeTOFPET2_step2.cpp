@@ -251,7 +251,11 @@ int main(int argc, char** argv)
   std::vector<int> plots = opts.GetOpt<std::vector<int> >("Plots.plots");
   float tResMin = opts.GetOpt<float>("Plots.tResMin");
   float tResMax = opts.GetOpt<float>("Plots.tResMax");
+  std::string barPlotLabel = opts.GetOpt<std::string>("Plots.barPlotLabel");
+  std::string pixPlotLabel = opts.GetOpt<std::string>("Plots.pixPlotLabel");
   
+  std::cout << "barPlotLabel  " << barPlotLabel.c_str() <<std::endl;
+
   TCanvas* c;
   TCanvas* c2;
   TCanvas* c3;
@@ -265,7 +269,18 @@ int main(int argc, char** argv)
   TLegend* legend;
   TLegend* legend2;
   
-  
+  TLatex* latexBar = new TLatex(0.16,0.95,barPlotLabel.c_str());
+  latexBar->SetNDC();
+  latexBar->SetTextFont(42);
+  latexBar->SetTextSize(0.035);
+  latexBar->Draw();
+
+  TLatex* latexPix = new TLatex(0.16,0.95,pixPlotLabel.c_str());
+  latexPix->SetNDC();
+  latexPix->SetTextFont(42);
+  latexPix->SetTextSize(0.035);
+  latexPix->Draw();
+ 
   
   
   //------------------
@@ -1461,8 +1476,14 @@ int main(int argc, char** argv)
         ++iter;
       }
       
+      if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	latexPix -> Draw("same");
+      else
+	latexBar -> Draw("same");
+
       c -> Print(Form("%s/c_tRes_vs_th__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       c -> Print(Form("%s/c_tRes_vs_th__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c -> Print(Form("%s/c_tRes_vs_th__%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       delete c;
       
       
@@ -1590,14 +1611,41 @@ int main(int argc, char** argv)
 	++iter;
       }
       
+      c->cd();
+      if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	latexPix -> Draw("same");
+      else
+	latexBar -> Draw("same");
       c -> Print(Form("%s/c_slewRate__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       c -> Print(Form("%s/c_slewRate__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c -> Print(Form("%s/c_slewRate__%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+
+      c2->cd();
+      if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	latexPix -> Draw("same");
+      else
+	latexBar -> Draw("same");
       c2 -> Print(Form("%s/c_slewRateNormalized__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       c2 -> Print(Form("%s/c_slewRateNormalized__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c2 -> Print(Form("%s/c_slewRateNormalized__%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      
+      c3->cd();
+      if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	latexPix -> Draw("same");
+      else
+	latexBar -> Draw("same");
       c3 -> Print(Form("%s/c_dVdt__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       c3 -> Print(Form("%s/c_dVdt__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c3 -> Print(Form("%s/c_dVdt__%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      
+      c4->cd();
+      if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	latexPix -> Draw("same");
+      else
+	latexBar -> Draw("same");
       c4 -> Print(Form("%s/c_tRes_noise_%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       c4 -> Print(Form("%s/c_tRes_noise_%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c4 -> Print(Form("%s/c_tRes_noise_%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
 
       delete c;
       delete c2;
@@ -1667,8 +1715,13 @@ int main(int argc, char** argv)
 	    ++iter;
 	  }
 
-	c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+	c->cd();
+	if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	  latexPix -> Draw("same");
+	else
+	  latexBar -> Draw("same");c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
 	c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+	c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
 	delete c;
 
 	++pairsIt;      
@@ -1743,10 +1796,12 @@ int main(int argc, char** argv)
         if (isBar1){
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.png",plotDir.c_str(),ch1.c_str(),ch1.c_str()));
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.pdf",plotDir.c_str(),ch1.c_str(),ch1.c_str()));
+          c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.C",plotDir.c_str(),ch1.c_str(),ch1.c_str()));
         }
         if (isBar2){
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.png",plotDir.c_str(),ch2.c_str(),ch2.c_str()));
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.pdf",plotDir.c_str(),ch2.c_str(),ch2.c_str()));
+          c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.C",plotDir.c_str(),ch2.c_str(),ch2.c_str()));
         }
 
         delete c;
@@ -1817,8 +1872,15 @@ int main(int argc, char** argv)
         ++iter;
       }
       
+      c->cd();
+      if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	latexPix -> Draw("same");
+      else
+	latexBar -> Draw("same");
+
       c -> Print(Form("%s/c_tRes_vs_Vov__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       c -> Print(Form("%s/c_tRes_vs_Vov__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c -> Print(Form("%s/c_tRes_vs_Vov__%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       delete c;
       
       ++pairsIt;
@@ -1889,9 +1951,15 @@ int main(int argc, char** argv)
       legend2->AddEntry(g_energyCorr_gaus,"corrected","PL");
       
       legend2->Draw("same");
+      
+      if ( ch1.find("pix") != std::string::npos && ch2.find("pix") != std::string::npos )
+	latexPix -> Draw("same");
+      else
+	latexBar -> Draw("same");
 
       c -> Print(Form("%s/c_tRes_bestTh_vs_Vov__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       c -> Print(Form("%s/c_tRes_bestTh_vs_Vov__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c -> Print(Form("%s/c_tRes_bestTh_vs_Vov__%s-%s.C",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
       delete c;
       
       ++pairsIt;
