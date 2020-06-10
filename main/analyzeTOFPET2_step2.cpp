@@ -1740,8 +1740,10 @@ int main(int argc, char** argv)
         int isBar2 = opts.GetOpt<int>(Form("%s.isBar",ch2.c_str()));
 
         // consider only bar vs pixel as ref
-        if ( !(  ( isBar1 && ch2.find("pixel") != std::string::npos ) ||
-                 ( isBar2 && ch1.find("pixel") != std::string::npos )  ) ) continue;
+        if ( !(  ( isBar1 && ch2.find("pixel3x3")!= std::string::npos ) ||
+	         ( isBar2 && ch1.find("pixel3x3")!= std::string::npos )   ) ) continue;
+
+	std::cout << "ciao " << "   " << ( isBar1 && ch2.find("pixel3x3")!= std::string::npos ) <<std::endl;
 
         c = new TCanvas(Form("c_tRes_corr_vs_th_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tRes_corr_vs_th_%s-%s",ch1.c_str(),ch2.c_str()));
         // gPad -> SetLogy();
@@ -1767,6 +1769,7 @@ int main(int argc, char** argv)
               label2 = Form("%sL-%sR_%s",ch2.c_str(),ch2.c_str(),mapIt.first.c_str());
             }
 	    std::cout << label.c_str() <<  "  " << label2.c_str()<< "  " <<  label3.c_str() << std::endl;
+	    if (g_tRes_energyCorr_gaus_vs_th[label3] == NULL) continue;
             g_tRes_noise_corr_vs_th[label] = new TGraphErrors();
             for(int point = 0; point < g_tRes_energyCorr_gaus_vs_th[label]->GetN(); ++point)
               {
