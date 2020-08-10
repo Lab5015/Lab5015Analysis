@@ -77,7 +77,8 @@ int main(int argc, char** argv)
     for(int run = runMin; run <= runMax; ++run)
     {
       //std::string fileName = Form("%s/*%04d*.root",inputDir.c_str(),run);
-      std::string fileName = Form("%s/%s%04d_events.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      //std::string fileName = Form("%s/%s%04d_events.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      std::string fileName = Form("%s/%s%04d_t.root",inputDir.c_str(),fileBaseName.c_str(),run);
       std::cout << ">>> Adding file " << fileName << std::endl;
       tree -> Add(fileName.c_str());
       
@@ -136,6 +137,8 @@ int main(int argc, char** argv)
   
   
   //--- define branches
+  int doTracks = opts.GetOpt<int>("TrackCuts.doTracks");
+  
   float step1, step2;
   float tot[256];
   float qfine[256];
@@ -152,10 +155,11 @@ int main(int argc, char** argv)
   tree -> SetBranchStatus("tot",         1); tree -> SetBranchAddress("tot",          tot);
   tree -> SetBranchStatus("energy",      1); tree -> SetBranchAddress("energy",       energy);
   tree -> SetBranchStatus("time",        1); tree -> SetBranchAddress("time",         time);
-  tree -> SetBranchStatus("xIntercept",  1); tree -> SetBranchAddress("xIntercept",  &xIntercept);
-  tree -> SetBranchStatus("yIntercept",  1); tree -> SetBranchAddress("yIntercept",  &yIntercept);
-  tree -> SetBranchStatus("ntracks",     1); tree -> SetBranchAddress("ntracks",     &ntracks);
-  
+  if( doTracks ){
+    tree -> SetBranchStatus("xIntercept",  1); tree -> SetBranchAddress("xIntercept",  &xIntercept);
+    tree -> SetBranchStatus("yIntercept",  1); tree -> SetBranchAddress("yIntercept",  &yIntercept);
+    tree -> SetBranchStatus("ntracks",     1); tree -> SetBranchAddress("ntracks",     &ntracks);
+  }
   
   //--- define histograms
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileName");

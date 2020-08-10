@@ -78,6 +78,7 @@ int main(int argc, char** argv)
   color["Vov4.0"] = 416;
   color["Vov5.0"] = 432;
   color["Vov6.0"] = 600;
+  color["Vov7.0"] = 700;
   color["Vov8.0"] = 880;
  
 
@@ -95,12 +96,8 @@ int main(int argc, char** argv)
   std::string fileBaseName = opts.GetOpt<std::string>("Input.fileBaseName");
   std::string runs = opts.GetOpt<std::string>("Input.runs");
   
-  
-  //--- track position cuts
-  //float cut_Xmin = opts.GetOpt<float>("TrackCuts.Xmin");
-  //float cut_Xmax = opts.GetOpt<float>("TrackCuts.Xmax");
-  //float cut_Ymin = opts.GetOpt<float>("TrackCuts.Ymin");
-  //float cut_Ymax = opts.GetOpt<float>("TrackCuts.Ymax");
+  //--- use track position if available
+  int doTracks = opts.GetOpt<int>("TrackCuts.doTracks");
   
   
   //--- define channels
@@ -137,10 +134,19 @@ int main(int argc, char** argv)
     std::vector<float> energyMins    = opts.GetOpt<std::vector<float> >(Form("%s.energyMins",ch.c_str()));
     std::vector<float> energyFitMins = opts.GetOpt<std::vector<float> >(Form("%s.energyFitMins",ch.c_str()));
     std::vector<float> energyFitMaxs = opts.GetOpt<std::vector<float> >(Form("%s.energyFitMaxs",ch.c_str()));
-    cut_Xmin[chID] = opts.GetOpt<float>(Form("%s.Xmin",ch.c_str()));
-    cut_Xmax[chID] = opts.GetOpt<float>(Form("%s.Xmax",ch.c_str()));
-    cut_Ymin[chID] = opts.GetOpt<float>(Form("%s.Ymin",ch.c_str()));
-    cut_Ymax[chID] = opts.GetOpt<float>(Form("%s.Ymax",ch.c_str()));
+    if( doTracks )
+      {
+	cut_Xmin[chID] = opts.GetOpt<float>(Form("%s.Xmin",ch.c_str()));
+	cut_Xmax[chID] = opts.GetOpt<float>(Form("%s.Xmax",ch.c_str()));
+	cut_Ymin[chID] = opts.GetOpt<float>(Form("%s.Ymin",ch.c_str()));
+	cut_Ymax[chID] = opts.GetOpt<float>(Form("%s.Ymax",ch.c_str()));
+      }
+    else{
+      cut_Xmin[chID] = -99;
+      cut_Xmax[chID] =  99;
+      cut_Xmin[chID] = -99;
+      cut_Xmax[chID] =  99;
+    }
     noise[chID] = opts.GetOpt<float>(Form("%s.noise",ch.c_str()));
     int iter = 0;
     for(auto Vov : Vovs)
@@ -316,36 +322,37 @@ int main(int argc, char** argv)
         int chID = opts.GetOpt<int>(Form("%s.chID",ch.c_str()));  
         std::string label(Form("%s_%s",ch.c_str(),stepLabel.c_str()));
         
-        
-        c = new TCanvas(Form("c_eff_vs_XY_%s",label.c_str()),Form("c_eff_vs_XY_%s",label.c_str()));
-        
-        prof2 = (TProfile2D*)( inFile->Get(Form("p2_eff_vs_XY_%s",label.c_str())) );
-        prof2 -> SetTitle(";tracker x [mm];tracker y [mm]");
-        prof2 -> Draw("colz");
-        prof2 -> GetXaxis() -> SetRangeUser(-10.,40.);
-        prof2 -> GetYaxis() -> SetRangeUser(5.,40.);
-        TLine* line1 = new TLine(cut_Xmin[chID],cut_Ymin[chID],cut_Xmax[chID],cut_Ymin[chID]);
-        line1 -> SetLineColor(kMagenta);
-        line1 -> Draw("same");
-        TLine* line2 = new TLine(cut_Xmin[chID],cut_Ymax[chID],cut_Xmax[chID],cut_Ymax[chID]);
-        line2 -> SetLineColor(kMagenta);
-        line2 -> Draw("same");
-        TLine* line3 = new TLine(cut_Xmin[chID],cut_Ymin[chID],cut_Xmin[chID],cut_Ymax[chID]);
-        line3 -> SetLineColor(kMagenta);
-        line3 -> Draw("same");
-        TLine* line4 = new TLine(cut_Xmax[chID],cut_Ymin[chID],cut_Xmax[chID],cut_Ymax[chID]);
-        line4 -> SetLineColor(kMagenta);
-        line4 -> Draw("same");
-        latex = new TLatex(0.65,0.85,Form("%s",ch.c_str()));
-        latex -> SetNDC();
-        latex -> SetTextFont(42);
-        latex -> SetTextSize(0.04);
-        latex -> Draw("same");      
-        prof2 -> Write();
-        c -> Print(Form("%s/tracker/c_eff_vs_XY__%s.png",plotDir.c_str(),label.c_str()));
-        c -> Print(Form("%s/tracker/c_eff_vs_XY__%s.pdf",plotDir.c_str(),label.c_str()));
-        delete c;
-        
+        if (doTracks)
+	  {
+	    c = new TCanvas(Form("c_eff_vs_XY_%s",label.c_str()),Form("c_eff_vs_XY_%s",label.c_str()));
+	    
+	    prof2 = (TProfile2D*)( inFile->Get(Form("p2_eff_vs_XY_%s",label.c_str())) );
+	    prof2 -> SetTitle(";tracker x [mm];tracker y [mm]");
+	    prof2 -> Draw("colz");
+	    prof2 -> GetXaxis() -> SetRangeUser(-10.,40.);
+	    prof2 -> GetYaxis() -> SetRangeUser(5.,40.);
+	    TLine* line1 = new TLine(cut_Xmin[chID],cut_Ymin[chID],cut_Xmax[chID],cut_Ymin[chID]);
+	    line1 -> SetLineColor(kMagenta);
+	    line1 -> Draw("same");
+	    TLine* line2 = new TLine(cut_Xmin[chID],cut_Ymax[chID],cut_Xmax[chID],cut_Ymax[chID]);
+	    line2 -> SetLineColor(kMagenta);
+	    line2 -> Draw("same");
+	    TLine* line3 = new TLine(cut_Xmin[chID],cut_Ymin[chID],cut_Xmin[chID],cut_Ymax[chID]);
+	    line3 -> SetLineColor(kMagenta);
+	    line3 -> Draw("same");
+	    TLine* line4 = new TLine(cut_Xmax[chID],cut_Ymin[chID],cut_Xmax[chID],cut_Ymax[chID]);
+	    line4 -> SetLineColor(kMagenta);
+	    line4 -> Draw("same");
+	    latex = new TLatex(0.65,0.85,Form("%s",ch.c_str()));
+	    latex -> SetNDC();
+	    latex -> SetTextFont(42);
+	    latex -> SetTextSize(0.04);
+	    latex -> Draw("same");      
+	    prof2 -> Write();
+	    c -> Print(Form("%s/tracker/c_eff_vs_XY__%s.png",plotDir.c_str(),label.c_str()));
+	    c -> Print(Form("%s/tracker/c_eff_vs_XY__%s.pdf",plotDir.c_str(),label.c_str()));
+	    delete c;
+	  }
         
         c = new TCanvas(Form("c_qfine_%s",label.c_str()),Form("c_qfine_%s",label.c_str()));
         gPad -> SetLogy();
@@ -438,16 +445,18 @@ int main(int argc, char** argv)
         std::cout << label << std::endl;
         max1 = FindXMaximum(histo,cut_energyAcc[chID][Vov],100.);
         // histo -> GetXaxis() -> SetRangeUser(0.1*max1,2.5*max1);
-        histo -> GetXaxis() -> SetRangeUser(0.,50.);
+        //histo -> GetXaxis() -> SetRangeUser(0.,50.);
+	histo -> GetXaxis() -> SetRangeUser(2.0,20.);
         fitFunc1 = new TF1("fitFunc1","gaus",max1-cut_energyFitMin[chID][Vov]*max1,max1+cut_energyFitMax[chID][Vov]*max1);
+	if (max1 <= cut_energyAcc[chID][Vov]) fitFunc1->SetRange(max1,max1+cut_energyFitMax[chID][Vov]*max1);
         histo -> Fit(fitFunc1,"QNRS+");
         fitFunc1 -> SetLineColor(kBlack);
         fitFunc1 -> SetLineWidth(3);
         fitFunc1 -> Draw("same");
-        // cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc1->GetMaximumX()-cut_energyFitMin[chID][Vov]*fitFunc1->GetMaximumX();
-        // cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc1->GetMaximumX()+cut_energyFitMax[chID][Vov]*fitFunc1->GetMaximumX();
-        cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = cut_energyAcc[chID][Vov];
-        cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = 50.;
+	cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc1->GetMaximumX()-cut_energyFitMin[chID][Vov]*fitFunc1->GetMaximumX();
+	cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc1->GetMaximumX()+cut_energyFitMax[chID][Vov]*fitFunc1->GetMaximumX();
+        //cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = cut_energyAcc[chID][Vov];
+        //cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = 50.;
         
         TLine* line_energyMin1 = new TLine(cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())],histo->GetMinimum(),
                                            cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())],histo->GetMaximum());
@@ -761,8 +770,10 @@ int main(int argc, char** argv)
         if( anEvent->tot1 < cut_totAcc[chID1][Vov] ) continue;
         if( anEvent->energy1 < cut_energyMin[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy1 > cut_energyMax[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
-	if( anEvent->x < cut_Xmin[chID1] || anEvent->x > cut_Xmax[chID1] ) continue;
-	if( anEvent->y < cut_Ymin[chID1] || anEvent->y > cut_Ymax[chID1] ) continue;
+	if (doTracks){
+	  if( anEvent->x < cut_Xmin[chID1] || anEvent->x > cut_Xmax[chID1] ) continue;
+	  if( anEvent->y < cut_Ymin[chID1] || anEvent->y > cut_Ymax[chID1] ) continue;
+	}
       }
       else
       {
@@ -776,16 +787,20 @@ int main(int argc, char** argv)
         if( anEvent->tot1L < cut_totAcc[chIDL][Vov] ) continue;
         if( anEvent->energy1L < cut_energyMin[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy1L > cut_energyMax[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
-	if( anEvent->x < cut_Xmin[chIDL] || anEvent->x > cut_Xmax[chIDL] ) continue;
-	if( anEvent->y < cut_Ymin[chIDL] || anEvent->y > cut_Ymax[chIDL] ) continue;
-
+	if (doTracks){
+	  if( anEvent->x < cut_Xmin[chIDL] || anEvent->x > cut_Xmax[chIDL] ) continue;
+	  if( anEvent->y < cut_Ymin[chIDL] || anEvent->y > cut_Ymax[chIDL] ) continue;
+	}
+	
         if( anEvent->qfine1R < cut_qfineAcc[chIDR][Vov] ) continue;
         if( anEvent->qfine1R > cut_qfineMax[chIDR][Vov] ) continue;
         if( anEvent->tot1R < cut_totAcc[chIDR][Vov] ) continue;
         if( anEvent->energy1R < cut_energyMin[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy1R > cut_energyMax[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
-	if( anEvent->x < cut_Xmin[chIDR] || anEvent->x > cut_Xmax[chIDR] ) continue;
-	if( anEvent->y < cut_Ymin[chIDR] || anEvent->y > cut_Ymax[chIDR] ) continue;
+	if (doTracks){
+	  if( anEvent->x < cut_Xmin[chIDR] || anEvent->x > cut_Xmax[chIDR] ) continue;
+	  if( anEvent->y < cut_Ymin[chIDR] || anEvent->y > cut_Ymax[chIDR] ) continue;
+	}
       }
       
       
@@ -798,8 +813,10 @@ int main(int argc, char** argv)
         if( anEvent->tot2 < cut_totAcc[chID2][Vov] ) continue;
         if( anEvent->energy2 < cut_energyMin[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy2 > cut_energyMax[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
-	if( anEvent->x < cut_Xmin[chID2] || anEvent->x > cut_Xmax[chID2] ) continue;
-	if( anEvent->y < cut_Ymin[chID2] || anEvent->y > cut_Ymax[chID2] ) continue;
+	if (doTracks){
+	  if( anEvent->x < cut_Xmin[chID2] || anEvent->x > cut_Xmax[chID2] ) continue;
+	  if( anEvent->y < cut_Ymin[chID2] || anEvent->y > cut_Ymax[chID2] ) continue;
+	}
       }
       else
       {
@@ -813,16 +830,20 @@ int main(int argc, char** argv)
         if( anEvent->tot2L < cut_totAcc[chIDL][Vov] ) continue;
         if( anEvent->energy2L < cut_energyMin[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy2L > cut_energyMax[Form("%s_%s",channelL.c_str(),anEvent->stepLabel.c_str())] ) continue;
-	if( anEvent->x < cut_Xmin[chIDL] || anEvent->x > cut_Xmax[chIDL] ) continue;
-	if( anEvent->y < cut_Ymin[chIDL] || anEvent->y > cut_Ymax[chIDL] ) continue;
-
+	if (doTracks){
+	  if( anEvent->x < cut_Xmin[chIDL] || anEvent->x > cut_Xmax[chIDL] ) continue;
+	  if( anEvent->y < cut_Ymin[chIDL] || anEvent->y > cut_Ymax[chIDL] ) continue;
+	}
+	
         if( anEvent->qfine2R < cut_qfineAcc[chIDR][Vov] ) continue;
         if( anEvent->qfine2R > cut_qfineMax[chIDR][Vov] ) continue;
         if( anEvent->tot2R < cut_totAcc[chIDR][Vov] ) continue;
         if( anEvent->energy2R < cut_energyMin[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
         if( anEvent->energy2R > cut_energyMax[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
-      	if( anEvent->x < cut_Xmin[chIDR] || anEvent->x > cut_Xmax[chIDR] ) continue;
-	if( anEvent->y < cut_Ymin[chIDR] || anEvent->y > cut_Ymax[chIDR] ) continue;
+      	if (doTracks){
+	  if( anEvent->x < cut_Xmin[chIDR] || anEvent->x > cut_Xmax[chIDR] ) continue;
+	  if( anEvent->y < cut_Ymin[chIDR] || anEvent->y > cut_Ymax[chIDR] ) continue;
+	}
       }
       
       accept[label][entry] = true;
@@ -831,7 +852,8 @@ int main(int argc, char** argv)
       {
         h1_totRatio[anEvent->label12] = new TH1F(Form("h1_totRatio_%s",anEvent->label12.c_str()),"",1000,0.,5.);
         h1_energyRatio[anEvent->label12] = new TH1F(Form("h1_energyRatio_%s",anEvent->label12.c_str()),"",1000,0.,5.);
-        h1_deltaT_raw[anEvent->label12] = new TH1F(Form("h1_deltaT_raw_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
+        //h1_deltaT_raw[anEvent->label12] = new TH1F(Form("h1_deltaT_raw_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
+	h1_deltaT_raw[anEvent->label12] = new TH1F(Form("h1_deltaT_raw_%s",anEvent->label12.c_str()),"",200,-10000.,10000.);
       }
       
       h1_totRatio[anEvent->label12] -> Fill( anEvent->tot2 / anEvent->tot1 );
@@ -857,7 +879,6 @@ int main(int argc, char** argv)
       std::string label1(Form("%s_%s",ch1.c_str(),stepLabel.c_str()));
       std::string label2(Form("%s_%s",ch2.c_str(),stepLabel.c_str()));
       std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
-      
       
       FindSmallestInterval(vals,h1_deltaT_raw[label12],0.68);
       float mean = vals[0];
@@ -903,7 +924,8 @@ int main(int argc, char** argv)
       
       if( h1_deltaT[anEvent->label12] == NULL )
       {
-        h1_deltaT[anEvent->label12] = new TH1F(Form("h1_deltaT_%s",anEvent->label12.c_str()),"",1250,-5000,5000.);
+        //h1_deltaT[anEvent->label12] = new TH1F(Form("h1_deltaT_%s",anEvent->label12.c_str()),"",1250,-5000,5000.);
+	h1_deltaT[anEvent->label12] = new TH1F(Form("h1_deltaT_%s",anEvent->label12.c_str()),"",200,-10000,10000.);
       }
       
       h1_deltaT[anEvent->label12] -> Fill( deltaT );
@@ -916,7 +938,8 @@ int main(int argc, char** argv)
 
         float xMin = fitFunc->GetParameter(1) - 3.*fitFunc->GetParameter(2);
         float xMax = fitFunc->GetParameter(1) + 3.*fitFunc->GetParameter(2);
-        p1_deltaT_vs_energyRatio[anEvent->label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent->label12.c_str()),"",100,xMin,xMax);
+        //p1_deltaT_vs_energyRatio[anEvent->label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent->label12.c_str()),"",100,xMin,xMax);
+	p1_deltaT_vs_energyRatio[anEvent->label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent->label12.c_str()),"",50,xMin,xMax);
       }
       
       if( ( deltaT > timeLow ) && ( deltaT < timeHig ) )
@@ -1030,7 +1053,8 @@ int main(int argc, char** argv)
       
       if( h1_deltaT_energyCorr[label] == NULL )
       {
-        h1_deltaT_energyCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
+        //h1_deltaT_energyCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
+	h1_deltaT_energyCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_%s",anEvent->label12.c_str()),"",200,-10000.,10000.);
       }
       
       h1_deltaT_energyCorr[label] -> Fill( deltaT - energyCorr );
@@ -1511,14 +1535,16 @@ int main(int argc, char** argv)
       c = new TCanvas(Form("c_slewRate_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_slewRate_%s-%s",ch1.c_str(),ch2.c_str()));
       // gPad -> SetLogy();
       
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,2.5,64.) );
+      //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,2.5,64.) );
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,5.0,64.) );
       hPad -> SetTitle(";#LT t_{diff} #GT [ns];threshold [DAC]");
       hPad -> Draw();
       gPad -> SetGridy();
 
 
       c2 = new TCanvas(Form("c_slewRateNormalized_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_slewRateNormalized_%s-%s",ch1.c_str(),ch2.c_str()));
-      TH1F *hPad2 = (TH1F*)( gPad->DrawFrame(-0.5,0.,2.5,15.) );
+      //TH1F *hPad2 = (TH1F*)( gPad->DrawFrame(-0.5,0.,2.5,15.) );
+      TH1F *hPad2 = (TH1F*)( gPad->DrawFrame(-0.5,0.,5.0,15.) );
       hPad2 -> SetTitle(";#LT t_{diff} #GT [ns]; normalized threshold");
       hPad2 -> Draw();
       gPad -> SetGridy();
@@ -1606,7 +1632,7 @@ int main(int argc, char** argv)
 	  {
 	    double x,y;
 	    g_slewRate -> GetPoint(point,x,y);
-            float delta = 50.; // ps
+            float delta = 100.; // ps
             float dVdt = ( g_slewRate->Eval(x-delta) - g_slewRate->Eval(x+delta))/(2*delta);
             g_dVdt_vs_th[label] -> SetPoint(point, y, dVdt*1000.);
             g_tRes_noise_vs_th[label] -> SetPoint(point, y, sigmaV/dVdt);
@@ -2059,76 +2085,75 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
   
+  if (doTracks){
+  
+    std::map<std::string,TF1*> fitFunc_posCorr;
+  
+    for(auto stepLabel : stepLabels)
+      {
+	float Vov = map_Vovs[stepLabel];
+	float th = map_ths[stepLabel];
+	std::string VovLabel(Form("Vov%.1f",Vov));
+	std::string thLabel(Form("th%02.0f",th));
+	
+	for(auto pair : pairsVec)
+	  {
+	    std::string ch1 = pair.first;
+	    std::string ch2 = pair.second;
+	    std::string label1(Form("%s_%s",ch1.c_str(),stepLabel.c_str()));
+	    std::string label2(Form("%s_%s",ch2.c_str(),stepLabel.c_str()));
+	    std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
+	    
+	    int chID = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));
+	    
+	    fitFunc_posCorr[label12] = new TF1(Form("fitFunc_posCorr_%s",label12.c_str()),"pol1",cut_Xmin[chID],cut_Xmax[chID]);
+	    p1_deltaT_energyCorr_vs_pos[label12] -> Fit(fitFunc_posCorr[label12],"QRS+");
+	  }
+      }
   
   
-  std::map<std::string,TF1*> fitFunc_posCorr;
   
-  for(auto stepLabel : stepLabels)
-  {
-    float Vov = map_Vovs[stepLabel];
-    float th = map_ths[stepLabel];
-    std::string VovLabel(Form("Vov%.1f",Vov));
-    std::string thLabel(Form("th%02.0f",th));
-    
-    for(auto pair : pairsVec)
-    {
-      std::string ch1 = pair.first;
-      std::string ch2 = pair.second;
-      std::string label1(Form("%s_%s",ch1.c_str(),stepLabel.c_str()));
-      std::string label2(Form("%s_%s",ch2.c_str(),stepLabel.c_str()));
-      std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
-
-      int chID = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));
-
-      fitFunc_posCorr[label12] = new TF1(Form("fitFunc_posCorr_%s",label12.c_str()),"pol1",cut_Xmin[chID],cut_Xmax[chID]);
-      p1_deltaT_energyCorr_vs_pos[label12] -> Fit(fitFunc_posCorr[label12],"QRS+");
-    }
+    //------------------------
+    //--- 6th loop over events
+    for(auto mapIt : trees)
+      {
+	std::string label = mapIt.first;
+	
+	EventClass* anEvent = new EventClass();
+	mapIt.second -> SetBranchAddress("event",&anEvent);
+	
+	int nEntries = mapIt.second->GetEntries();
+	for(int entry = 0; entry < nEntries; ++entry)
+	  {
+	    if( entry%1000 == 0 ) std::cout << ">>> 6th loop (" << label << "): reading entry " << entry << " / " << nEntries << "\r" << std::flush;
+	    mapIt.second -> GetEntry(entry);
+	    
+	    if( !accept[label][entry] ) continue;
+	    
+	    long long deltaT = anEvent->time2-anEvent->time1;
+	    
+	    float energyCorr = fitFunc_energyCorr[label]->Eval(anEvent->energy2/anEvent->energy1) -
+	                       fitFunc_energyCorr[label]->Eval(h1_energyRatio[anEvent->label12]->GetMean());
+	    
+	    float posCorr = 0.;
+	    
+	    if( (anEvent->isHorizontal1!=-1 && anEvent->isHorizontal1==1) || (anEvent->isHorizontal2!=-1 && anEvent->isHorizontal2==1) ) 
+	      //  posCorr = fitFunc_posCorr[label]->Eval(anEvent->x) - fitFunc_posCorr[label]->Eval(0.5*(cut_Xmin+cut_Xmax));
+	      posCorr = fitFunc_posCorr[label]->Eval(anEvent->x) - fitFunc_posCorr[label]->Eval(p1_deltaT_energyCorr_vs_pos[anEvent->label12] -> GetMean(1)); 
+	    if( (anEvent->isHorizontal1!=-1 && anEvent->isHorizontal1==0) || (anEvent->isHorizontal2!=-1 && anEvent->isHorizontal2==0) ) 
+	      //posCorr = fitFunc_posCorr[label]->Eval(anEvent->y) - fitFunc_posCorr[label]->Eval(0.5*(cut_Ymin+cut_Ymax));
+	      posCorr = fitFunc_posCorr[label]->Eval(anEvent->y) - fitFunc_posCorr[label]->Eval(p1_deltaT_energyCorr_vs_pos[anEvent->label12] -> GetMean(1)); 
+	    
+	    if( h1_deltaT_energyCorr_posCorr[label] == NULL )
+	      {
+		h1_deltaT_energyCorr_posCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_posCorr_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
+	      }
+	    
+	    h1_deltaT_energyCorr_posCorr[label] -> Fill( deltaT - energyCorr - posCorr );
+	  }
+	std::cout << std::endl;
+      }
   }
-  
-  
-  
-  //------------------------
-  //--- 6th loop over events
-  for(auto mapIt : trees)
-  {
-    std::string label = mapIt.first;
-
-    EventClass* anEvent = new EventClass();
-    mapIt.second -> SetBranchAddress("event",&anEvent);
-
-    int nEntries = mapIt.second->GetEntries();
-    for(int entry = 0; entry < nEntries; ++entry)
-    {
-      if( entry%1000 == 0 ) std::cout << ">>> 6th loop (" << label << "): reading entry " << entry << " / " << nEntries << "\r" << std::flush;
-      mapIt.second -> GetEntry(entry);
-      
-      if( !accept[label][entry] ) continue;
-
-      long long deltaT = anEvent->time2-anEvent->time1;
-      
-      float energyCorr = fitFunc_energyCorr[label]->Eval(anEvent->energy2/anEvent->energy1) -
-                         fitFunc_energyCorr[label]->Eval(h1_energyRatio[anEvent->label12]->GetMean());
-      
-      float posCorr = 0.;
-      
-      if( (anEvent->isHorizontal1!=-1 && anEvent->isHorizontal1==1) || (anEvent->isHorizontal2!=-1 && anEvent->isHorizontal2==1) ) 
-	//  posCorr = fitFunc_posCorr[label]->Eval(anEvent->x) - fitFunc_posCorr[label]->Eval(0.5*(cut_Xmin+cut_Xmax));
-	posCorr = fitFunc_posCorr[label]->Eval(anEvent->x) - fitFunc_posCorr[label]->Eval(p1_deltaT_energyCorr_vs_pos[anEvent->label12] -> GetMean(1)); 
-      if( (anEvent->isHorizontal1!=-1 && anEvent->isHorizontal1==0) || (anEvent->isHorizontal2!=-1 && anEvent->isHorizontal2==0) ) 
-        //posCorr = fitFunc_posCorr[label]->Eval(anEvent->y) - fitFunc_posCorr[label]->Eval(0.5*(cut_Ymin+cut_Ymax));
-	posCorr = fitFunc_posCorr[label]->Eval(anEvent->y) - fitFunc_posCorr[label]->Eval(p1_deltaT_energyCorr_vs_pos[anEvent->label12] -> GetMean(1)); 
-      
-      if( h1_deltaT_energyCorr_posCorr[label] == NULL )
-	{
-	  h1_deltaT_energyCorr_posCorr[label] = new TH1F(Form("h1_deltaT_energyCorr_posCorr_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
-	}
-
-      h1_deltaT_energyCorr_posCorr[label] -> Fill( deltaT - energyCorr - posCorr );
-    }
-    std::cout << std::endl;
-  }
- 
-  
   
   outFile -> cd();
   
