@@ -3,20 +3,20 @@ collection of programs for the analysis of Lab5015 measurements
 
 ### Login to your favourite machine
 ```sh
-$ ssh username@host
+ssh username@host
 ```
 
 
 
 ### Fresh installation of the analysis package
 ```sh
-$ export MYNAME=putYourNameHere  #use your name for development
-$ mkdir $MYNAME
-$ cd $MYNAME
-$ git clone --recursive https://github.com/Lab5015/Lab5015Analysis
-$ cd Lab5015Analysis
-$ make
-$ make exe
+export MYNAME=putYourNameHere  #use your name for development
+mkdir $MYNAME
+cd $MYNAME
+git clone --recursive https://github.com/Lab5015/Lab5015Analysis
+cd Lab5015Analysis
+make
+make exe
 ```
 
 
