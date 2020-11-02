@@ -13,6 +13,8 @@
 //#pragma link C++ class vector<vector<vector<float> > >+;
 #pragma link C++ class vector<vector<vector<int> > >+;
 #pragma link C++ class vector<vector<vector<float> > >+;
+#pragma link C++ class EventClass;
+#pragma link C++ class ModuleEventClass;
 
 #endif
 

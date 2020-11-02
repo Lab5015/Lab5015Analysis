@@ -37,7 +37,7 @@ int main(int argc, char** argv)
   
   if( argc < 2 )
   {
-    std::cout << ">>> analyzeTOFPET2_step2::usage:   " << argv[0] << " configFile.cfg" << std::endl;
+    std::cout << ">>> analyzeBars::usage:   " << argv[0] << " configFile.cfg" << std::endl;
     return -1;
   }
   
@@ -111,7 +111,7 @@ int main(int argc, char** argv)
   std::map<unsigned int,std::map<float,float> > cut_energyAcc;
   std::map<unsigned int,std::map<float,float> > cut_energyFitMin;
   std::map<unsigned int,std::map<float,float> > cut_energyFitMax;
-  std::map<unsigned int, float> noise;
+  std::map<unsigned int, float > noise;
   for(auto ch :  channels)
   {
     int chID = opts.GetOpt<int>(Form("%s.chID",ch.c_str()));
@@ -166,19 +166,19 @@ int main(int argc, char** argv)
       trees[label] = (TTree*)( inFile->Get(name.c_str()) );
     }
     
-    found = name.find("h1_qfine");
+    found = name.find("h1_energy_cut");
     if( found!=std::string::npos )
     {
-      std::string stepLabel = tokens[3]+"_"+tokens[4];
-      VovLabels[tokens[3]] += 1;
-      thLabels[tokens[4]] += 1;
+      std::string stepLabel = tokens[4]+"_"+tokens[5];
+      VovLabels[tokens[4]] += 1;
+      thLabels[tokens[5]] += 1;
       stepLabels.push_back(stepLabel);
       
-      std::string string_Vov = tokens[3];
+      std::string string_Vov = tokens[4];
       string_Vov.erase(0,3);
       map_Vovs[stepLabel] = atof(string_Vov.c_str());
       
-      std::string string_th = tokens[4];
+      std::string string_th = tokens[5];
       string_th.erase(0,2);
       map_ths[stepLabel] = atof(string_th.c_str());
     }
@@ -187,26 +187,53 @@ int main(int argc, char** argv)
   stepLabels.erase(std::unique(stepLabels.begin(),stepLabels.end()),stepLabels.end());
   
   
-  
   //--- define histograms
   std::string plotFileName = opts.GetOpt<std::string>("Output.plotFileName");
   TFile* outFile = TFile::Open(plotFileName.c_str(),"RECREATE");
   
+  std::map<std::string,TH2F*> h2_tot_corr;
   std::map<std::string,TH1F*> h1_totRatio;
   
-  std::map<std::string,TH1F*> h1_energyRatio;
   std::map<std::string,TH2F*> h2_energy_corr;
-  
+  std::map<std::string,TH1F*> h1_energyRatio;
+
   std::map<std::string,TH1F*> h1_deltaT_raw;
   std::map<std::string,TH1F*> h1_deltaT;
   std::map<std::string,TProfile*> p1_deltaT_vs_energyRatio;
-  
+
   std::map<std::string,TH1F*> h1_deltaT_energyCorr;
   std::map<std::string,TProfile*> p1_deltaT_energyCorr_vs_pos;
-  
+
   std::map<std::string,TH1F*> h1_deltaT_energyCorr_posCorr;
   
   
+  
+  
+  /*
+  for(auto stepLabel : stepLabels)
+  {
+    float Vov = map_Vovs[stepLabel];
+    float th = map_ths[stepLabel];
+    std::string VovLabel(Form("Vov%.1f",Vov));
+    std::string thLabel(Form("th%02.0f",th));
+    
+    
+    for(auto ch : channels)
+    {
+      int chID = opts.GetOpt<int>(Form("%s.chID",ch.c_str()));
+      std::string label(Form("%s_%s",ch.c_str(),stepLabel.c_str()));
+      
+      // float max1 = FindXMaximum(h1_energy[label],cut_energyAcc[chID][Vov],50.);
+      // TF1* fitFunc = new TF1("fitFunc","gaus",max1-cut_energyFitMin[chID][Vov]*max1,max1+cut_energyFitMax[chID][Vov]*max1);
+      // h1_energy[label] -> Fit(fitFunc,"QRS+");
+      // cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc->GetMaximumX()-cut_energyFitMin[chID][Vov]*fitFunc->GetMaximumX();
+      // cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = fitFunc->GetMaximumX()+cut_energyFitMax[chID][Vov]*fitFunc->GetMaximumX();
+      cut_energyMin[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = cut_energyAcc[chID][Vov];
+      cut_energyMax[Form("%s_%s",ch.c_str(),stepLabel.c_str())] = 100.;
+    }
+  }
+  */
+
   
   //--- get plot settings
   std::vector<int> plots = opts.GetOpt<std::vector<int> >("Plots.plots");
@@ -215,7 +242,6 @@ int main(int argc, char** argv)
   float energyMax = opts.GetOpt<float>("Plots.energyMax");
   float tResMin = opts.GetOpt<float>("Plots.tResMin");
   float tResMax = opts.GetOpt<float>("Plots.tResMax");
-  float doSlewRatePlots = opts.GetOpt<float>("Plots.doSlewRatePlots");
   
   TCanvas* c;
   TCanvas* c2;
@@ -232,10 +258,11 @@ int main(int argc, char** argv)
   
   
   
+  
   //------------------
   //--- draw 1st plots
-  // std::map<std::string,TGraphErrors*> g_tot_vs_th;
-  // std::map<std::string,TGraphErrors*> g_tot_vs_Vov;
+  std::map<std::string,TGraphErrors*> g_tot_vs_th;
+  std::map<std::string,TGraphErrors*> g_tot_vs_Vov;
   std::map<std::string,TGraphErrors*> g_energy_vs_th;
   std::map<std::string,TGraphErrors*> g_energy_vs_Vov;
   
@@ -296,7 +323,6 @@ int main(int argc, char** argv)
         histo = (TH1F*)( inFile->Get(Form("h1_qfine_%s",label.c_str())) );
         histo -> SetTitle(";Q_{fine} [ADC];entries");
         histo -> SetLineColor(kRed);
-        histo -> SetLineWidth(2);
         histo -> Draw();
         histo -> GetXaxis() -> SetRangeUser(0.,600.);
         TLine* line_qfineAcc1 = new TLine(cut_qfineAcc[chID][Vov],histo->GetMinimum(),cut_qfineAcc[chID][Vov],histo->GetMaximum());
@@ -314,20 +340,35 @@ int main(int argc, char** argv)
         delete c;
         
         
+        histo = (TH1F*)( inFile->Get(Form("h1_qfine_%s",label.c_str())) );      
+        c = new TCanvas(Form("c_qfine_vs_tot_%s",label.c_str()),Form("c_qfine_vs_tot_%s",label.c_str()));
+        gPad -> SetLogz();
+        
+        
+        histo2 = (TH2F*)( inFile->Get(Form("h2_qfine_vs_tot_%s",label.c_str())) );            
+        histo2 -> SetTitle(Form(";%s ToT [ns];%s Q_{fine} [ADC]",ch.c_str(),ch.c_str()));
+        histo2 -> Draw("colz");
+        
+        histo -> Write();
+        histo2 -> Write();
+        c -> Print(Form("%s/qfine/c_qfine_vs_tot__%s.png",plotDir.c_str(),label.c_str()));
+        c -> Print(Form("%s/qfine/c_qfine_vs_tot__%s.pdf",plotDir.c_str(),label.c_str()));
+        delete c;
+        
+        
         c = new TCanvas(Form("c_tot_%s",label.c_str()),Form("c_tot_%s",label.c_str()));
         // gPad -> SetLogy();
         
         histo = (TH1F*)( inFile->Get(Form("h1_tot_%s",label.c_str())) );
         histo -> SetTitle(";ToT [ns];entries");
         histo -> SetLineColor(kRed);
-        histo -> SetLineWidth(2);
         histo -> Draw();
         float max1 = FindXMaximum(histo,cut_totAcc[chID][Vov],1000.);
         histo -> GetXaxis() -> SetRangeUser(0.25*max1,2.*max1);
         TF1* fitFunc1 = new TF1("fitFunc1","gaus",max1-0.05*max1,max1+0.05*max1);
         histo -> Fit(fitFunc1,"QNRS+");
         fitFunc1 -> SetLineColor(kBlack);
-        fitFunc1 -> SetLineWidth(2);
+        fitFunc1 -> SetLineWidth(3);
         fitFunc1 -> Draw("same");
         TLine* line_totAcc1 = new TLine(cut_totAcc[chID][Vov],histo->GetMinimum(),cut_totAcc[chID][Vov],histo->GetMaximum());
         line_totAcc1 -> SetLineColor(kBlack);
@@ -344,30 +385,32 @@ int main(int argc, char** argv)
         delete c;
         
         
-        // if( g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] == NULL ) g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] = new TGraphErrors();
-        // if( g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] == NULL ) g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] = new TGraphErrors();
+        if( g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] == NULL )
+          g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] = new TGraphErrors();
         
-        // g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] -> SetPoint(g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())]->GetN(),th,fitFunc1->GetMaximumX());
-        // g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] -> SetPointError(g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())]->GetN()-1,0.,0.);
+        if( g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] == NULL )
+          g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] = new TGraphErrors();
         
-        // g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] -> SetPoint(g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())]->GetN(),Vov,fitFunc1->GetMaximumX());
-        // g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] -> SetPointError(g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())]->GetN()-1,0.,0.);
+        g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] -> SetPoint(g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())]->GetN(),th,fitFunc1->GetMaximumX());
+        g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] -> SetPointError(g_tot_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())]->GetN()-1,0.,0.);
+        
+        g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] -> SetPoint(g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())]->GetN(),Vov,fitFunc1->GetMaximumX());
+        g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] -> SetPointError(g_tot_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())]->GetN()-1,0.,0.);
         
         
         c = new TCanvas(Form("c_energy_%s",label.c_str()),Form("c_energy_%s",label.c_str()));
-        gPad -> SetLogy();
+        // gPad -> SetLogy();
         
         histo = (TH1F*)( inFile->Get(Form("h1_energy_%s",label.c_str())) );      
         histo -> SetTitle(";energy [a.u.];entries");
         histo -> SetLineColor(kRed);
-        histo -> SetLineWidth(2);
         histo -> Draw();
         max1 = FindXMaximum(histo,cut_energyAcc[chID][Vov],200.);
         histo -> GetXaxis() -> SetRangeUser(energyMin,energyMax);
         fitFunc1 = new TF1("fitFunc1","gaus",max1-cut_energyFitMin[chID][Vov]*max1,max1+cut_energyFitMax[chID][Vov]*max1);
         histo -> Fit(fitFunc1,"QNRS+");
         fitFunc1 -> SetLineColor(kBlack);
-        fitFunc1 -> SetLineWidth(2);
+        fitFunc1 -> SetLineWidth(3);
         fitFunc1 -> Draw("same");
         if( photopeakSelection )
         {
@@ -400,8 +443,11 @@ int main(int argc, char** argv)
         delete c;
       
         
-        if( g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] == NULL ) g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] = new TGraphErrors();
-        if( g_energy_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] == NULL ) g_energy_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] = new TGraphErrors();
+        if( g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] == NULL )
+          g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] = new TGraphErrors();
+        
+        if( g_energy_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] == NULL )
+          g_energy_vs_Vov[Form("%s_%s",ch.c_str(),thLabel.c_str())] = new TGraphErrors();
         
         g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] -> SetPoint(g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())]->GetN(),th,fitFunc1->GetMaximumX());
         g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())] -> SetPointError(g_energy_vs_th[Form("%s_%s",ch.c_str(),VovLabel.c_str())]->GetN()-1,0.,0.);
@@ -411,77 +457,41 @@ int main(int argc, char** argv)
       }
       
       
-      for(auto pair : pairsVec)
-      {
-        std::string ch1 = pair.first;
-        std::string ch2 = pair.second;
-        int chID1 = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));
-        int chID2 = opts.GetOpt<int>(Form("%s.chID",ch2.c_str()));
-        std::string label1 = Form("%s_%s",ch1.c_str(),stepLabel.c_str());
-        std::string label2 = Form("%s_%s",ch2.c_str(),stepLabel.c_str());
-        std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
-        
-        int isBar1 = opts.GetOpt<int>(Form("%s.isBar",ch1.c_str()));
-        int isBar2 = opts.GetOpt<int>(Form("%s.isBar",ch2.c_str()));
-        int isBarSide1 = opts.GetOpt<int>(Form("%s.isBarSide",ch1.c_str()));
-        int isBarSide2 = opts.GetOpt<int>(Form("%s.isBarSide",ch2.c_str()));
-        
-        if( isBar1 || isBar2 ) continue;
-        
-        
-        if( isBarSide1 == 1 && isBarSide2 == 1 )
-        {
-          c = new TCanvas(Form("c_energy_%s",label12.c_str()),Form("c_energy_%s",label12.c_str()));
-          gPad -> SetLogy();
-          
-          histo = (TH1F*)( inFile->Get(Form("h1_energy_%s",label12.c_str())) );      
-          histo -> SetTitle(";energy [a.u.];entries");
-          histo -> SetLineColor(kRed);
-          histo -> SetLineWidth(2);
-          histo -> Draw();
-          float max1 = FindXMaximum(histo,0.5*(cut_energyAcc[chID1][Vov]+cut_energyAcc[chID2][Vov]),200.);
-          histo -> GetXaxis() -> SetRangeUser(energyMin,energyMax);
-          TF1* fitFunc1 = new TF1("fitFunc1","gaus",
-                                  max1-0.5*(cut_energyFitMin[chID1][Vov]+cut_energyFitMin[chID2][Vov])*max1,
-                                  max1+0.5*(cut_energyFitMax[chID1][Vov]+cut_energyFitMax[chID2][Vov])*max1);
-          histo -> Fit(fitFunc1,"QNRS+");
-          fitFunc1 -> SetLineColor(kBlack);
-          fitFunc1 -> SetLineWidth(3);
-          fitFunc1 -> Draw("same");
-          if( photopeakSelection )
-          {
-            cut_energyMin[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())] = fitFunc1->GetMaximumX()-0.5*(cut_energyFitMin[chID1][Vov]+cut_energyFitMin[chID2][Vov])*fitFunc1->GetMaximumX();
-            cut_energyMax[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())] = fitFunc1->GetMaximumX()+0.5*(cut_energyFitMax[chID1][Vov]+cut_energyFitMax[chID2][Vov])*fitFunc1->GetMaximumX();
-          }
-          else
-          {
-            cut_energyMin[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())] = 0.5*(cut_energyAcc[chID1][Vov]+cut_energyAcc[chID2][Vov]);
-            cut_energyMax[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())] = 50.;
-          }
-          
-          TLine* line_energyMin1 = new TLine(cut_energyMin[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())],histo->GetMinimum(),
-                                             cut_energyMin[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())],histo->GetMaximum());
-          line_energyMin1 -> SetLineColor(kBlack);
-          line_energyMin1 -> Draw("same");
-          TLine* line_energyMax1 = new TLine(cut_energyMax[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())],histo->GetMinimum(),
-                                             cut_energyMax[Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str())],histo->GetMaximum());
-          line_energyMax1 -> SetLineColor(kBlack);
-          line_energyMax1 -> Draw("same");
-          
-          latex = new TLatex(0.65,0.85,Form("%s-%s",ch1.c_str(),ch2.c_str()));
-          latex -> SetNDC();
-          latex -> SetTextFont(42);
-          latex -> SetTextSize(0.04);
-          latex -> SetTextColor(kRed);
-          latex -> Draw("same");
-          histo -> Write();
-          
-          c -> Print(Form("%s/energy/c_energy__%s.png",plotDir.c_str(),label12.c_str()));
-          c -> Print(Form("%s/energy/c_energy__%s.pdf",plotDir.c_str(),label12.c_str()));
-          delete c;
-        }
-      }
-    }
+      //--------------------------------------------------------
+      
+      
+      // for(auto pair : pairsVec)
+      // {  
+      //   std::string ch1 = pair.first;
+      //   std::string ch2 = pair.second;
+      //   std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
+      
+      //   c = new TCanvas(Form("c_tot_corr_%s",label12.c_str()),Form("c_tot_corr_%s",label12.c_str()));
+      //   gPad -> SetLogz();
+      
+      //   histo2 = (TH2F*)( inFile->Get(Form("h2_tot_corr_%s",label12.c_str())) );
+      //   histo2 -> SetTitle(Form(";%s ToT [ns];%s ToT [ns]",ch1.c_str(),ch2.c_str()));
+      //   histo2 -> Draw("colz");
+      
+      //   c -> Print(Form("%s/tot/c_tot_corr__%s.png",plotDir.c_str(),label12.c_str()));
+      //   c -> Print(Form("%s/tot/c_tot_corr__%s.pdf",plotDir.c_str(),label12.c_str()));
+      //   delete c;
+      
+      
+      //   c = new TCanvas(Form("c_energy_corr_%s",label12.c_str()),Form("c_energy_corr_%s",label12.c_str()));
+      //   gPad -> SetLogz();
+      
+      //   histo2 = (TH2F*)( inFile->Get(Form("h2_energy_corr_%s",label12.c_str())) );
+      //   histo2 -> SetTitle(Form(";%s energy [a.u.];%s energy [a.u.]",ch1.c_str(),ch2.c_str()));
+      //   histo2 -> Draw("colz");
+      
+      //   c -> Print(Form("%s/energy/c_energy_corr__%s.png",plotDir.c_str(),label12.c_str()));
+      //   c -> Print(Form("%s/energy/c_energy_corr__%s.pdf",plotDir.c_str(),label12.c_str()));
+      //   delete c;
+      // }
+      
+      
+    }  
     
     //--------------------------------------------------------
     
@@ -498,113 +508,112 @@ int main(int argc, char** argv)
       legend -> SetFillColor(0);
       legend -> SetFillStyle(1000);
       legend -> SetTextFont(42);
+      legend -> Draw("same");
       
       
-      // c = new TCanvas(Form("c_tot_vs_th_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tot_vs_th_%s-%s",ch1.c_str(),ch2.c_str()));
-      // // gPad -> SetLogy();
+      c = new TCanvas(Form("c_tot_vs_th_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tot_vs_th_%s-%s",ch1.c_str(),ch2.c_str()));
+      // gPad -> SetLogy();
       
-      // TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,64.,500.) );
-      // hPad -> SetTitle(";threshold [DAC];ToT [ns]");
-      // hPad -> Draw();
-      // gPad -> SetGridy();
+      TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,64.,500.) );
+      hPad -> SetTitle(";threshold [DAC];ToT [ns]");
+      hPad -> Draw();
+      gPad -> SetGridy();
       
-      // int iter = 0;
-      // int size = VovLabels.size();
-      // for(auto mapIt : VovLabels) 
-      // {
-      //   std::string label1(Form("%s_%s",ch1.c_str(),mapIt.first.c_str()));
-      //   std::string label2(Form("%s_%s",ch2.c_str(),mapIt.first.c_str()));
-      //   TGraph* g_tot1 = g_tot_vs_th[label1];
-      //   TGraph* g_tot2 = g_tot_vs_th[label2];
+      int iter = 0;
+      int size = VovLabels.size();
+      for(auto mapIt : VovLabels) 
+      {
+        std::string label1(Form("%s_%s",ch1.c_str(),mapIt.first.c_str()));
+        std::string label2(Form("%s_%s",ch2.c_str(),mapIt.first.c_str()));
+        TGraph* g_tot1 = g_tot_vs_th[label1];
+        TGraph* g_tot2 = g_tot_vs_th[label2];
         
-      //   g_tot1 -> SetLineColor(51+iter*(int(50/size)));
-      //   g_tot1 -> SetMarkerColor(51+iter*(int(50/size)));
-      //   g_tot1 -> SetMarkerStyle(20);
-      //   g_tot1 -> Draw("PL,same");
+        g_tot1 -> SetLineColor(51+iter*(int(50/size)));
+        g_tot1 -> SetMarkerColor(51+iter*(int(50/size)));
+        g_tot1 -> SetMarkerStyle(20);
+        g_tot1 -> Draw("PL,same");
         
-      //   g_tot2 -> SetLineColor(51+iter*(int(50/size)));
-      //   g_tot2 -> SetMarkerColor(51+iter*(int(50/size)));
-      //   g_tot2 -> SetMarkerStyle(25);
-      //   g_tot2 -> Draw("PL,same");
+        g_tot2 -> SetLineColor(51+iter*(int(50/size)));
+        g_tot2 -> SetMarkerColor(51+iter*(int(50/size)));
+        g_tot2 -> SetMarkerStyle(25);
+        g_tot2 -> Draw("PL,same");
         
-      //   latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
-      //   latex -> SetNDC();
-      //   latex -> SetTextFont(42);
-      //   latex -> SetTextSize(0.04);
-      //   latex -> SetTextColor(51+iter*(int(50/size)));
-      //   latex -> Draw("same");
+        latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.04);
+        latex -> SetTextColor(51+iter*(int(50/size)));
+        latex -> Draw("same");
         
-      //   if( iter == 0 )
-      //   {
-      //     legend -> AddEntry(g_tot1,ch1.c_str(),"PL");
-      //     legend -> AddEntry(g_tot2,ch2.c_str(),"PL");
-      //   }
-      //   ++iter;
-      // }
+        if( iter == 0 )
+        {
+          legend -> AddEntry(g_tot1,ch1.c_str(),"PL");
+          legend -> AddEntry(g_tot2,ch2.c_str(),"PL");
+        }
+        ++iter;
+      }
       
-      // legend -> Draw("same");
+      legend -> Draw("same");
       
-      // c -> Print(Form("%s/c_tot_vs_th__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-      // c -> Print(Form("%s/c_tot_vs_th__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-      // delete c;
+      c -> Print(Form("%s/c_tot_vs_th__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c -> Print(Form("%s/c_tot_vs_th__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      delete c;
       
       
-      // c = new TCanvas(Form("c_tot_vs_Vov_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tot_vs_Vov_%s-%s",ch1.c_str(),ch2.c_str()));
-      // // gPad -> SetLogy();
+      c = new TCanvas(Form("c_tot_vs_Vov_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tot_vs_Vov_%s-%s",ch1.c_str(),ch2.c_str()));
+      // gPad -> SetLogy();
       
-      // hPad = (TH1F*)( gPad->DrawFrame(0.,0.,10.,500.) );
-      // hPad -> SetTitle(";V_{ov} [V];ToT [ns]");
-      // hPad -> Draw();
-      // gPad -> SetGridy();
+      hPad = (TH1F*)( gPad->DrawFrame(0.,0.,10.,500.) );
+      hPad -> SetTitle(";V_{ov} [V];ToT [ns]");
+      hPad -> Draw();
+      gPad -> SetGridy();
       
-      // iter = 0;
-      // size = thLabels.size();
-      // for(auto mapIt : thLabels)
-      // {
-      //   std::string label1(Form("%s_%s",ch1.c_str(),mapIt.first.c_str()));
-      //   std::string label2(Form("%s_%s",ch2.c_str(),mapIt.first.c_str()));
-      //   TGraph* g_tot1 = g_tot_vs_Vov[label1];
-      //   TGraph* g_tot2 = g_tot_vs_Vov[label2];
+      iter = 0;
+      size = thLabels.size();
+      for(auto mapIt : thLabels)
+      {
+        std::string label1(Form("%s_%s",ch1.c_str(),mapIt.first.c_str()));
+        std::string label2(Form("%s_%s",ch2.c_str(),mapIt.first.c_str()));
+        TGraph* g_tot1 = g_tot_vs_Vov[label1];
+        TGraph* g_tot2 = g_tot_vs_Vov[label2];
         
-      //   g_tot1 -> SetLineColor(51+iter*(int(50/size)));
-      //   g_tot1 -> SetMarkerColor(51+iter*(int(50/size)));
-      //   g_tot1 -> SetMarkerStyle(20);
-      //   g_tot1 -> Draw("PL,same");
+        g_tot1 -> SetLineColor(51+iter*(int(50/size)));
+        g_tot1 -> SetMarkerColor(51+iter*(int(50/size)));
+        g_tot1 -> SetMarkerStyle(20);
+        g_tot1 -> Draw("PL,same");
         
-      //   g_tot2 -> SetLineColor(51+iter*(int(50/size)));
-      //   g_tot2 -> SetMarkerColor(51+iter*(int(50/size)));
-      //   g_tot2 -> SetMarkerStyle(25);
-      //   g_tot2 -> Draw("PL,same");
+        g_tot2 -> SetLineColor(51+iter*(int(50/size)));
+        g_tot2 -> SetMarkerColor(51+iter*(int(50/size)));
+        g_tot2 -> SetMarkerStyle(25);
+        g_tot2 -> Draw("PL,same");
         
-      //   latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
-      //   latex -> SetNDC();
-      //   latex -> SetTextFont(42);
-      //   latex -> SetTextSize(0.04);
-      //   latex -> SetTextColor(51+iter*(int(50/size)));
-      //   latex -> Draw("same");
+        latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.04);
+        latex -> SetTextColor(51+iter*(int(50/size)));
+        latex -> Draw("same");
         
-      //   ++iter;
-      // }
+        ++iter;
+      }
       
-      // legend -> Draw("same");
+      legend -> Draw("same");
       
-      // c -> Print(Form("%s/c_tot_vs_Vov__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-      // c -> Print(Form("%s/c_tot_vs_Vov__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-      // delete c;
+      c -> Print(Form("%s/c_tot_vs_Vov__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c -> Print(Form("%s/c_tot_vs_Vov__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      delete c;
       
       
       c = new TCanvas(Form("c_energy_vs_th_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_energy_vs_th_%s-%s",ch1.c_str(),ch2.c_str()));
       // gPad -> SetLogy();
       
-      TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,energyMin,64.,energyMax) );
+      hPad = (TH1F*)( gPad->DrawFrame(-1.,energyMin,64.,energyMax) );
       hPad -> SetTitle(";threshold [DAC];energy [a.u.]");
       hPad -> Draw();
       gPad -> SetGridy();
       
-      std::cout << "qui1" << std::endl;
-      
-      int iter = 0;
-      int size = VovLabels.size();
+      iter = 0;
+      size = VovLabels.size();
       for(auto mapIt : VovLabels)
       {
         std::string label1(Form("%s_%s",ch1.c_str(),mapIt.first.c_str()));
@@ -628,12 +637,6 @@ int main(int argc, char** argv)
         latex -> SetTextSize(0.04);
         latex -> SetTextColor(51+iter*(int(50/size)));
         latex -> Draw("same");
-        
-        if( iter == 0 )
-        {
-           legend -> AddEntry(g_energy1,ch1.c_str(),"PL");
-           legend -> AddEntry(g_energy2,ch2.c_str(),"PL");
-        }
         
         ++iter;
       }
@@ -718,7 +721,6 @@ int main(int argc, char** argv)
       
       accept[label][entry] = false;
       
-      
       // selection on track position
       if( doTracks )
       {
@@ -727,7 +729,16 @@ int main(int argc, char** argv)
       }
       
       
-      if( anEvent->isBar1 == 1 )
+      if( anEvent->isBar1 == 0 )
+      {
+        int chID1 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch1.c_str()));
+        
+        if( anEvent->qfine1 < cut_qfineAcc[chID1][Vov] ) continue;
+        if( anEvent->tot1 < cut_totAcc[chID1][Vov] ) continue;
+        if( anEvent->energy1 < cut_energyMin[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
+        if( anEvent->energy1 > cut_energyMax[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
+      }
+      else
       {
         std::string channelL = opts.GetOpt<std::string>(Form("%s.channelL",anEvent->ch1.c_str()));
         int chIDL = opts.GetOpt<int>(Form("%s.chID",channelL.c_str()));
@@ -745,7 +756,17 @@ int main(int argc, char** argv)
         if( anEvent->energy1R > cut_energyMax[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
       }
       
-      if( anEvent->isBar2 == 1 )
+      
+      if( anEvent->isBar2 == 0 )
+      {
+        int chID2 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch2.c_str()));
+        
+        if( anEvent->qfine2 < cut_qfineAcc[chID2][Vov] ) continue;
+        if( anEvent->tot2 < cut_totAcc[chID2][Vov] ) continue;
+        if( anEvent->energy2 < cut_energyMin[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
+        if( anEvent->energy2 > cut_energyMax[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
+      }
+      else
       {
         std::string channelL = opts.GetOpt<std::string>(Form("%s.channelL",anEvent->ch2.c_str()));
         int chIDL = opts.GetOpt<int>(Form("%s.chID",channelL.c_str()));
@@ -763,46 +784,12 @@ int main(int argc, char** argv)
         if( anEvent->energy2R > cut_energyMax[Form("%s_%s",channelR.c_str(),anEvent->stepLabel.c_str())] ) continue;
       }
       
-      if( anEvent->isBar1 == 0 && anEvent->isBarSide1 == 0 )
-      {
-        int chID1 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch1.c_str()));
-        
-        if( anEvent->qfine1 < cut_qfineAcc[chID1][Vov] ) continue;
-        if( anEvent->tot1 < cut_totAcc[chID1][Vov] ) continue;
-        if( anEvent->energy1 < cut_energyMin[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
-        if( anEvent->energy1 > cut_energyMax[Form("%s_%s",anEvent->ch1.c_str(),anEvent->stepLabel.c_str())] ) continue;
-      }
-      
-      if( anEvent->isBar2 == 0 && anEvent->isBarSide2 == 0 )
-      {      
-        int chID2 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch2.c_str()));
-        
-        if( anEvent->qfine2 < cut_qfineAcc[chID2][Vov] ) continue;
-        if( anEvent->tot2 < cut_totAcc[chID2][Vov] ) continue;
-        if( anEvent->energy2 < cut_energyMin[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
-        if( anEvent->energy2 > cut_energyMax[Form("%s_%s",anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
-      }
-      
-      if( anEvent->isBar1 == 0 && anEvent->isBarSide1 == 1 &&
-          anEvent->isBar2 == 0 && anEvent->isBarSide2 == 1 )
-      {
-        int chID1 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch1.c_str()));
-        int chID2 = opts.GetOpt<int>(Form("%s.chID",anEvent->ch2.c_str()));
-        
-        if( anEvent->qfine1 < cut_qfineAcc[chID1][Vov] ) continue;
-        if( anEvent->tot1 < cut_totAcc[chID1][Vov] ) continue;
-        if( anEvent->qfine2 < cut_qfineAcc[chID2][Vov] ) continue;
-        if( anEvent->tot2 < cut_totAcc[chID2][Vov] ) continue;
-        if( anEvent->energy1 < cut_energyMin[Form("%s-%s_%s",anEvent->ch1.c_str(),anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
-        if( anEvent->energy1 > cut_energyMax[Form("%s-%s_%s",anEvent->ch1.c_str(),anEvent->ch2.c_str(),anEvent->stepLabel.c_str())] ) continue;
-      }  
-      
       accept[label][entry] = true;
       
       if( h1_totRatio[anEvent->label12] == NULL )
       {
         h1_totRatio[anEvent->label12] = new TH1F(Form("h1_totRatio_%s",anEvent->label12.c_str()),"",1000,0.,5.);
-        h1_energyRatio[anEvent->label12] = new TH1F(Form("h1_energyRatio_%s",anEvent->label12.c_str()),"",1000,0.,5.);
+        h1_energyRatio[anEvent->label12] = new TH1F(Form("h1_energyRatio_%s",anEvent->label12.c_str()),"",200,0.,5.);
         h1_deltaT_raw[anEvent->label12] = new TH1F(Form("h1_deltaT_raw_%s",anEvent->label12.c_str()),"",1250,-5000.,5000.);
       }
       
@@ -819,8 +806,6 @@ int main(int argc, char** argv)
   //--- draw 2nd plots
   std::map<std::string,float> CTRMeans;
   std::map<std::string,float> CTRSigmas;
-  
-  std::map<std::string,TF1*> fitFunc_energyRatio;
   
   for(auto stepLabel : stepLabels)
   {
@@ -844,20 +829,13 @@ int main(int argc, char** argv)
       
       
       c = new TCanvas(Form("c_energyRatio_%s",label12.c_str()),Form("c_energyRatio_%s",label12.c_str()));
+      gPad -> SetLogy();
       
       histo = h1_energyRatio[label12];
-      histo -> GetXaxis() -> SetRangeUser(histo->GetMean()-5.*histo->GetRMS(),histo->GetMean()+5.*histo->GetRMS());
       histo -> SetTitle(Form(";%s energy / %s energy;entries",ch2.c_str(),ch1.c_str()));
       histo -> SetLineColor(kRed);
       histo -> Draw();
       histo -> Write();
-      
-      fitFunc_energyRatio[label12] = new TF1(Form("fitFunc_energyRatio_%s",label12.c_str()),"gaus",histo->GetMean()-2.*histo->GetRMS(),histo->GetMean()+2.*histo->GetRMS());
-      histo -> Fit(fitFunc_energyRatio[label12],"QRLS+");
-      fitFunc_energyRatio[label12] -> SetLineColor(kBlack);
-      fitFunc_energyRatio[label12] -> SetLineWidth(2);
-      fitFunc_energyRatio[label12] -> Draw("same");
-      
       c -> Print(Form("%s/energyRatio/c_energyRatio__%s.png",plotDir.c_str(),label12.c_str()));
       c -> Print(Form("%s/energyRatio/c_energyRatio__%s.pdf",plotDir.c_str(),label12.c_str()));
       delete c;
@@ -890,14 +868,8 @@ int main(int argc, char** argv)
       
       if( !accept[label][entry] ) continue;
       
-      float energyRatioMean = fitFunc_energyRatio[anEvent->label12]->GetParameter(1);
-      float energyRatioSigma = fitFunc_energyRatio[anEvent->label12]->GetParameter(2);
-      if( fabs(anEvent->energy2/anEvent->energy1-energyRatioMean) > 2.*energyRatioSigma )
-      {
-        accept[label][entry] = false;
-        continue;
-      }
-      
+      float timeLow = CTRMeans[anEvent->label12] - 1.* CTRSigmas[anEvent->label12];
+      float timeHig = CTRMeans[anEvent->label12] + 1.* CTRSigmas[anEvent->label12];
       long long deltaT = anEvent->time2 - anEvent->time1;
       
       if( h1_deltaT[anEvent->label12] == NULL )
@@ -906,14 +878,18 @@ int main(int argc, char** argv)
       }
       
       h1_deltaT[anEvent->label12] -> Fill( deltaT );
-      
-      
-      float timeLow = CTRMeans[anEvent->label12] - 1.* CTRSigmas[anEvent->label12];
-      float timeHig = CTRMeans[anEvent->label12] + 1.* CTRSigmas[anEvent->label12];
 
       if( !p1_deltaT_vs_energyRatio[anEvent->label12] )
       {
-        p1_deltaT_vs_energyRatio[anEvent->label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent->label12.c_str()),"",50,energyRatioMean-3.*energyRatioSigma,energyRatioMean+3.*energyRatioSigma);
+        float maxX = FindXMaximum(h1_energyRatio[anEvent->label12],0.,5.);
+        TF1* fitFunc = new TF1("fitFunc","gaus(0)",maxX-0.75*h1_energyRatio[anEvent->label12]->GetRMS(),maxX+0.75*h1_energyRatio[anEvent->label12]->GetRMS());
+        h1_energyRatio[anEvent->label12] -> Fit(fitFunc,"QRS+");
+
+        // float xMin = fitFunc->GetParameter(1) - 3.*fitFunc->GetParameter(2);
+        // float xMax = fitFunc->GetParameter(1) + 3.*fitFunc->GetParameter(2);
+        float xMin = h1_energyRatio[anEvent->label12]->GetMean()-5.*h1_energyRatio[anEvent->label12]->GetRMS();
+        float xMax = h1_energyRatio[anEvent->label12]->GetMean()+5.*h1_energyRatio[anEvent->label12]->GetRMS();
+        p1_deltaT_vs_energyRatio[anEvent->label12] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",anEvent->label12.c_str()),"",50,xMin,xMax);
       }
       
       if( ( deltaT > timeLow ) && ( deltaT < timeHig ) )
@@ -942,8 +918,9 @@ int main(int argc, char** argv)
       std::string label2(Form("%s_%s",ch2.c_str(),stepLabel.c_str()));
       std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
       
-      float fitXMin = fitFunc_energyRatio[label12]->GetParameter(1) - 2.*fitFunc_energyRatio[label12]->GetParameter(2);
-      float fitXMax = fitFunc_energyRatio[label12]->GetParameter(1) + 2.*fitFunc_energyRatio[label12]->GetParameter(2);
+      TF1* fitFunc = (TF1*)( h1_energyRatio[label12]->GetFunction("fitFunc"));
+      float fitXMin = fitFunc->GetParameter(1) - 2.*fitFunc->GetParameter(2);
+      float fitXMax = fitFunc->GetParameter(1) + 2.*fitFunc->GetParameter(2);
       
       fitFunc_energyCorr[label12] = new TF1(Form("fitFunc_energyCorr_%s",label12.c_str()),"pol1",fitXMin,fitXMax);
       p1_deltaT_vs_energyRatio[label12] -> Fit(fitFunc_energyCorr[label12],"QRS+");
@@ -1440,13 +1417,13 @@ int main(int argc, char** argv)
 	}
 	delete ctemp;	
 
-	//if (abs(fitFunc->GetParameter(1)) < 2500. && fitFunc->GetParameter(2)<1000.){
+	if (abs(fitFunc->GetParameter(1)) < 2500. && fitFunc->GetParameter(2)<1000.){
           g_slewRate_vs_th[label_vs_th] -> SetPoint(g_slewRate_vs_th[label_vs_th]->GetN(),fitFunc2->GetParameter(1),th);
           g_slewRate_vs_th[label_vs_th] -> SetPointError(g_slewRate_vs_th[label_vs_th]->GetN()-1,fitFunc2->GetParError(1),0.);
           g_slewRateNormalized_vs_th[label_vs_th] -> SetPoint(g_slewRateNormalized_vs_th[label_vs_th]->GetN(),fitFunc2->GetParameter(1),th/norm);
 	  g_slewRateNormalized_vs_th[label_vs_th] -> SetPointError(g_slewRateNormalized_vs_th[label_vs_th]->GetN()-1,fitFunc2->GetParError(1),0.);
-        //}
-	/*else{ // for cases at very low thr when most of the events fall one clock later.
+        }
+	else{ // for cases at very low thr when most of the events fall one clock later.
 	  TF1 *fitFuncTmp = new TF1(Form("fitFuncTmp_%s",label12.c_str()),"gaus", -2500, 2500);
           TH1F *htemp = (TH1F*)histo->Clone("htemp");
           htemp->Rebin(5);
@@ -1468,7 +1445,7 @@ int main(int argc, char** argv)
           delete fitFuncTmp;
           delete htemp;
           delete ctmp;
-          }*/
+	}
 	
         
         c -> Print(Form("%s/CTR_energyCorr/c_deltaT_energyCorr__%s.png",plotDir.c_str(),label12.c_str()));
@@ -1506,8 +1483,6 @@ int main(int argc, char** argv)
     {
       std::string ch1 = pair.first;
       std::string ch2 = pair.second;
-      int chID1 = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));
-      int chID2 = opts.GetOpt<int>(Form("%s.chID",ch2.c_str()));
       int isBar1 = opts.GetOpt<int>(Form("%s.isBar",ch1.c_str()));
       int isBar2 = opts.GetOpt<int>(Form("%s.isBar",ch2.c_str()));
 
@@ -1568,102 +1543,100 @@ int main(int argc, char** argv)
       delete c;
       
       
-      if( doSlewRatePlots )
+      c = new TCanvas(Form("c_slewRate_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_slewRate_%s-%s",ch1.c_str(),ch2.c_str()));
+      // gPad -> SetLogy();
+      
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,2.5,64.) );
+      hPad -> SetTitle(";#LT t_{diff} #GT [ns];threshold [DAC]");
+      hPad -> Draw();
+      gPad -> SetGridy();
+
+
+      c2 = new TCanvas(Form("c_slewRateNormalized_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_slewRateNormalized_%s-%s",ch1.c_str(),ch2.c_str()));
+      TH1F *hPad2 = (TH1F*)( gPad->DrawFrame(-0.5,0.,2.5,15.) );
+      hPad2 -> SetTitle(";#LT t_{diff} #GT [ns]; normalized threshold");
+      hPad2 -> Draw();
+      gPad -> SetGridy();
+
+      c3 = new TCanvas(Form("c_dVdt_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_dVdt_%s-%s",ch1.c_str(),ch2.c_str()));
+      TH1F *hPad3 = (TH1F*)( gPad->DrawFrame(-0.5,0.,64,400.) );
+      hPad3 -> SetTitle("; threshold [DAC]; dV/dt [a.u.]");
+      hPad3 -> Draw();
+      gPad -> SetGridy();
+      
+      c4 = new TCanvas(Form("c_tRes_noise_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tRes_noise_%s-%s",ch1.c_str(),ch2.c_str()));
+      TH1F *hPad4 = (TH1F*)( gPad->DrawFrame(-0.5,0.,64,150.) );
+      hPad4 -> SetTitle("; threshold [DAC]; #sigma_{noise} (ps)");
+      hPad4 -> Draw();
+      gPad -> SetGridy();
+
+      iter = 0;
+      for(auto mapIt : VovLabels)
       {
-        c = new TCanvas(Form("c_slewRate_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_slewRate_%s-%s",ch1.c_str(),ch2.c_str()));
-        // gPad -> SetLogy();
-        
-        hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,3.0,64.) );
-        hPad -> SetTitle(";#LT t_{diff} #GT [ns];threshold [DAC]");
-        hPad -> Draw();
-        gPad -> SetGridy();
-        
-        
-        c2 = new TCanvas(Form("c_slewRateNormalized_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_slewRateNormalized_%s-%s",ch1.c_str(),ch2.c_str()));
-        TH1F *hPad2 = (TH1F*)( gPad->DrawFrame(-0.5,0.,3.0,15.) );
-        hPad2 -> SetTitle(";#LT t_{diff} #GT [ns]; normalized threshold");
-        hPad2 -> Draw();
-        gPad -> SetGridy();
-        
-        c3 = new TCanvas(Form("c_dVdt_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_dVdt_%s-%s",ch1.c_str(),ch2.c_str()));
-        TH1F *hPad3 = (TH1F*)( gPad->DrawFrame(-0.5,0.,64,100.) );
-        hPad3 -> SetTitle("; threshold [DAC]; dV/dt [a.u.]");
-        hPad3 -> Draw();
-        gPad -> SetGridy();
-        
-        c4 = new TCanvas(Form("c_tRes_noise_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tRes_noise_%s-%s",ch1.c_str(),ch2.c_str()));
-        TH1F *hPad4 = (TH1F*)( gPad->DrawFrame(-0.5,0.,64,150.) );
-        hPad4 -> SetTitle("; threshold [DAC]; #sigma_{noise} (ps)");
-        hPad4 -> Draw();
-        gPad -> SetGridy();
-        
-        iter = 0;
-        for(auto mapIt : VovLabels)
+        std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
+        TGraphErrors* g_slewRate_final = new TGraphErrors();
+        TGraph* g_slewRate = g_slewRate_vs_th[label];
+        double x0,y0;
+	g_slewRate -> GetPoint(0,x0,y0);
+	for(int point = 0; point < g_slewRate->GetN(); ++point)
         {
-          std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
-          TGraphErrors* g_slewRate_final = new TGraphErrors();
-          TGraph* g_slewRate = g_slewRate_vs_th[label];
-          double x0,y0;
-          g_slewRate -> GetPoint(0,x0,y0);
-          for(int point = 0; point < g_slewRate->GetN(); ++point)
-          {
-            double x,y;
-            g_slewRate -> GetPoint(point,x,y);
-            g_slewRate_final -> SetPoint(point,fabs(x-x0)/1000.,y);
-            //std::cout << "x: " << x << "   y: " << y << "   y0: " << y0 << "   val: " << fabs(y-y0)/1000. << std::endl;
-          }
-          
-          c->cd();
-          g_slewRate_final -> SetLineColor(1+iter);
-          g_slewRate_final -> SetMarkerColor(1+iter);
-          g_slewRate_final -> SetMarkerStyle(20);
-          g_slewRate_final -> Draw("PL,same");
-          
-          latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
-          latex -> SetNDC();
-          latex -> SetTextFont(42);
-          latex -> SetTextSize(0.04);
-          latex -> SetTextColor(kBlack+iter);
-          latex -> Draw("same");
-          
-          
-          // normalized to amp
-          TGraphErrors* g_slewRateNormalized_final = new TGraphErrors();
-          TGraph* g_slewRateNormalized = g_slewRateNormalized_vs_th[label];
-          g_slewRateNormalized -> GetPoint(0,x0,y0);
-          for(int point = 0; point < g_slewRateNormalized->GetN(); ++point)
-          {
-            double x,y;
-            g_slewRateNormalized -> GetPoint(point,x,y);
-            g_slewRateNormalized_final -> SetPoint(point,fabs(x-x0)/1000.,y);
-            //std::cout << "x: " << x << "   y: " << y << "   y0: " << y0 << "   val: " << fabs(y-y0)/1000. << std::endl;
-          }
-          
-          c2->cd();
-          g_slewRateNormalized_final -> SetLineColor(1+iter);
-          g_slewRateNormalized_final -> SetMarkerColor(1+iter);
-          g_slewRateNormalized_final -> SetMarkerStyle(20);
-          g_slewRateNormalized_final -> Draw("PL,same");
-          
-          latex -> Draw("same");
-          
-          
-          // derivative of the pulse shape vs threshold
-          g_dVdt_vs_th[label] = new TGraphErrors();
-          g_tRes_noise_vs_th[label] = new TGraphErrors();
-          float sigmaV;
-          if (isBar1 == 0) {
-            int chID = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));
-            sigmaV = noise[chID];
-          }
-          else{
-            std::string channelL = opts.GetOpt<std::string>(Form("%s.channelL",ch1.c_str()));
-            std::string channelR = opts.GetOpt<std::string>(Form("%s.channelR",ch1.c_str()));
-            int chIDL = opts.GetOpt<int>(Form("%s.chID",channelL.c_str()));
-            int chIDR = opts.GetOpt<int>(Form("%s.chID",channelR.c_str()));
-            sigmaV = 0.5*(noise[chIDL] + noise[chIDR]);
-          }
-          for(int point = 0; point < g_slewRate->GetN(); ++point)
+          double x,y;
+          g_slewRate -> GetPoint(point,x,y);
+          g_slewRate_final -> SetPoint(point,fabs(x-x0)/1000.,y);
+	  //std::cout << "x: " << x << "   y: " << y << "   y0: " << y0 << "   val: " << fabs(y-y0)/1000. << std::endl;
+        }
+        
+	c->cd();
+        g_slewRate_final -> SetLineColor(1+iter);
+        g_slewRate_final -> SetMarkerColor(1+iter);
+        g_slewRate_final -> SetMarkerStyle(20);
+        g_slewRate_final -> Draw("PL,same");
+
+        latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.04);
+        latex -> SetTextColor(kBlack+iter);
+        latex -> Draw("same");
+
+
+	// normalized to amp
+        TGraphErrors* g_slewRateNormalized_final = new TGraphErrors();
+        TGraph* g_slewRateNormalized = g_slewRateNormalized_vs_th[label];
+        g_slewRateNormalized -> GetPoint(0,x0,y0);
+        for(int point = 0; point < g_slewRateNormalized->GetN(); ++point)
+        {
+          double x,y;
+          g_slewRateNormalized -> GetPoint(point,x,y);
+          g_slewRateNormalized_final -> SetPoint(point,fabs(x-x0)/1000.,y);
+          //std::cout << "x: " << x << "   y: " << y << "   y0: " << y0 << "   val: " << fabs(y-y0)/1000. << std::endl;
+        }
+        
+	c2->cd();
+        g_slewRateNormalized_final -> SetLineColor(1+iter);
+        g_slewRateNormalized_final -> SetMarkerColor(1+iter);
+        g_slewRateNormalized_final -> SetMarkerStyle(20);
+        g_slewRateNormalized_final -> Draw("PL,same");
+
+	latex -> Draw("same");
+        
+
+	// derivative of the pulse shape vs threshold
+	g_dVdt_vs_th[label] = new TGraphErrors();
+	g_tRes_noise_vs_th[label] = new TGraphErrors();
+	float sigmaV;
+	if (isBar1 == 0) {
+	  int chID = opts.GetOpt<int>(Form("%s.chID",ch1.c_str()));
+	  sigmaV = noise[chID];
+	}
+	else{
+	  std::string channelL = opts.GetOpt<std::string>(Form("%s.channelL",ch1.c_str()));
+	  std::string channelR = opts.GetOpt<std::string>(Form("%s.channelR",ch1.c_str()));
+	  int chIDL = opts.GetOpt<int>(Form("%s.chID",channelL.c_str()));
+	  int chIDR = opts.GetOpt<int>(Form("%s.chID",channelR.c_str()));
+	  sigmaV = 0.5*(noise[chIDL] + noise[chIDR]);
+	}
+	for(int point = 0; point < g_slewRate->GetN(); ++point)
 	  {
 	    double x,y;
 	    g_slewRate -> GetPoint(point,x,y);
@@ -1673,135 +1646,130 @@ int main(int argc, char** argv)
             g_tRes_noise_vs_th[label] -> SetPoint(point, y, sigmaV/dVdt);
 	    //std::cout << "x: " << x << "   y: " << y << "   y0: " << y0 << "   val: " << fabs(y-y0)/1000. << std::endl; 
 	  }
-          
-          c3->cd();
-          g_dVdt_vs_th[label] -> SetLineColor(1+iter);
-          g_dVdt_vs_th[label] -> SetMarkerColor(1+iter);
-          g_dVdt_vs_th[label] -> SetMarkerStyle(20);
-          g_dVdt_vs_th[label] -> Draw("PL,same");
-          
-          latex -> Draw("same");
-          
-          
-          c4->cd();
-          g_tRes_noise_vs_th[label] -> SetLineColor(1+iter);                                                                                                                      
-          g_tRes_noise_vs_th[label] -> SetMarkerColor(1+iter);                                                                                                                    
-          //g_tRes_noise_vs_th[label] -> SetLineColor(color[vov]);
-          //g_tRes_noise_vs_th[label] -> SetMarkerColor(color[vov]);
-          g_tRes_noise_vs_th[label] -> SetMarkerStyle(20);
-          g_tRes_noise_vs_th[label] -> Draw("PL,same");
-          
-          latex -> Draw("same");        
-          ++iter;
-        }
-        
-        c -> Print(Form("%s/c_slewRate__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c -> Print(Form("%s/c_slewRate__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c2 -> Print(Form("%s/c_slewRateNormalized__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c2 -> Print(Form("%s/c_slewRateNormalized__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c3 -> Print(Form("%s/c_dVdt__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c3 -> Print(Form("%s/c_dVdt__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c4 -> Print(Form("%s/c_tRes_noise_%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c4 -> Print(Form("%s/c_tRes_noise_%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        
-        delete c;
-        delete c2;
-        delete c3;
-        delete c4;
+	
+	c3->cd();
+        g_dVdt_vs_th[label] -> SetLineColor(1+iter);
+        g_dVdt_vs_th[label] -> SetMarkerColor(1+iter);
+        g_dVdt_vs_th[label] -> SetMarkerStyle(20);
+        g_dVdt_vs_th[label] -> Draw("PL,same");
+
+        latex -> Draw("same");
+
+
+        c4->cd();
+        g_tRes_noise_vs_th[label] -> SetLineColor(1+iter);                                                                                                                      
+        g_tRes_noise_vs_th[label] -> SetMarkerColor(1+iter);                                                                                                                    
+        //g_tRes_noise_vs_th[label] -> SetLineColor(color[vov]);
+        //g_tRes_noise_vs_th[label] -> SetMarkerColor(color[vov]);
+        g_tRes_noise_vs_th[label] -> SetMarkerStyle(20);
+        g_tRes_noise_vs_th[label] -> Draw("PL,same");
+
+        latex -> Draw("same");        
+	++iter;
       }
+      
+      c -> Print(Form("%s/c_slewRate__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c -> Print(Form("%s/c_slewRate__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c2 -> Print(Form("%s/c_slewRateNormalized__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c2 -> Print(Form("%s/c_slewRateNormalized__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c3 -> Print(Form("%s/c_dVdt__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c3 -> Print(Form("%s/c_dVdt__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c4 -> Print(Form("%s/c_tRes_noise_%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+      c4 -> Print(Form("%s/c_tRes_noise_%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+
+      delete c;
+      delete c2;
+      delete c3;
+      delete c4;
       
       ++pairsIt;
     }
     
     
     //--------------------------------------------------------
-    
-    
-    if( doSlewRatePlots )
-    {
-      pairsIt = 0;
-      for(auto pair : pairsVec)
+    pairsIt = 0;
+    for(auto pair : pairsVec)
       {
-        std::string ch1 = pair.first;
-        std::string ch2 = pair.second;
-        
-        c = new TCanvas(Form("c_tRes_vs_dVdt_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tRes_vs_dVdt_%s-%s",ch1.c_str(),ch2.c_str()));
-        // gPad -> SetLogy();                                                                                                     
-        
-        TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,tResMin,100,tResMax) );
-        if( pairsMode.at(pairsIt) == 0 )
-          hPad -> SetTitle("; dV/dt [DAC/ns];#sigma_{t_{diff}} [ps]");
-        if( pairsMode.at(pairsIt) == 1 )
-          hPad -> SetTitle(";dV/dt [DAC/ns];#sigma_{t_{diff}} / #sqrt{2} [ps]");
-        if( pairsMode.at(pairsIt) == 2 )
-          hPad -> SetTitle(";dV/dt [DAC/ns];#sigma_{t_{diff}} / 2 [ps]");
-        hPad -> Draw();
-        gPad -> SetGridy();
-        
-        int iter = 0;
-        for(auto mapIt : VovLabels)
-        {
-          std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
-          g_tRes_gaus_vs_dVdt[label] = new TGraphErrors();
-          g_tRes_energyCorr_gaus_vs_dVdt[label] = new TGraphErrors();
-          for(int point = 0; point < g_tRes_gaus_vs_th[label]->GetN(); ++point)
-          {
-            double x,y;
-            g_tRes_gaus_vs_th[label] -> GetPoint(point,x,y);
-            g_tRes_gaus_vs_dVdt[label]->SetPoint(point,g_dVdt_vs_th[label]->Eval(x),y);
-            g_tRes_gaus_vs_dVdt[label]->SetPointError(point,0,g_tRes_gaus_vs_th[label]->GetEY()[point]);
-            g_tRes_energyCorr_gaus_vs_th[label] -> GetPoint(point,x,y);
-            g_tRes_energyCorr_gaus_vs_dVdt[label]->SetPoint(point,g_dVdt_vs_th[label]->Eval(x),y);
-            g_tRes_energyCorr_gaus_vs_dVdt[label]->SetPointError(point,0,g_tRes_energyCorr_gaus_vs_th[label]->GetEY()[point]);
-          }
-          
-          
-          g_tRes_gaus_vs_dVdt[label] -> SetLineColor(1+iter);
-          g_tRes_gaus_vs_dVdt[label] -> SetMarkerColor(1+iter);
-          g_tRes_gaus_vs_dVdt[label] -> SetMarkerStyle(25);
-          //g_tRes_gaus_vs_dVdt[label] -> Draw("PL,same");
-          
-          g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetLineColor(1+iter);
-          g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetMarkerColor(1+iter);
-          g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetMarkerStyle(20);
-          g_tRes_energyCorr_gaus_vs_dVdt[label] -> Draw("PL,same");
-          
-          latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
-          latex -> SetNDC();
-          latex -> SetTextFont(42);
-          latex -> SetTextSize(0.04);
-          latex -> SetTextColor(kBlack+iter);
-          latex -> Draw("same");
-          
-          ++iter;
-        }
-        
-        c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
-        delete c;
-        
-        ++pairsIt;      
+	std::string ch1 = pair.first;
+	std::string ch2 = pair.second;
+
+	c = new TCanvas(Form("c_tRes_vs_dVdt_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tRes_vs_dVdt_%s-%s",ch1.c_str(),ch2.c_str()));
+	// gPad -> SetLogy();                                                                                                     
+
+	TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,tResMin,400,tResMax) );
+	if( pairsMode.at(pairsIt) == 0 )
+	  hPad -> SetTitle("; dV/dt [DAC/ns];#sigma_{t_{diff}} [ps]");
+	if( pairsMode.at(pairsIt) == 1 )
+	  hPad -> SetTitle(";dV/dt [DAC/ns];#sigma_{t_{diff}} / #sqrt{2} [ps]");
+	if( pairsMode.at(pairsIt) == 2 )
+	  hPad -> SetTitle(";dV/dt [DAC/ns];#sigma_{t_{diff}} / 2 [ps]");
+	hPad -> Draw();
+	gPad -> SetGridy();
+
+	int iter = 0;
+	for(auto mapIt : VovLabels)
+	  {
+	    std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
+	    g_tRes_gaus_vs_dVdt[label] = new TGraphErrors();
+	    g_tRes_energyCorr_gaus_vs_dVdt[label] = new TGraphErrors();
+	    for(int point = 0; point < g_tRes_gaus_vs_th[label]->GetN(); ++point)
+	      {
+		double x,y;
+		g_tRes_gaus_vs_th[label] -> GetPoint(point,x,y);
+		g_tRes_gaus_vs_dVdt[label]->SetPoint(point,g_dVdt_vs_th[label]->Eval(x),y);
+		g_tRes_gaus_vs_dVdt[label]->SetPointError(point,0,g_tRes_gaus_vs_th[label]->GetEY()[point]);
+		g_tRes_energyCorr_gaus_vs_th[label] -> GetPoint(point,x,y);
+		g_tRes_energyCorr_gaus_vs_dVdt[label]->SetPoint(point,g_dVdt_vs_th[label]->Eval(x),y);
+		g_tRes_energyCorr_gaus_vs_dVdt[label]->SetPointError(point,0,g_tRes_energyCorr_gaus_vs_th[label]->GetEY()[point]);
+	      }
+	  
+	
+	    g_tRes_gaus_vs_dVdt[label] -> SetLineColor(1+iter);
+	    g_tRes_gaus_vs_dVdt[label] -> SetMarkerColor(1+iter);
+	    g_tRes_gaus_vs_dVdt[label] -> SetMarkerStyle(25);
+	    //g_tRes_gaus_vs_dVdt[label] -> Draw("PL,same");
+	    
+	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetLineColor(1+iter);
+	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetMarkerColor(1+iter);
+	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> SetMarkerStyle(20);
+	    g_tRes_energyCorr_gaus_vs_dVdt[label] -> Draw("PL,same");
+	    
+	    latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
+	    latex -> SetNDC();
+	    latex -> SetTextFont(42);
+	    latex -> SetTextSize(0.04);
+	    latex -> SetTextColor(kBlack+iter);
+	    latex -> Draw("same");
+	    
+	    ++iter;
+	  }
+
+	c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.png",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+	c -> Print(Form("%s/c_tRes_vs_dVdt__%s-%s.pdf",plotDir.c_str(),ch1.c_str(),ch2.c_str()));
+	delete c;
+
+	++pairsIt;      
       }
-      
-      
-      
-      //--------------------------------------------------------
-      // correlated noise term
-      pairsIt = 0;
-      for(auto pair : pairsVec)
+
+
+    
+    //--------------------------------------------------------
+    // correlated noise term
+    pairsIt = 0;
+    for(auto pair : pairsVec)
       {
-        std::string ch1 = pair.first;
-        std::string ch2 = pair.second;
+	std::string ch1 = pair.first;
+	std::string ch2 = pair.second;
         int isBar1 = opts.GetOpt<int>(Form("%s.isBar",ch1.c_str()));
         int isBar2 = opts.GetOpt<int>(Form("%s.isBar",ch2.c_str()));
-        
+
         // consider only bar vs pixel as ref
         if ( !(  ( isBar1 && ch2.find("pixel") != std::string::npos ) ||
                  ( isBar2 && ch1.find("pixel") != std::string::npos )  ) ) continue;
-        
+
         c = new TCanvas(Form("c_tRes_corr_vs_th_%s-%s",ch1.c_str(),ch2.c_str()),Form("c_tRes_corr_vs_th_%s-%s",ch1.c_str(),ch2.c_str()));
         // gPad -> SetLogy();
-        
+
         TH1F* hPad = (TH1F*)( gPad->DrawFrame(-0.5,tResMin,64,tResMax) );
         if( pairsMode.at(pairsIt) == 0 )
           hPad -> SetTitle("; threshold [DAC];#sigma_{t_{diff}} [ps]");
@@ -1811,47 +1779,47 @@ int main(int argc, char** argv)
           hPad -> SetTitle(";threhsold [DAC];#sigma_{t_{diff}} / 2 [ps]");
         hPad -> Draw();
         gPad -> SetGridy();
-        
-        int iter = 0;
+
+	int iter = 0;
         for(auto mapIt : VovLabels)
-        {
-          std::string vov = mapIt.first.c_str();
-          std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
-          std::string label2(Form("%sL-%sR_%s",ch1.c_str(),ch1.c_str(),mapIt.first.c_str()));
-          std::string label3(Form("pixel3x3-pixel2x2_%s",mapIt.first.c_str()));
-          if (isBar2){
-            label2 = Form("%sL-%sR_%s",ch2.c_str(),ch2.c_str(),mapIt.first.c_str());
-          }
-          std::cout << label.c_str() <<  "  " << label2.c_str()<< "  " <<  label3.c_str() << std::endl;
-          g_tRes_noise_corr_vs_th[label] = new TGraphErrors();
-          for(int point = 0; point < g_tRes_energyCorr_gaus_vs_th[label]->GetN(); ++point)
           {
-            double y1, y2, y3, th;
-            g_tRes_energyCorr_gaus_vs_th[label] -> GetPoint(point,th,y1);// bar -pixel                                                                                        
-            g_tRes_energyCorr_gaus_vs_th[label2] -> GetPoint(point,th,y2); // diff                                                                                            
-            g_tRes_energyCorr_gaus_vs_th[label3] -> GetPoint(point,th,y3);// pixel                                                                                            
-            double y = sqrt(y1*y1 - (y2*y2/4) - (y3*y3/2));
-            g_tRes_noise_corr_vs_th[label]->SetPoint(point,th,y);
+	    std::string vov = mapIt.first.c_str();
+	    std::string label(Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),mapIt.first.c_str()));
+	    std::string label2(Form("%sL-%sR_%s",ch1.c_str(),ch1.c_str(),mapIt.first.c_str()));
+	    std::string label3(Form("pixel3x3-pixel2x2_%s",mapIt.first.c_str()));
+            if (isBar2){
+              label2 = Form("%sL-%sR_%s",ch2.c_str(),ch2.c_str(),mapIt.first.c_str());
+            }
+	    std::cout << label.c_str() <<  "  " << label2.c_str()<< "  " <<  label3.c_str() << std::endl;
+            g_tRes_noise_corr_vs_th[label] = new TGraphErrors();
+            for(int point = 0; point < g_tRes_energyCorr_gaus_vs_th[label]->GetN(); ++point)
+              {
+                double y1, y2, y3, th;
+                g_tRes_energyCorr_gaus_vs_th[label] -> GetPoint(point,th,y1);// bar -pixel                                                                                        
+                g_tRes_energyCorr_gaus_vs_th[label2] -> GetPoint(point,th,y2); // diff                                                                                            
+                g_tRes_energyCorr_gaus_vs_th[label3] -> GetPoint(point,th,y3);// pixel                                                                                            
+                double y = sqrt(y1*y1 - (y2*y2/4) - (y3*y3/2));
+                g_tRes_noise_corr_vs_th[label]->SetPoint(point,th,y);
+              }
+
+            //g_tRes_noise_corr_vs_th[label] -> SetLineColor(color[vov]);
+            //g_tRes_noise_corr_vs_th[label] -> SetMarkerColor(color[vov]);
+	    g_tRes_noise_corr_vs_th[label] -> SetLineColor(iter+1);
+	    g_tRes_noise_corr_vs_th[label] -> SetMarkerColor(iter+1);
+            g_tRes_noise_corr_vs_th[label] -> SetMarkerStyle(20);
+            g_tRes_noise_corr_vs_th[label] -> Draw("PL,same");
+
+            latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
+            latex -> SetNDC();
+            latex -> SetTextFont(42);
+            latex -> SetTextSize(0.04);
+            //latex -> SetTextColor(color[vov]);
+	    latex -> SetTextColor(iter+1);
+            latex -> Draw("same");
+
+            ++iter;
           }
-          
-          //g_tRes_noise_corr_vs_th[label] -> SetLineColor(color[vov]);
-          //g_tRes_noise_corr_vs_th[label] -> SetMarkerColor(color[vov]);
-          g_tRes_noise_corr_vs_th[label] -> SetLineColor(iter+1);
-          g_tRes_noise_corr_vs_th[label] -> SetMarkerColor(iter+1);
-          g_tRes_noise_corr_vs_th[label] -> SetMarkerStyle(20);
-          g_tRes_noise_corr_vs_th[label] -> Draw("PL,same");
-          
-          latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
-          latex -> SetNDC();
-          latex -> SetTextFont(42);
-          latex -> SetTextSize(0.04);
-          //latex -> SetTextColor(color[vov]);
-          latex -> SetTextColor(iter+1);
-          latex -> Draw("same");
-          
-          ++iter;
-        }
-        
+
         if (isBar1){
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.png",plotDir.c_str(),ch1.c_str(),ch1.c_str()));
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.pdf",plotDir.c_str(),ch1.c_str(),ch1.c_str()));
@@ -1860,14 +1828,14 @@ int main(int argc, char** argv)
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.png",plotDir.c_str(),ch2.c_str(),ch2.c_str()));
           c -> Print(Form("%s/c_tRes_noise_corr_%sL-%sR.pdf",plotDir.c_str(),ch2.c_str(),ch2.c_str()));
         }
-        
+
         delete c;
-        
+
         ++pairsIt;
       }
-    }
-    
-    
+
+
+
     //--------------------------------------------------------
     
     
@@ -2133,8 +2101,8 @@ int main(int argc, char** argv)
   
   outFile -> cd();
   
-  // for(auto mapIt: g_tot_vs_th)  mapIt.second -> Write(Form("g_tot_vs_th_%s", mapIt.first.c_str()));
-  // for(auto mapIt: g_tot_vs_Vov) mapIt.second -> Write(Form("g_tot_vs_Vov_%s",mapIt.first.c_str()));
+  for(auto mapIt: g_tot_vs_th)  mapIt.second -> Write(Form("g_tot_vs_th_%s", mapIt.first.c_str()));
+  for(auto mapIt: g_tot_vs_Vov) mapIt.second -> Write(Form("g_tot_vs_Vov_%s",mapIt.first.c_str()));
   for(auto mapIt: g_energy_vs_th)  mapIt.second -> Write(Form("g_energy_vs_th_%s", mapIt.first.c_str()));
   for(auto mapIt: g_energy_vs_Vov) mapIt.second -> Write(Form("g_energy_vs_Vov_%s",mapIt.first.c_str()));
   

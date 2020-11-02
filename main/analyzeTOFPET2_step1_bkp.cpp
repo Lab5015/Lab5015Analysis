@@ -180,13 +180,25 @@ int main(int argc, char** argv)
   std::map<std::string,TProfile2D*> p2_eff_vs_XY;
   
   std::map<std::string,TH1F*> h1_qfine;
+  std::map<std::string,TH2F*> h2_qfine_vs_tot;
+  
   std::map<std::string,TH1F*> h1_tot;
+  std::map<std::string,TH2F*> h2_tot_corr;
+  std::map<std::string,TH1F*> h1_totRatio;
+  
   std::map<std::string,TH1F*> h1_energy;
+  std::map<std::string,TH1F*> h1_energy_cut;
   std::map<std::string,TH2F*> h2_energy_corr;
+  std::map<std::string,TH1F*> h1_energyRatio;
   
+  std::map<std::string,TH1F*> h1_deltaT_raw;
+  std::map<std::string,TH1F*> h1_deltaT;
+  std::map<std::string,TProfile*> p1_deltaT_vs_energyRatio;
   
+  std::map<std::string,TH1F*> h1_deltaT_energyCorr;
+  std::map<std::string,TProfile*> p1_deltaT_energyCorr_vs_pos;
   
-  
+  std::map<std::string,TH1F*> h1_deltaT_energyCorr_posCorr;
   
   
   //------------------------
@@ -221,12 +233,17 @@ int main(int argc, char** argv)
       if( h1_tot[label] == NULL )
       {
         p2_eff_vs_XY[label] = new TProfile2D(Form("p2_eff_vs_XY_%s",label.c_str()),"",200,-10.,40.,200,0.,50.);
-        
+  
         h1_qfine[label] = new TH1F(Form("h1_qfine_%s",label.c_str()),"",512,-0.5,511.5);
+        h2_qfine_vs_tot[label] = new TH2F(Form("h2_qfine_vs_tot_%s",label.c_str()),"",100,0.,500,512,-0.5,511.5);
         
         h1_tot[label] = new TH1F(Form("h1_tot_%s",label.c_str()),"",2000,0.,1000.);
         
-        h1_energy[label] = new TH1F(Form("h1_energy_%s",label.c_str()),"",2000,0.,100.);
+        //h1_energy[label] = new TH1F(Form("h1_energy_%s",label.c_str()),"",400,0.,400.);
+        //h1_energy_cut[label] = new TH1F(Form("h1_energy_cut_%s",label.c_str()),"",400,0.,400.);
+
+        h1_energy[label] = new TH1F(Form("h1_energy_%s",label.c_str()),"",1000,0.,100.);
+        h1_energy_cut[label] = new TH1F(Form("h1_energy_cut_%s",label.c_str()),"",1000,0.,100.);
         
         VovLabels[VovLabel] += 1;
         thLabels[thLabel] += 1;
@@ -241,12 +258,22 @@ int main(int argc, char** argv)
       std::string ch2 = pair.second;
       std::string label12 = Form("%s-%s_%s",ch1.c_str(),ch2.c_str(),stepLabel.c_str());
       
-      if( h2_energy_corr[label12] == NULL )
+      if( h2_tot_corr[label12] == NULL )
       {
         outTrees[label12] = new TTree(Form("data_%s",label12.c_str()),Form("data_%s",label12.c_str()));
         outTrees[label12] -> Branch("event",&anEvent);
         
+        h2_tot_corr[label12] = new TH2F(Form("h2_tot_corr_%s",label12.c_str()),"",100,0.,500.,100,0.,500.);
+        h1_totRatio[label12] = new TH1F(Form("h1_totRatio_%s",label12.c_str()),"",1000,0.,5.);
+        
         h2_energy_corr[label12] = new TH2F(Form("h2_energy_corr_%s",label12.c_str()),"",200,0.,50.,200,0.,50.);
+        h1_energyRatio[label12] = new TH1F(Form("h1_energyRatio_%s",label12.c_str()),"",1000,0.,5.);
+        
+        h1_deltaT_raw[label12] = new TH1F(Form("h1_deltaT_raw_%s",label12.c_str()),"",1250,-5000.,5000.);
+        h1_deltaT[label12] = new TH1F(Form("h1_deltaT_%s",label12.c_str()),"",1250,-5000,5000.);
+        
+        h1_deltaT_energyCorr[label12] = new TH1F(Form("h1_deltaT_energyCorr_%s",label12.c_str()),"",1250,-5000.,5000.);
+        h1_deltaT_energyCorr_posCorr[label12] = new TH1F(Form("h1_deltaT_energyCorr_posCorr_%s",label12.c_str()),"",1250,-5000.,5000.);
       }
     }
     
@@ -268,6 +295,7 @@ int main(int argc, char** argv)
         p2_eff_vs_XY[label] -> Fill( xIntercept,yIntercept,energy1>cut_energyAcc[chID][step1] );
         h1_qfine[label] -> Fill( qfine1 );
         h1_tot[label] -> Fill( tot1 );
+        h2_qfine_vs_tot[label] -> Fill( tot1,qfine1 );
         
         if( qfine1 < cut_qfineAcc[chID][step1] ) continue;
         if( tot1 < cut_totAcc[chID][step1] ) continue;
@@ -287,13 +315,14 @@ int main(int argc, char** argv)
         float qfineR  = qfine[int(chIDR)];
         float totR    = tot[int(chIDR)]/1000.;
         float energyR = energy[int(chIDR)];
-        float qfine   = 0.5*(qfineL+qfineR);
-        float tot     = 0.5*(totL+totR);
-        float energy  = 0.5*(energyL+energyR);
+        float qfine   = 1.*(qfineL+qfineR);
+        float tot     = 1.*(totL+totR);
+        float energy  = 1.*(energyL+energyR);
         
         p2_eff_vs_XY[label] -> Fill( xIntercept,yIntercept,energyL>cut_energyAcc[chIDL][step1] && energyR>cut_energyAcc[chIDR][step1] );
         h1_qfine[label] -> Fill( qfine );
         h1_tot[label] -> Fill( tot );
+        h2_qfine_vs_tot[label] -> Fill( tot,qfine );
         
         if( qfineL < cut_qfineAcc[chIDL][step1] ) continue;
         if( totL < cut_totAcc[chIDL][step1] ) continue;
@@ -310,8 +339,6 @@ int main(int argc, char** argv)
       std::string ch2 = pair.second;
       int isBar1 = opts.GetOpt<int>(Form("%s.isBar",ch1.c_str()));
       int isBar2 = opts.GetOpt<int>(Form("%s.isBar",ch2.c_str()));
-      int isBarSide1 = opts.GetOpt<int>(Form("%s.isBarSide",ch1.c_str()));
-      int isBarSide2 = opts.GetOpt<int>(Form("%s.isBarSide",ch2.c_str()));
       int isHorizontal1 = opts.GetOpt<int>(Form("%s.isHorizontal",ch1.c_str()));
       int isHorizontal2 = opts.GetOpt<int>(Form("%s.isHorizontal",ch2.c_str()));
       
@@ -394,14 +421,10 @@ int main(int argc, char** argv)
       
       if( tot1 < -1. || tot2 < -1. ) continue;
       
+      h2_tot_corr[label12] -> Fill( tot1,tot2 );
+      h2_tot_corr[label12] -> Fill( tot1,tot2 );
       h2_energy_corr[label12] -> Fill( energy1,energy2 );
       h2_energy_corr[label12] -> Fill( energy1,energy2 );
-      
-      if( isBarSide1 == 1 && isBarSide2 == 1 )
-      {
-        if( !h1_energy[label12] ) h1_energy[label12] = new TH1F(Form("h1_energy_%s",label12.c_str()),"",2000,0.,100.);
-        h1_energy[label12] -> Fill( 0.5*(energy1+energy2) );
-      }
       
       
       bool accept = true;
@@ -427,8 +450,6 @@ int main(int argc, char** argv)
       anEvent.y = yIntercept;
       anEvent.isBar1 = isBar1;
       anEvent.isBar2 = isBar2;
-      anEvent.isBarSide1 = isBarSide1;
-      anEvent.isBarSide2 = isBarSide2;
       anEvent.isHorizontal1 = isHorizontal1;
       anEvent.isHorizontal2 = isHorizontal2;
       anEvent.qfine1 = qfine1;

@@ -25,7 +25,6 @@
 struct channel
 {
   std::string array;
-  int arrayID;
   int barID;
   int lrID;
 };
@@ -62,7 +61,8 @@ int main(int argc, char** argv)
   time_t timesec;
   for(auto fileBaseName : fileBaseNames)
   {
-    std::string fileName = Form("%s/%s_events.root",inputDir.c_str(),fileBaseName.c_str());
+    //std::string fileName = Form("%s/%s_ped_t.root",inputDir.c_str(),fileBaseName.c_str());
+    std::string fileName = Form("%s/%s_t.root",inputDir.c_str(),fileBaseName.c_str());
     std::cout << ">>> Adding flle " << fileName << std::endl;
     tree -> Add(fileName.c_str());
     
@@ -75,6 +75,7 @@ int main(int argc, char** argv)
   
   std::string plotDir = opts.GetOpt<std::string>("Output.plotDir");
   system(Form("mkdir -p %s",plotDir.c_str()));
+  system(Form("cp %s/../index.php %s",plotDir.c_str(),plotDir.c_str()));  
   
   
   
@@ -88,7 +89,6 @@ int main(int argc, char** argv)
   {
     unsigned int FEBDPort = opts.GetOpt<unsigned int>(Form("%s.FEBDPort",array.c_str()));
     std::string connectorID = opts.GetOpt<std::string>(Form("%s.connectorID",array.c_str()));
-    int arrayID = opts.GetOpt<unsigned int>(Form("%s.arrayID",array.c_str()));
     int offset = 128*FEBDPort;
     
     if( connectorID == "S1_1" || connectorID == "S2_1" )
@@ -109,20 +109,22 @@ int main(int argc, char** argv)
     for(int ii = 0; ii < 32; ++ii)
     {
       int chID = channelMapping[ii] + offset;
-      channels_key[chID] = {array,arrayID,(ii/2),(ii%2)};
+      channels_key[chID] = {array,(ii/2),(ii%2)};
     }
   }
   
   
   //--- define branches
+  float step1;
   float energy[256];
   float qfine[256];
   float tot[256];
   
   tree -> SetBranchStatus("*",0);
-  tree -> SetBranchStatus("energy",      1); tree -> SetBranchAddress("energy",      energy);
-  tree -> SetBranchStatus("qfine",       1); tree -> SetBranchAddress("qfine",       qfine);
-  tree -> SetBranchStatus("tot",         1); tree -> SetBranchAddress("tot",         tot);
+  tree -> SetBranchStatus("step1",  1); tree -> SetBranchAddress("step1",  &step1);
+  tree -> SetBranchStatus("energy", 1); tree -> SetBranchAddress("energy", energy);
+  tree -> SetBranchStatus("qfine",  1); tree -> SetBranchAddress("qfine",   qfine);
+  tree -> SetBranchStatus("tot",    1); tree -> SetBranchAddress("tot",       tot);
   
   
   
@@ -131,50 +133,15 @@ int main(int argc, char** argv)
   TFile* outFile = TFile::Open(Form("%s",outFileName.c_str()),"RECREATE");
   outFile -> cd();
   
-  
-  // TTree* outTree = new TTree("data","data");
-  // unsigned long long int t_time = timesec;
-  // unsigned int t_arrayID;
-  // unsigned int t_barID;
-  // unsigned int t_lrID;
-  // float t_peak1;
-  // float t_peak1Err;
-  // float t_sigma1;
-  // float t_sigma1Err;
-  // outTree -> Branch("time",     &t_time,          "time/l");
-  // outTree -> Branch("arrayID",  &t_arrayID,    "arrayID/i");
-  // outTree -> Branch("barID",    &t_barID,        "barID/i");
-  // outTree -> Branch("lrID",     &t_lrID,          "lrID/i");
-  // outTree -> Branch("peak1",    &t_peak1,        "peak1/F");
-  // outTree -> Branch("peak1Err", &t_peak1Err,  "peak1Err/F");
-  // outTree -> Branch("sigma1",   &t_sigma1,      "sigma1/F");
-  // outTree -> Branch("sigma1Err",&t_sigma1Err,"sigma1Err/F");
-  
-  
-  std::map<std::string,TH1F*> h1_energy;
-  std::map<std::string,TH2F*> h2_energy_LRCorr;
-  
-  for(auto mapIt: channels_key)
-  {
-    if( mapIt.second.lrID != 0 ) continue;
-    
-    std::string array = mapIt.second.array;
-    int arrayID = mapIt.second.arrayID;
-    int barID = mapIt.second.barID;
-    
-    std::string label_L = Form("h1_energy_%s_bar%02d_L",array.c_str(),barID);
-    std::string label_R = Form("h1_energy_%s_bar%02d_R",array.c_str(),barID);
-    
-    h1_energy[label_L] = new TH1F(label_L.c_str(),"",500,0.,50.);
-    h1_energy[label_R] = new TH1F(label_R.c_str(),"",500,0.,50.);
-    
-    std::string label_LR = Form("h2_energy_%s_bar%02d_LRCorr",array.c_str(),barID);
-    h2_energy_LRCorr[label_LR] = new TH2F(label_LR.c_str(),"",500,0.,50.,500,0.,50.);
-  }
+  std::map<int,std::map<int,TH1F*> > h1_energy_L;
+  std::map<int,std::map<int,TH1F*> > h1_energy_R;
+  // std::map<int,TH2F*> h2_energy_LRCorr;
   
   
   
   //--- loop over events
+  std::map<float,int> VovMap;
+  
   int nEntries = tree->GetEntries();
   if( maxEntries > nEntries ) nEntries = maxEntries;
   for(int entry = 0; entry < nEntries; ++entry)
@@ -182,166 +149,201 @@ int main(int argc, char** argv)
     tree -> GetEntry(entry);
     if( entry%100000 == 0 ) std::cout << ">>> 1st loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
     
+    VovMap[step1] += 1;
+    
+    
     for(auto mapIt: channels_key)
     {
       int chID    = mapIt.first;
       std::string array = mapIt.second.array;
-      int arrayID = mapIt.second.arrayID;
       int barID   = mapIt.second.barID;
       int lrID    = mapIt.second.lrID;
       
       if( qfine[chID] > 13 )
       {
-        if( lrID == 0 ) h1_energy[Form("h1_energy_%s_bar%02d_L",array.c_str(),barID)] -> Fill( energy[chID] );
-        else            h1_energy[Form("h1_energy_%s_bar%02d_R",array.c_str(),barID)] -> Fill( energy[chID] );
-        
-        if( lrID == 0 )
+        if( h1_energy_L[step1][barID] == NULL )
         {
-          for(auto mapIt2: channels_key)
-          {
-            if( mapIt2.second.arrayID == arrayID &&
-                mapIt2.second.barID == barID &&
-                mapIt2.second.lrID == 1 )
-            {
-              int chID2 = mapIt2.first;
-              
-              h2_energy_LRCorr[Form("h2_energy_%s_bar%02d_LRCorr",array.c_str(),barID)] -> Fill( energy[chID],energy[chID2] );
-            }
-          }
+          std::string label_L(Form("h1_energy_%s_bar%02d_L_Vov%.1f",array.c_str(),barID,step1));
+          std::string label_R(Form("h1_energy_%s_bar%02d_R_Vov%.1f",array.c_str(),barID,step1));
+          // std::string label_LR(Form("h2_energy_%s_bar%02d_LRCorr_Vov%.1f",array.c_str(),barID,step1));
+          
+          h1_energy_L[step1][barID] = new TH1F(label_L.c_str(),"",400,0.,40.);
+          h1_energy_R[step1][barID] = new TH1F(label_R.c_str(),"",400,0.,40.);
+          //h1_energy_L[step1][barID] = new TH1F(label_L.c_str(),"",150,0.,150.);
+          //h1_energy_R[step1][barID] = new TH1F(label_R.c_str(),"",150,0.,150.);
+          // h2_energy_LRCorr[barID] = new TH2F(label_LR.c_str(),"",150,0.,150.,150,0.,150.);
         }
         
+        if( lrID == 0 ) h1_energy_L[step1][barID] -> Fill( energy[chID] );
+        else            h1_energy_R[step1][barID] -> Fill( energy[chID] );
+        
+        // if( lrID == 0 )
+        // {
+        //   for(auto mapIt2: channels_key)
+        //   {
+        //         mapIt2.second.barID == barID &&
+        //         mapIt2.second.lrID == 1 )
+        //     {
+        //       int chID2 = mapIt2.first;
+              
+        //       h2_energy_LRCorr[barID] -> Fill( energy[chID],energy[chID2] );
+        //     }
+        //   }
+        // }
       }
-    } 
+    }
   }
   std::cout << std::endl;
   
   
   
   //--- draw plots
-  for(auto array : arrays)
+  for( auto mapIt : VovMap)
   {
-    TGraphErrors* g_511keV_L = new TGraphErrors();
-    TGraphErrors* g_511keV_R = new TGraphErrors();
+    float Vov = mapIt.first;
     
-    float maxN = -999.;
-    TGraphErrors* g_N_L = new TGraphErrors();
-    TGraphErrors* g_N_R = new TGraphErrors();
-    
-    
-    for(int barIt = 0; barIt < 16; ++barIt)
+    for(auto array : arrays)
     {
-      // t_arrayID = arrayIt;
-      // t_barID = barIt;
+      TGraphErrors* g_511keV_L = new TGraphErrors();
+      TGraphErrors* g_511keV_R = new TGraphErrors();
       
-      TCanvas* c1 = new TCanvas(Form("c1_bar%d",barIt),Form("c1_bar%d",barIt),1200,600);
-      c1 -> Divide(2,1);
-      
-      c1 -> cd(1);
-      
-      std::string label_L = Form("h1_energy_%s_bar%02d_L", array.c_str(),barIt);
-      std::string label_R = Form("h1_energy_%s_bar%02d_R", array.c_str(),barIt);
-      
-      if( h1_energy[label_L] == NULL || h1_energy[label_R] == NULL ) continue;
-      
-      if( h1_energy[label_L]->Integral() > 0. ) h1_energy[label_L]->Scale(1./h1_energy[label_L]->Integral());
-      if( h1_energy[label_R]->Integral() > 0. ) h1_energy[label_R]->Scale(1./h1_energy[label_R]->Integral());
-      
-      float max = h1_energy[label_L] -> GetMaximum();
-      if( h1_energy[label_R]->GetMaximum() > max ) max = h1_energy[label_R]->GetMaximum();
-      h1_energy[label_L]->SetMaximum(max);
-      
-      h1_energy[label_L] -> SetTitle(";energy [a.u.];fraction of events");
-      h1_energy[label_L] -> SetLineColor(kRed);
-      h1_energy[label_L] -> Draw("hist");
-      h1_energy[label_R] -> SetLineColor(kBlue);
-      h1_energy[label_R] -> Draw("hist,sames");
-      
-      g_N_L -> SetPoint(g_N_L->GetN(),barIt,h1_energy[label_L]->GetEntries());
-      g_N_L -> SetPointError(g_N_L->GetN()-1,0,sqrt(h1_energy[label_L]->GetEntries()));
-      if( h1_energy[label_L]->GetEntries() > maxN ) maxN = h1_energy[label_L]->GetEntries();
-      g_N_R -> SetPoint(g_N_R->GetN(),barIt,h1_energy[label_R]->GetEntries());
-      g_N_R -> SetPointError(g_N_R->GetN()-1,0,sqrt(h1_energy[label_R]->GetEntries()));
-      if( h1_energy[label_R]->GetEntries() > maxN ) maxN = h1_energy[label_R]->GetEntries();
+      float maxN = -999.;
+      TGraphErrors* g_N_L = new TGraphErrors();
+      TGraphErrors* g_N_R = new TGraphErrors();
       
       
-      std::vector<std::string> labels;
-      labels.push_back(label_L);
-      labels.push_back(label_R);
-      
-      for(auto label: labels)
+      for(int barIt = 0; barIt < 16; ++barIt)
       {
-        // if( label == label_L ) t_lrID = 0;
-        // if( label == label_R ) t_lrID = 1;
+        // TCanvas* c1 = new TCanvas(Form("c1_bar%d",barIt),Form("c1_bar%d",barIt),1200,600);
+        // c1 -> Divide(2,1);
+        TCanvas* c1 = new TCanvas(Form("c1_bar%d",barIt),Form("c1_bar%d",barIt));
+        // c1 -> Divide(2,1);
+        
+        // c1 -> cd(1);
+        
+        std::string label_L = Form("h1_energy_%s_bar%02d_L_Vov%.1f", array.c_str(),barIt,Vov);
+        std::string label_R = Form("h1_energy_%s_bar%02d_R_Vov%.1f", array.c_str(),barIt,Vov);
+        TH1F* histo_L = h1_energy_L[Vov][barIt];
+        TH1F* histo_R = h1_energy_R[Vov][barIt];
+        
+        if( histo_L == NULL || histo_R == NULL ) continue;
+        
+        // if( histo_L->Integral() > 0. ) histo_L->Scale(1./histo_L->Integral());
+        // if( histo_R->Integral() > 0. ) histo_R->Scale(1./histo_R->Integral());
+        
+        float maxL = histo_L->GetMaximum();
+        float maxR = histo_R->GetMaximum();
+        
+        histo_L -> SetMaximum(1.2*std::max(maxL,maxR));
+        histo_R -> SetMaximum(1.2*std::max(maxL,maxR));
+        histo_L -> GetXaxis() -> SetRangeUser(0.,40.);
+        histo_R -> GetXaxis() -> SetRangeUser(0.,40.);
+        
+        histo_L -> SetTitle(";energy [a.u.];events");
+        histo_L -> SetLineColor(kRed);
+        histo_L -> Draw("hist");
+        histo_R -> SetLineColor(kBlue);
+        histo_R -> Draw("hist,sames");
         
         
-        TH1F* histo = h1_energy[label];
-        if( histo->GetEntries() < 100 ) continue;
-        
-        
-        // -- fit 511 keV peak only
-        float xMax = FindXMaximum(histo,5.,20.);
-        TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.05*xMax,xMax+0.05*xMax);
-        histo -> Fit(f_gaus,"QNRS+");
-        f_gaus -> SetLineColor(kBlack);
-        f_gaus -> SetLineWidth(3);
-        f_gaus -> Draw("same");
-        
-        if( label == label_L )
+        if( histo_L->Integral(histo_L->FindBin(7.),histo_L->FindBin(20.)) > 100 )
         {
+          std::cout << "barIt: " << barIt << "   left " << std::endl;
+          // -- fit 511 keV peak only
+          float xMax = FindXMaximum(histo_L,7.,20.);
+          TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.10*xMax,xMax+0.10*xMax);
+          histo_L -> Fit(f_gaus,"QNRS+");
+          f_gaus -> SetLineColor(kBlack);
+          f_gaus -> SetLineWidth(3);
+          f_gaus -> Draw("same");
+          
           g_511keV_L -> SetPoint(g_511keV_L->GetN(),barIt,f_gaus -> GetParameter(1));
           g_511keV_L -> SetPointError(g_511keV_L->GetN()-1,0,f_gaus -> GetParError(1));
+          
+          float integral = f_gaus->Integral(f_gaus->GetParameter(1)-f_gaus->GetParameter(2),
+                                            f_gaus->GetParameter(1)+f_gaus->GetParameter(2));
+          
+          g_N_L -> SetPoint(g_N_L->GetN(),barIt,integral);
+          g_N_L -> SetPointError(g_N_L->GetN()-1,0,0.);
+          if( integral > maxN ) maxN = integral;
         }
-        if( label == label_R )
+        
+        if( histo_R->Integral(histo_R->FindBin(7.),histo_R->FindBin(20.)) > 100 )
         {
+          std::cout << "barIt: " << barIt << "   right " << std::endl;
+
+          // -- fit 511 keV peak only
+          float xMax = FindXMaximum(histo_R,7.,20.);
+          TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.10*xMax,xMax+0.10*xMax);
+          histo_R -> Fit(f_gaus,"QNRS+");
+          f_gaus -> SetLineColor(kBlack);
+          f_gaus -> SetLineWidth(3);
+          f_gaus -> Draw("same");
+          
           g_511keV_R -> SetPoint(g_511keV_R->GetN(),barIt,f_gaus -> GetParameter(1));
           g_511keV_R -> SetPointError(g_511keV_R->GetN()-1,0,f_gaus -> GetParError(1));
+          
+          float integral = f_gaus->Integral(f_gaus->GetParameter(1)-f_gaus->GetParameter(2),
+                                            f_gaus->GetParameter(1)+f_gaus->GetParameter(2));
+          
+          g_N_R -> SetPoint(g_N_R->GetN(),barIt,integral);
+          g_N_R -> SetPointError(g_N_R->GetN()-1,0,0.);
+          if( integral > maxN ) maxN = integral;
         }
+        
+        
+        // c1 -> cd(2);
+        
+        // std::string label_LR = Form("h2_energy_%s_bar%02d_LRCorr_Vov%.1f", array.c_str(),barIt,Vov);
+        // h2_energy_LRCorr[label_LR] -> Draw("COLZ");
+        
+        c1 -> Print(Form("%s/c1_energy__%s__bar%02d__Vov%.1f.png",plotDir.c_str(),array.c_str(),barIt,Vov));
+        delete c1;
       }
       
       
-      c1 -> cd(2);
+      TCanvas* c2 = new TCanvas("c2","c2");
       
-      std::string label_LR = Form("h2_energy_%s_bar%02d_LRCorr", array.c_str(),barIt);
-      h2_energy_LRCorr[label_LR] -> Draw("COLZ");
+      TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,17.,20.) );
+      hPad -> SetTitle(";bar ID;photopeak energy [a.u.]");
+      hPad -> Draw();
+      gPad -> SetGridy();
       
-      c1 -> Print(Form("%s/c1_energy__%s__bar%02d.png",plotDir.c_str(),array.c_str(),barIt));
-      delete c1;
+      g_511keV_L -> SetMarkerStyle(20);
+      g_511keV_L -> SetMarkerColor(kRed);
+      g_511keV_L -> Draw("P,same");
+      g_511keV_R -> SetMarkerColor(kBlue);
+      g_511keV_R -> SetMarkerStyle(21);
+      g_511keV_R -> Draw("P,same");
+      
+      outFile -> cd();
+      g_511keV_L -> Write(Form("g_511keV_L__%s__Vov%.1f",array.c_str(),Vov));
+      g_511keV_R -> Write(Form("g_511keV_R__%s__Vov%.1f",array.c_str(),Vov));
+      
+      c2 -> Print(Form("%s/c2_energy__%s__Vov%.1f.png",plotDir.c_str(),array.c_str(),Vov));
+      
+      
+      TCanvas* c3 = new TCanvas("c3","c3");
+      
+      hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,17.,1.2*maxN) );
+      hPad -> SetTitle(";bar ID;number of events");
+      hPad -> Draw();
+      gPad -> SetGridy();
+      
+      g_N_L -> SetMarkerStyle(20);
+      g_N_L -> SetMarkerColor(kRed);
+      g_N_L -> Draw("P,same");
+      g_N_R -> SetMarkerColor(kBlue);
+      g_N_R -> SetMarkerStyle(21);
+      g_N_R -> Draw("P,same");
+      
+      outFile -> cd();
+      g_N_L -> Write(Form("g_N_L__%s__Vov%.1f",array.c_str(),Vov));
+      g_N_R -> Write(Form("g_N_R__%s__Vov%.1f",array.c_str(),Vov));
+      
+      c3 -> Print(Form("%s/c3_N__%s__Vov%.1f.png",plotDir.c_str(),array.c_str(),Vov));
     }
-    
-    TCanvas* c2 = new TCanvas("c2","c2");
-    
-    TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,17.,30.) );
-    hPad -> SetTitle(";bar ID;photopeak energy [a.u.]");
-    hPad -> Draw();
-    gPad -> SetGridy();
-    
-    g_511keV_L -> SetMarkerStyle(20);
-    g_511keV_L -> SetMarkerColor(kRed);
-    g_511keV_L -> Draw("P,same");
-    g_511keV_R -> SetMarkerColor(kBlue);
-    g_511keV_R -> SetMarkerStyle(21);
-    g_511keV_R -> Draw("P,same");
-    
-    c2 -> Print(Form("%s/c2_energy__%s.png",plotDir.c_str(),array.c_str()));
-    
-    
-    TCanvas* c3 = new TCanvas("c3","c3");
-    
-    hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,17.,1.2*maxN) );
-    hPad -> SetTitle(";bar ID;number of events");
-    hPad -> Draw();
-    gPad -> SetGridy();
-    
-    g_N_L -> SetMarkerStyle(20);
-    g_N_L -> SetMarkerColor(kRed);
-    g_N_L -> Draw("P,same");
-    g_N_R -> SetMarkerColor(kBlue);
-    g_N_R -> SetMarkerStyle(21);
-    g_N_R -> Draw("P,same");
-    
-    c3 -> Print(Form("%s/c3_N__%s.png",plotDir.c_str(),array.c_str()));
   }
-  
   
   
   int bytes = outFile -> Write();
