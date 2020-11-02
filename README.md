@@ -1,6 +1,8 @@
 # Lab5015Analysis
 collection of programs for the analysis of Lab5015 measurements
 
+
+
 ### Login to your favourite machine
 ```sh
 ssh username@host
@@ -33,6 +35,11 @@ After the compilation, each step of the analysis can be executed from the main f
 
 
 
+### Before running the analysis
+The output filename and output location of each analysis step is defined in the cfg files. Before running the analysis make sure you have checked and if needed updated the relevant output paths in order not to override the work of others.
+
+
+
 ### Run the analysis
 The analysis of the collected data is structured in three steps
 1. `moduleCharacterization_step1.cpp`:
@@ -48,3 +55,11 @@ The analysis of the collected data is structured in three steps
 
 1. `moduleCharacterization_step3.cpp`:
    This step is still missing. The idea here is to run over the histograms filled in step2 and produce summary plots. Loops over the events don't belong to here.
+
+
+
+### Visualize the results
+All the results are available for inspection on a website hosted on pcfatis. The [link](https://pcfatis.mib.infn.it) is accessible via tunnel.
+
+
+
