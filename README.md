@@ -59,7 +59,7 @@ The analysis of the collected data is structured in three steps
 
 
 ### Visualize the results
-All the results are available for inspection on a website hosted on pcfatis. The [link](https://pcfatis.mib.infn.it) is accessible via tunnel.
+All the results are available for inspection on a website hosted on pcfatis. The [link](http://pcfatis.mib.infn.it) is accessible from the INFN network or via tunnel.
 
 
 
