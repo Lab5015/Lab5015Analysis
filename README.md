@@ -36,21 +36,22 @@ After the compilation, each step of the analysis can be executed from the main f
 
 
 ### Before running the analysis
-The output filename and output location of each analysis step is defined in the cfg files. Before running the analysis make sure you have checked and if needed updated the relevant output paths in order not to override the work of others.
+The output filename and output location of each analysis step are defined in the cfg files. Before running the analysis make sure you have checked and if needed updated the relevant output paths in order not to overwrite the work of others.
 
 
 
 ### Run the analysis
 The analysis of the collected data is structured in three steps
 1. `moduleCharacterization_step1.cpp`:
-   This step performs the first loop over the events and fills base histograms such as energy and ToT for each bar, each theshold and each over-voltage. A skim of the events according to the selections defined in the config file is also performed. As in the previous step, the output is in the form of TTrees and histograms.
+   This step performs the first loop over the events and fills base histograms such as energy and ToT for each bar, each theshold and each over-voltage. A skim of the events according to the selections defined in the config file is also performed. The output is in the form of TTrees and histograms.
 
 1. `moduleCharacterization_step2.cpp`:
-   This step performs several loops over the events.
+   This step performs several loops over the events:
     1. loop over the histos filled in step1 and define the energy ranges
     1. loop over the skimmed TTrees and fill raw distribution of energy and energy ratio according to the predefined bins
     1. loop over the skimmed TTrees and compute time walk corrections
     1. loop over the skimmed TTrees and apply the time walk corrections
+    
    The output of this step are histograms.
 
 1. `moduleCharacterization_step3.cpp`:
