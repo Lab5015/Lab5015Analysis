@@ -39,6 +39,11 @@ After the compilation, each step of the analysis can be executed from the main f
 ### Before running the analysis
 The output filename and output location of each analysis step are defined in the cfg files. Before running the analysis make sure you have checked and if needed updated the relevant output paths in order not to overwrite the work of others.
 
+Other than that, every time you login remember to source the setup script:
+```
+cd Lab5015Analysis
+source scripts/setup.sh
+```
 
 
 ### Run the analysis
