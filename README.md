@@ -17,6 +17,7 @@ mkdir $MYNAME
 cd $MYNAME
 git clone --recursive https://github.com/Lab5015/Lab5015Analysis
 cd Lab5015Analysis
+source scripts/setup.sh
 make
 make exe
 ```
