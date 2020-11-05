@@ -5,7 +5,7 @@ collection of programs for the analysis of Lab5015 measurements
 
 ### Login to your favourite machine
 ```sh
-ssh username@host
+ssh username@hostname
 ```
 
 
