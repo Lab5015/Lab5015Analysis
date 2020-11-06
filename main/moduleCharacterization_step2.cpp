@@ -411,7 +411,7 @@ int main(int argc, char** argv)
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
       {
         int index2( (1000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
-        
+        if( !h1_energyRatio[index2] ) continue;
         std::string labelLR_energyBin(Form("%s_energyBin%d",labelLR.c_str(),iEnergyBin));
         
         c = new TCanvas(Form("c_energyRatio_%s",labelLR_energyBin.c_str()),Form("c_energyRatio_%s",labelLR_energyBin.c_str()));
@@ -527,14 +527,14 @@ int main(int argc, char** argv)
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
       {
         int index2( (1000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
-        
+        if( !p1_deltaT_vs_energyRatio[index2] ) continue;
         std::string labelLR_energyBin(Form("%s_energyBin%d",labelLR.c_str(),iEnergyBin));
         
         
         c = new TCanvas(Form("c_deltaT_vs_energyRatio_%s",labelLR_energyBin.c_str()),Form("c_deltaT_vs_energyRatio_%s",labelLR_energyBin.c_str()));
         
         prof = p1_deltaT_vs_energyRatio[index2];
-        prof -> SetTitle(Form("energy_{right} / energy_{left};#Deltat [ps]"));
+        prof -> SetTitle(Form(";energy_{right} / energy_{left};#Deltat [ps]"));
         prof -> GetYaxis() -> SetRangeUser(CTRMeans[index2]-2.*CTRSigmas[index2],CTRMeans[index2]+2.*CTRSigmas[index2]);
         prof -> Draw("");
         
@@ -628,7 +628,7 @@ int main(int argc, char** argv)
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
       {
         int index2( (1000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
-
+	if( !h1_deltaT_energyRatioCorr[index2] ) continue;
         std::string labelLR_energyBin(Form("%s_energyBin%d",labelLR.c_str(),iEnergyBin));
         
         
