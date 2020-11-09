@@ -65,8 +65,8 @@ The analysis of the collected data is structured in three steps
 
 
 
-### Submit the analysis in parallel on pcfatis
-A script under the scripts folder allows the submission of multiple jobs (e.g. a set of runs corresponding to an overvoltage/threshold scan) in parallel on pcfatis. one job per run. The script is used as follows:
+### Submit the analysis in parallel on `pcfatis`
+A script under the `scripts` folder allows the submission of multiple jobs (e.g. a set of runs corresponding to an overvoltage/threshold scan) in parallel on `pcfatis`. one job per run. The script is used as follows:
 ```
 python scripts/submit_moduleCharacterization.py --label myTask_stepX -b /path/of/Lab5015Analysis -e bin/moduleCharacterization_stepX.exe -r run1-run2,run3 -c config/moduleCharacterization.cfg --submit
 ```
@@ -75,7 +75,7 @@ The config file is used as a template for each job, and the run number and file 
 
 
 ### Visualize the results
-All the results are available for inspection on a website hosted on pcfatis. The [link](http://pcfatis.mib.infn.it) is accessible from the INFN network or via tunnel.
+All the results are available for inspection on a website hosted on `pcfatis`. The [link](http://pcfatis.mib.infn.it) is accessible from the INFN network or via tunnel.
 
 
 
