@@ -305,6 +305,11 @@ int main(int argc, char** argv)
         ranges[index] = new std::vector<float>;
         peaks[index] = Na22SpectrumAnalyzer(histo,ranges[index]);
         
+	if (peaks[index]["0.511 MeV"].first== -9999){
+		peaks.erase(index);
+		ranges.erase(index);
+	}
+
         for(auto peak : peaks[index] )
         {
           histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);

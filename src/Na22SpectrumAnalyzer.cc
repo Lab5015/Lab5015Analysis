@@ -10,121 +10,193 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
   
   std::map<std::string,std::pair<float,float> > res;
   
-  /*
-  //--- find first peak (compton + threshold)
-  float firstPeakVal = -1;
-  float firstPeakPos = -1;
-  int firstPeakCount = 0;
-  bool firstPeak = false;
-  for(int bin = 1; bin <= histo->GetNbinsX(); ++bin)
-  {
-    float binContent = histo->GetBinContent(bin);
-    float binCenter = histo->GetBinCenter(bin);
-    
-    if( !firstPeak )
-    {
-      if( binContent >= firstPeakVal && binContent >= 1000. )
-      {
-        firstPeakVal = binContent;
-        firstPeakPos = binCenter;
-        firstPeakCount = 0;
-      }
-      else if( binContent < firstPeakVal )
-        ++firstPeakCount;
-    }
-    if( firstPeakCount == 20 )
-      firstPeak = true;
+  int nPeaks = 5;
+  TSpectrum* spectrum = new TSpectrum(nPeaks);
+
+  histo -> GetXaxis() -> SetRangeUser(0.,40.);
+                                                                                                                                                                                                                                                                                                                                                                             
+  int nFound = spectrum -> Search(histo, 0.5, "", 0.001);		
+  double* peaks = spectrum -> GetPositionX();				
+ 
+  //totalPeaks -> all found Peaks, nBins -> bin number of found Peaks, realPeaks -> 511 e 1275 
+  std::vector<double> totalPeaks;
+  std::vector<double> realPeaks;
+  std::vector<int> nBins;
+ 
+  if(nFound >2){
+	
+	for( int i = 0; i < nFound; i++){
+  		nBins.push_back(histo -> FindBin(peaks[i]));
+		totalPeaks.push_back(peaks[i]);
+ 	}
+	sort(nBins.begin(), nBins.end());
+  	sort(totalPeaks.begin(), totalPeaks.end());
+
+	//Derivative calculation
+	std::vector<double> derivative;
+	derivative.push_back(0);
+
+ 	int unemptyBin = 2;
+  	while ( histo -> GetBinContent(unemptyBin) < 100 && histo -> GetBinContent(unemptyBin-1) < 100 ){
+		unemptyBin ++;
+  	}
+	for( int bin = 1; bin < nBins[nBins.size()-1] +20; bin++){
+		if ( bin < unemptyBin){
+			derivative.push_back(0);
+		}
+		if( bin >= unemptyBin){	
+			double difference = histo->GetBinContent(bin+1) - histo->GetBinContent(bin);
+			double distance =  histo->GetBinCenter(bin+1) - histo->GetBinCenter(bin);		
+			derivative.push_back(difference/distance);		
+		}
+	  }
+
+
+
+	//Finding  first and second maximum in totalPeaks
+	//Fitting them with gaussian ang getting their
+	double maxValue = 0;
+	double secondMaxValue = 0;
+  	int maxIndex = 0;
+	int secondMaxIndex = 0;
+	double maxSigma =0;  	
+	double secondMaxSigma =0;
+
+	//First max
+  	for (int i = 0; i < nFound; i++){
+		if ( histo -> GetBinContent(nBins[i]) > maxValue){
+			maxValue = histo -> GetBinContent(nBins[i]);
+			maxIndex = i;
+		}
+	}
+	TF1* fitFunc_gaus = new TF1("fitFunc_gaus","gaus",0.95*double(totalPeaks[maxIndex]),1.05*double(totalPeaks[maxIndex]));
+	histo -> Fit(fitFunc_gaus,"QR");
+	maxSigma = fitFunc_gaus->GetParameter(2);
+	
+	//Second Max
+	for (int i = 0; i < nFound; i++){
+		if(i != maxIndex){
+			if ( histo -> GetBinContent(nBins[i]) > secondMaxValue){
+				secondMaxValue = histo -> GetBinContent(nBins[i]);
+				secondMaxIndex = i;
+			}
+		}
+		
+	}
+	TF1* fitFunc_gaus2 = new TF1("fitFunc_gaus2","gaus",0.95*double(totalPeaks[secondMaxIndex]),1.05*double(totalPeaks[secondMaxIndex]));
+	histo -> Fit(fitFunc_gaus2,"QR");
+	secondMaxSigma = fitFunc_gaus2->GetParameter(2);
+
+
+	//Finding compton edge, looking for the range (width 10 bins) with smallest derivative not included in [first max - second max]
+	int sigmaBin = std::min(maxSigma, secondMaxSigma) / (histo->GetBinWidth(10));
+	int windowBin = 10;	
+	double minPendence = 1000;
+	int compton;
+
+	for ( int j = 1; j < nFound-1; j++){
+
+		int nRanges = 0;
+		if ( double(nBins[j+1] -sigmaBin * 2 - nBins[j])/windowBin - int((nBins[j+1] -sigmaBin * 2 - nBins[j])/windowBin) < 0.5){
+			nRanges = int((nBins[j+1] -sigmaBin * 2 - nBins[j])/windowBin);
+		}
+		if ( double(nBins[j+1] -sigmaBin * 2 - nBins[j])/windowBin - int((nBins[j+1] -sigmaBin * 2. - nBins[j])/windowBin) >= 0.5){
+			nRanges = int((nBins[j+1] -sigmaBin * 2 - nBins[j])/windowBin) +1;
+		}
+		
+		for(int r = 0; r < nRanges; r++){
+			double pendence = 0;	
+			for ( int i = nBins[j]+ sigmaBin + windowBin*r; i < nBins[j] + sigmaBin +windowBin*(r+1); i++){
+				pendence += derivative[i];
+			}
+			
+			if(std::abs(pendence/windowBin) <= minPendence && std::abs(pendence/windowBin)>0.1 && j+1 > maxIndex && j+1 > secondMaxIndex){
+				minPendence = std::abs(pendence/windowBin);
+				compton = j+1;
+			}
+		}
+  	}
+	
+			
+   	
+   	//Compton is the i-th found peaks after the compton edge
+	//Based on the number of peaks before and after the compton edge, 511 and 1275 Peaks are selected
+	if( compton > maxIndex && compton > secondMaxIndex){
+		int firstPeak = 0;
+		int afterCompton = nFound -1 -compton;
+		
+		do{ firstPeak++;}
+				while(double(histo->GetBinContent(nBins[compton-firstPeak]))/double(maxValue) < 0.1);
+
+		realPeaks.push_back(totalPeaks[compton-firstPeak]);
+		if(afterCompton == 1 || afterCompton == 0){
+			realPeaks.push_back(totalPeaks[compton+afterCompton]);
+		}
+		
+		if(afterCompton > 1){
+			double peaksRatio = histo->GetBinContent(nBins[nFound-2]) / histo->GetBinContent(nBins[nFound-1]);
+			if ( peaksRatio > 3 ) { 
+				realPeaks.push_back(totalPeaks[nFound-2]);
+			}
+			if ( peaksRatio < 3 && peaksRatio > 0.3333){				
+				realPeaks.push_back(totalPeaks[nFound-1]);	 
+			}
+		}
+	}
   }
-  // TLine* line = new TLine(firstPeakPos,0.,firstPeakPos,histo->GetMaximum());
-  // line -> Draw("same");
-  
-  
-  //--- find first dip (just before 511 peak)
-  float firstDipVal = 999999999;
-  float firstDipPos = -1;
-  int firstDipCount = 0;
-  bool firstDip = false;
-  for(int bin = 1; bin <= histo->GetNbinsX(); ++bin)
-  {
-    float binContent = histo->GetBinContent(bin);
-    float binCenter = histo->GetBinCenter(bin);
-    if( binCenter <= firstPeakPos ) continue;
-    
-    if( !firstDip )
-    {
-      if( binContent <= firstDipVal && binContent >= 100. )
-      {
-        firstDipVal = binContent;
-        firstDipPos = binCenter;
-        firstDipCount = 0;
-      }
-      else if( binContent > firstDipVal )
-        ++firstDipCount;
-    }
-    if( firstDipCount == 10 )
-      firstDip = true;
+
+  	
+	
+  //Fitting 511 keV peak
+  if (realPeaks.size() == 1 || realPeaks.size() == 2 ){
+  	TF1* fitFunc_511 = new TF1("fitFunc_511","gaus",0.90*realPeaks[0],1.10*realPeaks[0]);
+	fitFunc_511 -> SetLineColor(kBlack);
+	fitFunc_511 -> SetLineWidth(2);
+	histo -> Fit(fitFunc_511,"QRS+");	
+	res["0.511 MeV"] = std::make_pair(fitFunc_511->GetParameter(1),fitFunc_511->GetParameter(2));
+	histo -> GetXaxis() -> SetRangeUser(0.,3.*fitFunc_511->GetParameter(1));			
   }
-  // TLine* line2 = new TLine(firstDipPos,0.,firstDipPos,histo->GetMaximum());
-  // line2 -> Draw("same");
   
-  */
-  histo -> GetXaxis() -> SetRangeUser(5.,40.);
-  
-  int nPeaks = 3;                                                                                                                                                                                                                                                                                                                                                                                                          
-  TSpectrum* spectrum = new TSpectrum(nPeaks);                                                                                                                                                                                                                                                                                                                                                                             
-  int nFound = spectrum -> Search(histo, 0.5, "", 0.001);
-  double* peaks = spectrum -> GetPositionX();
-  
-  
-  //--- find and fit 511 keV peak
-  TF1* fitFunc_511 = new TF1("fitFunc_511","gaus",0.90*peaks[0],1.10*peaks[0]);
-  fitFunc_511 -> SetLineColor(kBlack);
-  fitFunc_511 -> SetLineWidth(2);
-  histo -> Fit(fitFunc_511,"QRS+");
-  
-  res["0.511 MeV"] = std::make_pair(fitFunc_511->GetParameter(1),fitFunc_511->GetParameter(2));
-  histo -> GetXaxis() -> SetRangeUser(0.,3.*fitFunc_511->GetParameter(1));
-  
-  
-  //--- find and fit 1275 keV peak
-  int iPeak_1275;
-  for(int iPeak = 1; iPeak < nFound; ++iPeak)
-  {
-    if( peaks[iPeak]/peaks[0] > 1.85 )
-    {
-      iPeak_1275 = iPeak;
-      break;
-    }
+  //Fitting 1275 keV peak
+  if (realPeaks.size() == 2){  
+	TF1* fitFunc_1275 = new TF1("fitFunc_1275","gaus",0.95*realPeaks[1],1.05*realPeaks[1]);
+	fitFunc_1275 -> SetLineColor(kBlack);
+	fitFunc_1275 -> SetLineWidth(2);
+	histo -> Fit(fitFunc_1275,"QRS+");		
+	res["1.275 MeV"] = std::make_pair(fitFunc_1275->GetParameter(1),fitFunc_1275->GetParameter(2));
   }
-  TF1* fitFunc_1275 = new TF1("fitFunc_1275","gaus",0.95*peaks[iPeak_1275],1.05*peaks[iPeak_1275]);
-  fitFunc_1275 -> SetLineColor(kBlack);
-  fitFunc_1275 -> SetLineWidth(2);
-  histo -> Fit(fitFunc_1275,"QRS+");
-  
-  res["1.275 MeV"] = std::make_pair(fitFunc_1275->GetParameter(1),fitFunc_1275->GetParameter(2));
-  
-  
-  if( ranges )
-  {
-    ranges->push_back(res["0.511 MeV"].first-8.*res["0.511 MeV"].second);
-    ranges->push_back(res["0.511 MeV"].first-5.*res["0.511 MeV"].second);
-    ranges->push_back(res["0.511 MeV"].first-2.*res["0.511 MeV"].second);
-    ranges->push_back(res["0.511 MeV"].first+2.*res["0.511 MeV"].second);
-    ranges->push_back(res["0.511 MeV"].first+5.*res["0.511 MeV"].second);
-    ranges->push_back(0.5*(res["0.511 MeV"].first+5.*res["0.511 MeV"].second+res["1.275 MeV"].first-5.*res["1.275 MeV"].second));
-    ranges->push_back(res["1.275 MeV"].first-5.*res["1.275 MeV"].second);
-    ranges->push_back(res["1.275 MeV"].first-2.*res["1.275 MeV"].second);
-    ranges->push_back(res["1.275 MeV"].first+2.*res["1.275 MeV"].second);
+ 
+  //Not Na22 spectrum controll
+  if (realPeaks.size() > 2 || nFound < 3){
+	std::cout << "Errore" << std::endl;
+	res["0.511 MeV"] = std::make_pair(-9999,0);		
+  }
+
+  //Locating and drawing ranges of interest
+  if ( realPeaks.size() > 0 && realPeaks.size() < 3 ){  
+  	ranges->push_back(res["0.511 MeV"].first-8.*res["0.511 MeV"].second);
+  	ranges->push_back(res["0.511 MeV"].first-5.*res["0.511 MeV"].second);
+	ranges->push_back(res["0.511 MeV"].first-2.*res["0.511 MeV"].second);
+	ranges->push_back(res["0.511 MeV"].first+2.*res["0.511 MeV"].second);
+	ranges->push_back(res["0.511 MeV"].first+5.*res["0.511 MeV"].second);
+   }	
+
+  if ( realPeaks.size() == 2 ){
+	ranges->push_back(0.5*(res["0.511 MeV"].first+5.*res["0.511 MeV"].second+res["1.275 MeV"].first-5.*res["1.275 MeV"].second));
+	ranges->push_back(res["1.275 MeV"].first-5.*res["1.275 MeV"].second);
+	ranges->push_back(res["1.275 MeV"].first-2.*res["1.275 MeV"].second);
+	ranges->push_back(res["1.275 MeV"].first+2.*res["1.275 MeV"].second);
+   }
     
-    for(auto range: (*ranges))
-    {
-      TLine* line = new TLine(range,3.,range,histo->GetBinContent(histo->FindBin(range)));
-      line -> SetLineWidth(1);
-      line -> SetLineStyle(7);
-      line -> Draw("same");
-    }
+  for(auto range: (*ranges)){
+	TLine* line = new TLine(range,3.,range,histo->GetBinContent(histo->FindBin(range)));
+	line -> SetLineWidth(1);
+	line -> SetLineStyle(7);
+	line -> Draw("same");
+    
   }
   
   
   return res;
 }
+
