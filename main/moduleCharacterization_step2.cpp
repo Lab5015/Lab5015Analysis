@@ -30,7 +30,6 @@
 
 
 
-
 int main(int argc, char** argv)
 {
   setTDRStyle();
@@ -61,6 +60,7 @@ int main(int argc, char** argv)
   system(Form("mkdir -p %s/CTR/",plotDir.c_str()));
   system(Form("mkdir -p %s/CTR_energyRatioCorr/",plotDir.c_str()));
   
+  //copia il file .php che si trova in una cartella fuori plotDir in plotDir definita nel config file
   system(Form("cp %s/../index.php %s",plotDir.c_str(),plotDir.c_str()));
   system(Form("cp %s/../index.php %s/qfine/",plotDir.c_str(),plotDir.c_str()));
   system(Form("cp %s/../index.php %s/tot/",plotDir.c_str(),plotDir.c_str()));
@@ -127,26 +127,25 @@ int main(int argc, char** argv)
     std::string name(object->GetName());
     std::vector<std::string> tokens = GetTokens(name,'_');
     std::size_t found;
-    
+     
     found = name.find("data_");
+    //tree
     if( found!=std::string::npos )
     {
       std::string label(Form("%s_%s_%s",tokens[1].c_str(),tokens[2].c_str(),tokens[3].c_str()));
       trees[label] = (TTree*)( inFile->Get(name.c_str()) );
     }
-    
     found = name.find("h1_energy");
     if( found!=std::string::npos )
     {
+     //Vov e th
       std::string stepLabel = tokens[3]+"_"+tokens[4];
       VovLabels[tokens[3]] += 1;
       thLabels[tokens[4]] += 1;
       stepLabels.push_back(stepLabel);
-      
       std::string string_Vov = tokens[3];
       string_Vov.erase(0,3);
       map_Vovs[stepLabel] = atof(string_Vov.c_str());
-      
       std::string string_th = tokens[4];
       string_th.erase(0,2);
       map_ths[stepLabel] = atof(string_th.c_str());
@@ -159,7 +158,16 @@ int main(int argc, char** argv)
   //--- define histograms
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep2");
   TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");
-  
+  outFile->cd();
+
+  std::map<int,TTree*> outTrees;
+  std::map<int,TTree*> outTrees2;
+  float energy511;
+  float energy1275;
+  float theIndex;
+  float timeRes;
+
+
   std::map<int,TH1F*> h1_energyRatio;
   
   std::map<int,TH1F*> h1_deltaT_raw;
@@ -188,6 +196,7 @@ int main(int argc, char** argv)
   
   //------------------
   //--- draw 1st plots
+  std::vector<double> vec_en511keV; 
   for(auto stepLabel : stepLabels)
   {
     float Vov = map_Vovs[stepLabel];
@@ -198,13 +207,20 @@ int main(int argc, char** argv)
     
     //--------------------------------------------------------
     
-    
+    //loop sulle barre 
     for(int iBar = 0; iBar < 16; ++iBar)
     {
       int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
       
+      outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1));
+      outTrees[index] -> Branch("energyPeak511",&energy511);
+      outTrees[index] -> Branch("energyPeak1275",&energy1275);
+      outTrees[index] -> Branch("indexID",&theIndex);
+      
+
       for(auto LRLabel : LRLabels )
       {
+	//label histo
         std::string label(Form("bar%02d%s_%s",iBar,LRLabel.c_str(),stepLabel.c_str()));
         
         histo = (TH1F*)( inFile->Get(Form("h1_qfine_%s",label.c_str())) );
@@ -263,15 +279,6 @@ int main(int argc, char** argv)
         histo -> SetLineWidth(2);
         histo -> Draw();
         
-        // peaks[label] = Na22SpectrumAnalyzer(histo);
-        
-        // for(auto peak : peaks[label] )
-        // {
-        //   histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
-        //   break;
-        // }
-        // histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
-        
         latex -> Draw("same");      
         histo -> Write();
         c -> Print(Form("%s/energy/c_energy__%s.png",plotDir.c_str(),label.c_str()));
@@ -304,28 +311,47 @@ int main(int argc, char** argv)
         
         ranges[index] = new std::vector<float>;
         peaks[index] = Na22SpectrumAnalyzer(histo,ranges[index]);
-        
+	
+	
+
 	if (peaks[index]["0.511 MeV"].first== -9999){
 		peaks.erase(index);
 		ranges.erase(index);
+		peaks[index]["0.511 MeV"].first = -10;
+		peaks[index]["1.275 MeV"].first = -10;
 	}
 
+
+	energy511 = peaks[index]["0.511 MeV"].first;
+        energy1275 = peaks[index]["1.275 MeV"].first;
+	theIndex = index;
+	outTrees[index] -> Fill();
+	
+        
+	
         for(auto peak : peaks[index] )
         {
           histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
           break;
         }
-        histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
+	
+        
+	histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
         
         latex -> Draw("same");
         histo -> Write();
         c -> Print(Form("%s/energy/c_energy__%s.png",plotDir.c_str(),label.c_str()));
         c -> Print(Form("%s/energy/c_energy__%s.pdf",plotDir.c_str(),label.c_str()));
         delete c;
+
       }
     }
   }
   
+
+
+
+
   // end 1st plots
   
   
@@ -352,11 +378,13 @@ int main(int argc, char** argv)
       
       accept[index1][entry] = false;
       
+      
       if( !ranges[index1] ) continue;
       int energyBin = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges[index1])+1;
       if( energyBin < 1 ) continue;
       
-      int index2( (1000000*energyBin+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+      float index2( (10000000*energyBin+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+      
       
       accept[index1][entry] = true;
       
@@ -397,8 +425,7 @@ int main(int argc, char** argv)
     CTRMeans[index] = mean;
     CTRSigmas[index] = effSigma;
   }
-  
-  
+   
   for(auto stepLabel : stepLabels)
   {
     float Vov = map_Vovs[stepLabel];
@@ -407,36 +434,42 @@ int main(int argc, char** argv)
     for(int iBar = 0; iBar < 16; ++iBar)
     {
       int index1( (10000*int(Vov*100.)) + (100*vth1) + iBar );
-      
+     
       std::string labelLR(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));
       
+
       if( !ranges[index1] ) continue;
       int nEnergyBins = ranges[index1]->size()-1;
       
+
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
       {
-        int index2( (1000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
-        if( !h1_energyRatio[index2] ) continue;
-        std::string labelLR_energyBin(Form("%s_energyBin%d",labelLR.c_str(),iEnergyBin));
+	float index2( (10000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
+	
+	if (!h1_energyRatio[index2]) continue;
+
+	std::string labelLR_energyBin(Form("%s_energyBin%d",labelLR.c_str(),iEnergyBin));
         
         c = new TCanvas(Form("c_energyRatio_%s",labelLR_energyBin.c_str()),Form("c_energyRatio_%s",labelLR_energyBin.c_str()));
-        
         histo = h1_energyRatio[index2];
         histo -> GetXaxis() -> SetRangeUser(histo->GetMean()-5.*histo->GetRMS(),histo->GetMean()+5.*histo->GetRMS());
-        histo -> SetMaximum(1.25*histo->GetBinContent(histo->FindBin(FindXMaximum(histo,histo->GetMean()-2.*histo->GetRMS(),histo->GetMean()+2.*histo->GetRMS()))));
+	histo -> SetMaximum(1.25*histo->GetBinContent(histo->FindBin(FindXMaximum(histo,histo->GetMean()-2.*histo->GetRMS(),histo->GetMean()+2.*histo->GetRMS()))));
         histo -> SetTitle(Form(";energy_{right} / energy_{left};entries"));
         histo -> SetLineColor(kRed);
         histo -> SetLineWidth(2);
         histo -> Draw();
         histo -> Write();
-        
+
+
         fitFunc_energyRatio[index2] = new TF1(Form("fitFunc_energyRatio_%s",labelLR_energyBin.c_str()),"gaus",histo->GetMean()-2.*histo->GetRMS(),histo->GetMean()+2.*histo->GetRMS());
         histo -> Fit(fitFunc_energyRatio[index2],"QNRS");
         histo -> Fit(fitFunc_energyRatio[index2],"QS+","",histo->GetMean()-2.*histo->GetRMS(),histo->GetMean()+2.*histo->GetRMS());
         fitFunc_energyRatio[index2] -> SetLineColor(kBlack);
         fitFunc_energyRatio[index2] -> SetLineWidth(2);
         fitFunc_energyRatio[index2] -> Draw("same");
-        
+                
+
+
         latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
         latex -> SetNDC();
         latex -> SetTextFont(42);
@@ -447,6 +480,8 @@ int main(int argc, char** argv)
         c -> Print(Form("%s/energyRatio/c_energyRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
         c -> Print(Form("%s/energyRatio/c_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
         delete c;
+
+
       }
     }
   }
@@ -472,9 +507,10 @@ int main(int argc, char** argv)
       int index1( (10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
       
       if( !accept[index1][entry] ) continue;
+      
       int energyBin = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges[index1])+1;
       
-      int index2( (1000000*energyBin+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+      float index2( (10000000*energyBin+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
       
       float energyRatioMean = fitFunc_energyRatio[index2]->GetParameter(1);
       float energyRatioSigma = fitFunc_energyRatio[index2]->GetParameter(2);
@@ -531,8 +567,9 @@ int main(int argc, char** argv)
       
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
       {
-        int index2( (1000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
-        if( !p1_deltaT_vs_energyRatio[index2] ) continue;
+        float index2( (10000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
+        if(!p1_deltaT_vs_energyRatio[index2]) continue;
+ 
         std::string labelLR_energyBin(Form("%s_energyBin%d",labelLR.c_str(),iEnergyBin));
         
         
@@ -590,8 +627,8 @@ int main(int argc, char** argv)
       if( !accept[index1][entry] ) continue;
       int energyBin = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges[index1])+1;
 
-      int index2( (1000000*energyBin+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );      
-      
+      float index2( (10000000*energyBin+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );      
+       
       
       long long deltaT = anEvent->timeR - anEvent->timeL;
       
@@ -612,7 +649,8 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
   
-  
+  float theIndex2;
+  //float enBin
   
   //------------------
   //--- draw 4th plots
@@ -630,10 +668,16 @@ int main(int argc, char** argv)
       if( !ranges[index1] ) continue;
       int nEnergyBins = ranges[index1]->size()-1;
       
+      
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
       {
-        int index2( (1000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
-	if( !h1_deltaT_energyRatioCorr[index2] ) continue;
+        float index2( (10000000*iEnergyBin+10000*int(Vov*100.)) + (100*vth1) + iBar );
+	outTrees2[index2] = new TTree(Form("dataRes_bar%02dL-R_Vov%.1f_th%02.0f_enBin%02d",iBar,Vov,vth1,iEnergyBin),Form("dataRes_bar%02dL-R_Vov%.1f_th%02.0f_enBin%02d",iBar,Vov,vth1,iEnergyBin));
+        //outTrees2[index2] -> Branch("energyBin", &enBin);
+	outTrees2[index2] -> Branch("timeResolution",&timeRes);
+	outTrees2[index2] -> Branch("indexID",&theIndex2);
+	if(!h1_deltaT_energyRatioCorr[index2]) continue;
+
         std::string labelLR_energyBin(Form("%s_energyBin%d",labelLR.c_str(),iEnergyBin));
         
         
@@ -673,6 +717,13 @@ int main(int argc, char** argv)
         float delta = max-min;
         float sigma = 0.5*delta;
         float effSigma = sigma;
+	
+	
+	theIndex2 = index2;
+	timeRes = fabs(fitFunc2->GetParameter(2));
+      
+        std::cout<<"eff sigma"<<effSigma<<"time res "<<timeRes<<std::endl;
+	outTrees2[index2]->Fill();
         
         histo -> GetXaxis() -> SetRangeUser(fitFunc2->GetParameter(1)-10.*fitFunc2->GetParameter(2),
                                             fitFunc2->GetParameter(1)+10.*fitFunc2->GetParameter(2));
@@ -726,8 +777,6 @@ int main(int argc, char** argv)
         latex -> SetTextSize(0.04);
         latex -> SetTextColor(kRed);
         latex -> Draw("same");
-        
-        c -> Print(Form("%s/CTR_energyRatioCorr/c_deltaT_energyRatioCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
         c -> Print(Form("%s/CTR_energyRatioCorr/c_deltaT_energyRatioCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
         delete c;
       }
