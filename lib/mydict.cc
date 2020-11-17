@@ -42,6 +42,7 @@ namespace std {} using namespace std;
 #include "./interface/AnalysisUtils.h"
 #include "./interface/FitUtils.h"
 #include "./interface/Na22SpectrumAnalyzer.h"
+#include "./interface/Co60SpectrumAnalyzer.h"
 
 // Header files passed via #pragma extra_include
 
@@ -746,6 +747,7 @@ namespace {
 "./interface/AnalysisUtils.h",
 "./interface/FitUtils.h",
 "./interface/Na22SpectrumAnalyzer.h",
+"./interface/Co60SpectrumAnalyzer.h",
 0
     };
     static const char* includePaths[] = {
@@ -776,6 +778,7 @@ class __attribute__((annotate("$clingAutoload$./interface/AnalysisUtils.h")))  M
 #include "./interface/AnalysisUtils.h"
 #include "./interface/FitUtils.h"
 #include "./interface/Na22SpectrumAnalyzer.h"
+#include "./interface/Co60SpectrumAnalyzer.h"
 
 #undef  _BACKWARD_BACKWARD_WARNING_H
 )DICTPAYLOAD";

@@ -167,7 +167,7 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
   }
  
   //Not Na22 spectrum controll
-  if (realPeaks.size == 0 || realPeaks.size() > 2 || nFound < 3){
+  if (realPeaks.size() == 0 || realPeaks.size() > 2 || nFound < 3){
 	std::cout << "Errore" << std::endl;
 	res["0.511 MeV"] = std::make_pair(-9999,0);		
   }

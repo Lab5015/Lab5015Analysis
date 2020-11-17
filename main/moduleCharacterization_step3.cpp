@@ -49,8 +49,12 @@ int main(int argc, char** argv)
   if( argc > 2 ) debugMode = atoi(argv[2]);
 
 
+  typedef std::numeric_limits<double> dbl;
+  std::cout.precision(dbl::max_digits10);
+
 //--- get parameters
   std::string plotDir = opts.GetOpt<std::string>("Output.plotDirStep3");
+  system(Form("rm -r %s", plotDir.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
   system(Form("mkdir -p %s/tot/",plotDir.c_str()));
   system(Form("mkdir -p %s/energy/",plotDir.c_str()));
@@ -104,9 +108,9 @@ int main(int argc, char** argv)
     }
   }
   
-  //--- define output root file
+  /*//--- define output root file
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep3");
-  TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");
+  TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");*/
 
   //--- get plot settings
   TCanvas* c;
@@ -146,11 +150,9 @@ int main(int argc, char** argv)
 	  while( (object = next()) )
 	  {
 	    std::string name(object->GetName());
-	    //la funzione GetTokens è implementata nel file AnalysisUtilis.cc
 	    std::vector<std::string> tokens = GetTokens(name,'_');
 	    std::size_t found;
 	    
-	    //questo idem ma per histo
 	    found = name.find("h1_energy");
 	    if( found!=std::string::npos )
 	    {
@@ -159,18 +161,14 @@ int main(int argc, char** argv)
 	      VovLabels[tokens[3]] += 1;
 	      thLabels[tokens[4]] += 1;
 	      stepLabels.push_back(stepLabel);
-	      //erase:Removes from the vector either a single element (position) or a range of elements ([first,last)). Quindi elimina Vov e rimane solo il numero associato a Vov
 	      std::string string_Vov = tokens[3];
 	      string_Vov.erase(0,3);
-	      //atof: Convert string to double
 	      map_Vovs[stepLabel] = atof(string_Vov.c_str());
-	      //Analogamente per il 4
 	      std::string string_th = tokens[4];
 	      string_th.erase(0,2);
 	      map_ths[stepLabel] = atof(string_th.c_str());
 	    }
 	  }
-	  //sort=ordina nel range, ordine alfanumerico
 	  std::sort(stepLabels.begin(),stepLabels.end());
 	  stepLabels.erase(std::unique(stepLabels.begin(),stepLabels.end()),stepLabels.end());
 	   
@@ -302,7 +300,6 @@ int main(int argc, char** argv)
 	    int iter = 0;
 	    for(auto mapIt : VovLabels)
 	    {
-	      //std::cout<<"Vov Label "<< mapIt.first.c_str()<<std::endl;
 	      std::string label1(Form("bar%02dL_%s",iBar,mapIt.first.c_str()));
 	      std::string label2(Form("bar%02dR_%s",iBar,mapIt.first.c_str()));
 
@@ -412,7 +409,6 @@ int main(int argc, char** argv)
 	      std::string label2(Form("R_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str()));
 
 	      if( g_tot_vs_iBar[Form("L_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str())]){
-		//std::cout<<"VovL"<<mapIt2.first.c_str()<<"thL"<<mapIt1.first.c_str()<<std::endl;
 		TGraphErrors* g_totL = g_tot_vs_iBar[label1];
 		if(g_totL->GetN()>0){
 		  g_totL -> SetLineColor(kBlue);
@@ -433,7 +429,6 @@ int main(int argc, char** argv)
 	      }
 
 	      if(g_tot_vs_iBar[Form("R_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str())]){
-		//std::cout<<"VovR"<<mapIt2.first.c_str()<<"thR"<<mapIt1.first.c_str()<<std::endl;
 		TGraphErrors* g_totR = g_tot_vs_iBar[label2];
 		if(g_totR->GetN()>0){
 		  g_totR -> SetLineColor(kRed);
@@ -447,6 +442,8 @@ int main(int argc, char** argv)
 	          latex -> SetTextSize(0.04);
 	          latex -> SetTextColor(kBlack);
 	          latex -> Draw("same");
+
+		
 
 		  c1 -> Print(Form("%s/tot/c_tot_vs_bar_%s_%s.png",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
 	          c1 -> Print(Form("%s/tot/c_tot_vs_bar_%s_%s.pdf",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
@@ -462,6 +459,8 @@ int main(int argc, char** argv)
 
 
   //int d=0;
+  std::vector<float> vec_Vov;
+  std::vector<float> vec_th;	
   for(auto file: listStep2){
 	  //int i=0;
 	  TFile* inFile = TFile::Open(file.c_str(),"READ");
@@ -472,65 +471,53 @@ int main(int argc, char** argv)
 	  while( (object = next()) )
 	  {
 	    std::string name(object->GetName());
-	    //la funzione GetTokens è implementata nel file AnalysisUtilis.cc
 	    std::vector<std::string> tokens = GetTokens(name,'_');
 	    std::size_t found;
-            std::size_t found1;
-	    //il metodo find() legge name e conta i caratteri char finchè non incontra "data_"    
+            std::size_t found1;  
 	    found = name.find("data_");
             found1 = name.find("dataRes_");
-	    //string::npos restituisce il massimo di un oggetto size_t, in questo caso è sottinteso name
 	    //tree
 	    if( found!=std::string::npos )
 	    {
-	      //il label è formato dai primi tre termini del vettore tokens separato da trattini: ibar, Vov, th
 	      std::string label(Form("%s_%s_%s",tokens[1].c_str(),tokens[2].c_str(),tokens[3].c_str()));
-	      //std::cout<<"label"<<label<<std::endl;
-	      //std::cout<<"tree label"<<inFile->Get(name.c_str())<<std::endl;
 	      trees[label] = (TTree*)( inFile->Get(name.c_str()) );
 	      std::string stepLabel = tokens[2]+"_"+tokens[3];
 	      VovLabels[tokens[2]] += 1;
 	      thLabels[tokens[3]] += 1;
 	      stepLabels.push_back(stepLabel);
-	      //erase:Removes from the vector either a single element (position) or a range of elements ([first,last)). Quindi elimina Vov e rimane solo il numero associato a Vov
 	      std::string string_Vov = tokens[2];
 	      string_Vov.erase(0,3);
-	      //atof: Convert string to double
 	      map_Vovs[stepLabel] = atof(string_Vov.c_str());
-	      //Analogamente per il 4
 	      std::string string_th = tokens[3];
 	      string_th.erase(0,2);
 	      map_ths[stepLabel] = atof(string_th.c_str());
 	      //i++;
 	    }
-	  //sort=ordina nel range, ordine alfanumerico
+	  
 	  std::sort(stepLabels.begin(),stepLabels.end());
 	  stepLabels.erase(std::unique(stepLabels.begin(),stepLabels.end()),stepLabels.end());
 
 	    if( found1!=std::string::npos )
 	    {
-	      //il label è formato dai primi tre termini del vettore tokens separato da trattini: ibar, Vov, th
 	      std::string label2(Form("%s_%s_%s_%s",tokens[1].c_str(),tokens[2].c_str(),tokens[3].c_str(),tokens[4].c_str()));
-	      //std::cout<<"label2"<<label2<<std::endl;
-	      //std::cout<<"tree label2"<<inFile->Get(name.c_str())<<std::endl;
 	      trees2[label2] = (TTree*)( inFile->Get(name.c_str()) );
 	      std::string stepLabel = tokens[2]+"_"+tokens[3];
 	      VovLabels[tokens[2]] += 1;
 	      thLabels[tokens[3]] += 1;
 	      stepLabels.push_back(stepLabel);
-	      //erase:Removes from the vector either a single element (position) or a range of elements ([first,last)). Quindi elimina Vov e rimane solo il numero associato a Vov
 	      std::string string_Vov = tokens[2];
 	      string_Vov.erase(0,3);
-	      //atof: Convert string to double
 	      map_Vovs[stepLabel] = atof(string_Vov.c_str());
-	      //Analogamente per il 4
 	      std::string string_th = tokens[3];
 	      string_th.erase(0,2);
 	      map_ths[stepLabel] = atof(string_th.c_str());
+              float Vov = map_Vovs[stepLabel];
+	      float vth1 = map_ths[stepLabel];
+              vec_Vov.push_back(Vov);
+	      vec_th.push_back(vth1);
 	      EnBinLabels[tokens[4]] += 1;
 	      std::string string_EnBin = tokens[4];
 	      string_EnBin.erase(0,9);
-	      //atof: Convert string to double
 	      map_EnBin[stepLabel] = atof(string_EnBin.c_str());
 	      //d++;
 	    }
@@ -540,66 +527,11 @@ int main(int argc, char** argv)
 	  //std::cout<<"d="<<d<<std::endl;
 
   }
-    
-  
-  
-  /*int i = 0;
-  int l = 0;
-  int d = 0;
-  std::vector<float> vec_Vov;
-  std::vector<float> vec_th;	  
-  for(auto file: listStep2){
-	  
-	  //--- open files
 
-	   for (auto stepLabel: stepLabels){
-	  	float Vov = map_Vovs[stepLabel];
-	  	float vth1 = map_ths[stepLabel];
-	        std::string VovLabel(Form("Vov%.1f",Vov));
-	        std::string thLabel(Form("th%02.0f",vth1));
-                vec_Vov.push_back(Vov);
-		vec_th.push_back(vth1);
-		for (int iBar=0; iBar<16; iBar++){
-			for(int energyBin=1; energyBin<9; energyBin++){  
-			  TFile* inFile = TFile::Open(file.c_str(),"READ");
-			  
-			  TList* list = inFile -> GetListOfKeys();
-			  TIter next(list);
-			  TObject* object = 0;
-			  while( (object = next()) )
-			  {
-			    std::string label = Form("data__bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1);
-			    //std::string label1 = Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1);
-			    if(inFile->Get(label.c_str()) != 0){
-			      trees[label] = (TTree*)( inFile->Get(label.c_str()) );
-			      i++;
-
-			    }
-
-			     //if(inFile->Get(label1.c_str()) != 0){
-			      //l++;
-			      
-			        std::string label2 = Form("data_bar%02dL-R_Vov%.1f_th%02.0f_enBin%02d",iBar,Vov,vth1,energyBin);
-				if(inFile->Get(label2.c_str()) != 0){
-			          trees[label2] = (TTree*)( inFile->Get(label2.c_str()) );
-			          d++;
-				}
-			       }
-
-			    //}
-			  }	
-		}	  
-	  }
-  }
-
-  std::cout<<i<<std::endl;
-  //std::cout<<l<<std::endl;
-  std::cout<<d<<std::endl;
- 
   std::sort(vec_Vov.begin(),vec_Vov.end());
   std::sort(vec_th.begin(),vec_th.end());
   vec_Vov.erase(std::unique(vec_Vov.begin(),vec_Vov.end()),vec_Vov.end());
-  vec_th.erase(std::unique(vec_th.begin(),vec_th.end()),vec_th.end());*/
+  vec_th.erase(std::unique(vec_th.begin(),vec_th.end()),vec_th.end()); 
 
 
   std::map<float,float> map_en511;
@@ -633,7 +565,6 @@ int main(int argc, char** argv)
     {
       mapIt.second -> GetEntry(entry);
     }
-    //std::cout<<"en511 = "<<energy511<<" en1275 = "<<energy1275<<" indexID"<<theIndex<<std::endl;
     if(energy511 > 0.1){  
       map_en511[theIndex] = energy511;
     }
@@ -777,8 +708,7 @@ int main(int argc, char** argv)
 
 
 
-  typedef std::numeric_limits<double> dbl;
-  std::cout.precision(dbl::max_digits10);
+
 
   std::map<int, TCanvas*> c_en511_vs_th;
   std::map<int, TCanvas*> c_en511_vs_Vov;
@@ -885,11 +815,16 @@ int main(int argc, char** argv)
     }
     
   }
+ 
+  for(std::map<int,TCanvas*>::iterator index = c_en511_vs_Vov.begin(); index != c_en511_vs_Vov.end(); index++){
+    index->second-> Print(Form("%s/energy/c_energy511_vs_Vov_bar%d.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/energy/c_energy511_vs_Vov_bar%d.pdf",plotDir.c_str(),index->first));
+  }
 
 
   //summary plots Energy Peak 511 vs iBar
   for(std::map<float,TGraphErrors*>::iterator index = g_en511_vs_iBar.begin(); index != g_en511_vs_iBar.end(); index++){
-    //std::cout<<"indexfirst= "<<index->first<<std::endl;
+ 
     int th;
     float Vov;
     int Vov_th_ID;
@@ -1227,60 +1162,92 @@ int main(int argc, char** argv)
 
 //Time Resolution
 
-  std::map<float,float> map_timeRes;
+  std::map<double,float> map_timeRes;
+  std::map<double,float> map_enBin;
+  std::map<double,float> map_enBin511;
+  std::map<double,float> map_enBin1275;
 
-  std::map<float,TGraphErrors*> g_timeRes_vs_th;
-  std::map<float,TGraphErrors*> g_timeRes_vs_Vov;
-  std::map<float,TGraphErrors*> g_timeRes_vs_iBar;
+  std::map<double,TGraphErrors*> g_timeRes_vs_th;
+  std::map<double,TGraphErrors*> g_timeRes_vs_Vov;
+  std::map<double,TGraphErrors*> g_timeRes511_vs_iBar;
+  std::map<double,TGraphErrors*> g_timeRes1275_vs_iBar;
+  std::map<double,TGraphErrors*> g_timeRes_vs_enBin;
 
   for (auto mapIt : trees2){
     float timeRes = -1;
-    float theIndex2 = -1;
+    double theIndex2 = -1;
+    float enBin = -1;
     mapIt.second -> SetBranchStatus("*",0);
     mapIt.second -> SetBranchStatus("timeResolution",  1); mapIt.second -> SetBranchAddress("timeResolution",  &timeRes);
-    mapIt.second -> SetBranchStatus("indexID",  1); mapIt.second -> SetBranchAddress("indexID",   &theIndex2);
+    mapIt.second -> SetBranchStatus("indexID2",  1); mapIt.second -> SetBranchAddress("indexID2",   &theIndex2);
+    mapIt.second -> SetBranchStatus("energyBin",  1); mapIt.second -> SetBranchAddress("energyBin",   &enBin);
     int nEntries = mapIt.second->GetEntries();
     for(int entry = 0; entry < nEntries; ++entry)
     {
       mapIt.second -> GetEntry(entry);
     }
-    //std::cout<<"Time Res = "<<timeRes<<" indexID"<<theIndex2<<std::endl;
-    if(timeRes > 0.1){  
+    //std::cout<<"Time Res = "<<timeRes<<" indexID"<<theIndex2<<"enBin"<<enBin<<std::endl;
+    if(timeRes > 0){  
       map_timeRes[theIndex2] = timeRes;
-      //std::cout<<theIndex2<<std::endl;
+      map_enBin[theIndex2] = enBin;
+      if (int(theIndex2/10000000) == 3){
+        map_enBin511[theIndex2] = enBin;
+      }
+      if (int(theIndex2/10000000) == 8){
+        map_enBin1275[theIndex2] = enBin;
+      }
+      
     }
   }
 
-  //TimeRes vs th and vs Vov
- for(std::map<float,float>::iterator index = map_timeRes.begin(); index != map_timeRes.end(); index++){
+
+  //TimeRes vs th, vs Vov, vs enBin and vs iBar
+ for(std::map<double,float>::iterator index = map_timeRes.begin(); index != map_timeRes.end(); index++){
     //std::cout<<"index"<<index->first<<std::endl;
     // int index2( (1000000*energyBin+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );  
     float Vov;
     int th;
     int iBar;
     int enBin;
-    enBin = int(index->first/10000000);
-    Vov = float(int((index->first-enBin*10000000)/10000)/100);
-    th = int((index->first - enBin*10000000 - Vov*1000000)/100);
-    iBar = int(index->first - enBin*10000000 - Vov*1000000 - th*100);
-    //std::cout<<"EnBin "<<enBin<<" Vov "<<Vov<<" th "<<th<<" iBar "<<iBar<<std::endl;
-    int Vov_iBar_enBin_ID;
-    Vov_iBar_enBin_ID = 10000000*enBin + Vov*1000000 + iBar;
-    int th_iBar_enBin_ID;
-    th_iBar_enBin_ID = 10000000*enBin + th*100 + iBar;
+    enBin = int(index->first/10000000.);
+    Vov = float(int(double(index->first-enBin*10000000)/10000.)/100);
+    th = int(double(index->first - enBin*10000000 - Vov*1000000)/100);
+    iBar = int(double(index->first - enBin*10000000 - Vov*1000000 - th*100));
+    double Vov_iBar_enBin_ID;
+    Vov_iBar_enBin_ID = double(10000000*enBin) + double(Vov*1000000) + double(iBar);
+    double th_iBar_enBin_ID;
+    th_iBar_enBin_ID = double(10000000*enBin) + double(th*100) + double(iBar);
+    double Vov_th_iBar_ID;
+    Vov_th_iBar_ID = double(Vov*1000000) + double(th*100) + double(iBar);
+    double Vov_th_ID;
+    Vov_th_ID = double(Vov*1000000) + double(th*100);
+    double index2;
+    index2 = double(10000000*enBin) + double(Vov*1000000) + double(th*100) + double(iBar);
 
-    if( g_timeRes_vs_th[Vov_iBar_enBin_ID] == NULL ){	
+    if( g_timeRes_vs_th[Vov_iBar_enBin_ID] == NULL ){
       g_timeRes_vs_th[Vov_iBar_enBin_ID] = new TGraphErrors();
     }
     if( g_timeRes_vs_Vov[th_iBar_enBin_ID] == NULL ){	
       g_timeRes_vs_Vov[th_iBar_enBin_ID] = new TGraphErrors();
     }
-    /*if( g_en511_vs_iBar[Vov_th_ID] == NULL ){	
-      g_en511_vs_iBar[Vov_th_ID] = new TGraphErrors();
-    }*/
+    if( g_timeRes_vs_enBin[Vov_th_iBar_ID] == NULL ){	
+      g_timeRes_vs_enBin[Vov_th_iBar_ID] = new TGraphErrors();
+    }
     
-    if (index->second>0.1){
-      //511 Peak
+    if (enBin ==3){
+      if( g_timeRes511_vs_iBar[Vov_th_ID] == NULL ){	
+      g_timeRes511_vs_iBar[Vov_th_ID] = new TGraphErrors();
+      }
+    }
+
+    if (enBin ==8){
+      if( g_timeRes1275_vs_iBar[Vov_th_ID] == NULL ){	
+      g_timeRes1275_vs_iBar[Vov_th_ID] = new TGraphErrors();
+      }
+    }
+
+
+    if (index->second>0){
       g_timeRes_vs_th[Vov_iBar_enBin_ID]->SetPoint(g_timeRes_vs_th[Vov_iBar_enBin_ID]->GetN(), th, (index->second)/2.);
       //std::cout<<"N"<<g_timeRes_vs_th[Vov_iBar_enBin_ID]->GetN()<<"th"<<th<<"RES "<<(index->second)/2<<"   VovIbarenBinID"<<Vov_iBar_enBin_ID<<"Vov"<<Vov<<std::endl;
       g_timeRes_vs_th[Vov_iBar_enBin_ID]->SetPointError(g_timeRes_vs_th[Vov_iBar_enBin_ID]->GetN()-1, 0., 0.);
@@ -1289,46 +1256,62 @@ int main(int argc, char** argv)
       //std::cout<<"N"<<g_timeRes_vs_Vov[th_iBar_enBin_ID]->GetN()<<"th"<<th<<"RES "<<(index->second)/2<<"   thIbarenBinID"<<th_iBar_enBin_ID<<"Vov"<<Vov<<std::endl;
       g_timeRes_vs_Vov[th_iBar_enBin_ID]->SetPointError(g_timeRes_vs_Vov[th_iBar_enBin_ID]->GetN()-1, 0., 0.);
 
-      /*g_en511_vs_iBar[Vov_th_ID]->SetPoint(g_en511_vs_iBar[Vov_th_ID]->GetN(), iBar, index->second);
-      //std::cout<<"N"<<g_en511_vs_iBar[Vov_th_ID]->GetN()<<"Vov"<<Vov<<"en"<<index->second<<"thVovID"<<Vov_th_ID<<"th"<<th<<"bar"<<iBar<<std::endl;
-      g_en511_vs_iBar[Vov_th_ID]->SetPointError(g_en511_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);*/
-      
+      g_timeRes_vs_enBin[Vov_th_iBar_ID]->SetPoint(g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetN(), map_enBin[index->first], (index->second)/2.);
+      g_timeRes_vs_enBin[Vov_th_iBar_ID]->SetPointError(g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetN()-1, 0., 0.);
+
     }
+
+    if (enBin ==3){
+      g_timeRes511_vs_iBar[Vov_th_ID]->SetPoint(g_timeRes511_vs_iBar[Vov_th_ID]->GetN(), iBar, (index->second)/2);
+      //std::cout<<"N"<<g_timeRes511_vs_iBar[Vov_th_ID]->GetN()<<"iBar"<<iBar<<"RES "<<(index->second)/2<<std::endl;
+      g_timeRes511_vs_iBar[Vov_th_ID]->SetPointError(g_timeRes511_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);
+    }
+
+    if (enBin ==8){
+      g_timeRes1275_vs_iBar[Vov_th_ID]->SetPoint(g_timeRes1275_vs_iBar[Vov_th_ID]->GetN(), iBar, (index->second)/2);
+      //std::cout<<"N"<<g_timeRes1275_vs_iBar[Vov_th_ID]->GetN()<<"iBar"<<iBar<<"RES "<<(index->second)/2<<std::endl;
+      g_timeRes1275_vs_iBar[Vov_th_ID]->SetPointError(g_timeRes1275_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);
+    }
+
+    
+      
   }
   
   
   //float tResMin = opts.GetOpt<float>("Plots.tResMin");
   //float tResMax = opts.GetOpt<float>("Plots.tResMax");
-  std::map<int, TCanvas*> c_timeRes_vs_th;
-  std::map<int, TCanvas*> c_timeRes_vs_Vov;
-  int Vov_iBar_enBin_ID;
-  int th_iBar_enBin_ID;
-  int iBar_enBin_ID;
+  std::map<double, TCanvas*> c_timeRes_vs_th;
+  std::map<double, TCanvas*> c_timeRes_vs_Vov;
+  std::map<double, TCanvas*> c_timeRes_vs_enBin;
+  std::map<double, TCanvas*> c_timeRes511_vs_iBar;
+  std::map<double, TCanvas*> c_timeRes1275_vs_iBar;
+  double Vov_iBar_enBin_ID;
+  double th_iBar_enBin_ID;
+  double iBar_enBin_ID;
+  double Vov_th_ID;
   float Vov;
   int iBar;
   int enBin;
   int th;
 
   //summary plot time resolution vs th
-  for(std::map<float,TGraphErrors*>::iterator index = g_timeRes_vs_th.begin(); index != g_timeRes_vs_th.end(); index++){
-    //std::cout<<"indexfirst= "<<index->first<<std::endl;
-    enBin = int(index->first/10000000);
-    Vov = float(int((index->first-enBin*10000000)/10000)/100);
-    iBar = int(index->first - enBin*10000000 - Vov*1000000);
-    //std::cout<<"EnBin "<<enBin<<" Vov "<<Vov<<" iBar "<<iBar<<std::endl;
-    Vov_iBar_enBin_ID = 10000000*enBin + Vov*1000000 + iBar;
+  for(std::map<double,TGraphErrors*>::iterator index = g_timeRes_vs_th.begin(); index != g_timeRes_vs_th.end(); index++){
+ 
+    enBin = int(double(index->first/10000000.));
+    Vov = float(int(double(index->first-enBin*10000000.)/10000.)/100.);
+    iBar = int(double(index->first - enBin*10000000 - Vov*1000000));
+    Vov_iBar_enBin_ID = double(10000000*enBin) + double(Vov*1000000) + double(iBar);
     iBar_enBin_ID = 10000000*enBin + iBar;
-    //std::cout<<"Vov_iBar_enBIn "<< Vov_iBar_enBin_ID<<std::endl;
+
     for(int bar=0; bar<16; bar++){
       if(bar==iBar){
         for(int energyBin=1; energyBin<9; energyBin++){
           if(energyBin==enBin){  
             if(c_timeRes_vs_th[iBar_enBin_ID]==NULL){
-              //std::cout<<"bar_en_ID "<<iBar_enBin_ID<<std::endl;
               c_timeRes_vs_th[iBar_enBin_ID] = new TCanvas(Form("c_timeRes_vs_th_bar_%d_enBin%d",bar,energyBin),Form("c_timeRes_vs_th_bar_%d_enBin%d",bar,energyBin));
               iter[iBar_enBin_ID] = 0;
-              TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,150,64.,1000) );
-              hPad -> SetTitle(";threshold [DAC];#sigma_{t_{eff}}/2 [ps]");
+              TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,0,64.,1000) );
+              hPad -> SetTitle(";threshold [DAC];#sigma_{t_{gaus}}/2 [ps]");
 	      hPad -> Draw();
 	      gPad -> SetGridy();
             }
@@ -1358,15 +1341,13 @@ int main(int argc, char** argv)
   }  
     
 
-  for(std::map<int,TCanvas*>::iterator index = c_timeRes_vs_th.begin(); index != c_timeRes_vs_th.end(); index++){
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_th_bar_%d_enBin%d.png",plotDir.c_str(),index->first-(int(index->first/10000000))*10000000, int(index->first/10000000)));
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_th_bar_%d_enBin%d.pdf",plotDir.c_str(),index->first-(int(index->first/10000000))*10000000, int(index->first/10000000)));
-    //std::cout<<"enBin "<< int(index->first/10000000)<<"bar "<<index->first-(int(index->first/10000000))*10000000<<std::endl;
-  }
+  for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_th.begin(); index != c_timeRes_vs_th.end(); index++){
+    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_th_bar_%d_enBin%d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_th_bar_%d_enBin%d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+ }
 
-
-  //summary plot time resolution vs Vov
-  for(std::map<float,TGraphErrors*>::iterator index = g_timeRes_vs_Vov.begin(); index != g_timeRes_vs_Vov.end(); index++){
+  //summary plot time resolution vs Vov at best th ???? nel senso non so se può andare
+/*  for(std::map<double,TGraphErrors*>::iterator index = g_timeRes_vs_Vov.begin(); index != g_timeRes_vs_Vov.end(); index++){
     //std::cout<<"indexfirst= "<<index->first<<std::endl;
     enBin = int(index->first/10000000);
     th = int((index->first - enBin*10000000)/100);
@@ -1384,22 +1365,18 @@ int main(int argc, char** argv)
               c_timeRes_vs_Vov[iBar_enBin_ID] = new TCanvas(Form("c_timeRes_vs_Vov_bar_%d_enBin%d",bar,energyBin),Form("c_timeRes_vs_Vov_bar_%d_enBin%d",bar,energyBin));
               iter[iBar_enBin_ID] = 10000000;
               TH1F* hPad = (TH1F*)( gPad->DrawFrame(0,150,10.,1000) );
-              hPad -> SetTitle(";V_{ov};#sigma_{t_{eff}}/2 [ps]");
+              hPad -> SetTitle(";V_{ov};#sigma_{t_{gaus}}/2 [ps]");
 	      hPad -> Draw();
 	      gPad -> SetGridy();
             }
 
 	    c_timeRes_vs_Vov[iBar_enBin_ID]->cd();
             TGraph* g_tRes = g_timeRes_vs_Vov[th_iBar_enBin_ID];
-	    std::cout<<"indexfirst= "<<index->first<<std::endl;
-            std::cout<<"g_timeRes_vs_Vov[th_iBar_enBin_ID]->GetPointY(0)  "<<g_timeRes_vs_Vov[th_iBar_enBin_ID]->GetPointY(0)<<std::endl;
-	    std::cout<<"iter[iBar_enBin_ID]prima   "<<iter[iBar_enBin_ID]<<std::endl;
             if(g_timeRes_vs_Vov[th_iBar_enBin_ID]->GetPointY(0)<iter[iBar_enBin_ID]){
 	      iter[iBar_enBin_ID] = g_timeRes_vs_Vov[th_iBar_enBin_ID]->GetPointY(0);
-	      std::cout<<"iter[iBar_enBin_ID]dopo  "<<iter[iBar_enBin_ID]<<std::endl;
 	      c_timeRes_vs_Vov[iBar_enBin_ID]->Clear();
 	      TH1F* hPad = (TH1F*)( gPad->DrawFrame(0,150,10.,1000) );
-              hPad -> SetTitle(";V_{ov};#sigma_{t_{eff}}/2 [ps]");
+              hPad -> SetTitle(";V_{ov};#sigma_{t_{gaus}}/2 [ps]");
 	      hPad -> Draw();
 	      gPad -> SetGridy();
               g_tRes -> SetLineColor(kBlack);
@@ -1421,14 +1398,199 @@ int main(int argc, char** argv)
         }
       }
     }
+  }  */
+    
+  //summary plot time resolution vs Vov
+  for(std::map<double,TGraphErrors*>::iterator index = g_timeRes_vs_Vov.begin(); index != g_timeRes_vs_Vov.end(); index++){
+    //std::cout<<"indexfirst= "<<index->first<<std::endl;
+    enBin = int(double(index->first/10000000.));
+    th = int(double(index->first - enBin*10000000)/100);
+    iBar = int(double(index->first - enBin*10000000- th*100));
+    th_iBar_enBin_ID = 10000000*enBin + th*100 + iBar;
+    iBar_enBin_ID = 10000000*enBin + iBar;
+    for(int bar=0; bar<16; bar++){
+      if(bar==iBar){
+        for(int energyBin=1; energyBin<9; energyBin++){
+          if(energyBin==enBin){  
+            if(c_timeRes_vs_Vov[iBar_enBin_ID]==NULL){
+              c_timeRes_vs_Vov[iBar_enBin_ID] = new TCanvas(Form("c_timeRes_vs_Vov_bar_%d_enBin%d",bar,energyBin),Form("c_timeRes_vs_Vov_bar_%d_enBin%d",bar,energyBin));
+              iter[iBar_enBin_ID] = 0;
+              TH1F* hPad = (TH1F*)( gPad->DrawFrame(0,0,10.,1000) );
+              hPad -> SetTitle(";V_{ov};#sigma_{t_{gaus}}/2 [ps]");
+	      hPad -> Draw();
+	      gPad -> SetGridy();
+            }
+
+	    c_timeRes_vs_Vov[iBar_enBin_ID]->cd();
+            TGraph* g_tRes = g_timeRes_vs_Vov[th_iBar_enBin_ID];
+
+	    g_tRes -> SetLineColor(1+iter[iBar_enBin_ID]);
+            g_tRes -> SetMarkerColor(1+iter[iBar_enBin_ID]);
+            g_tRes -> SetMarkerStyle(20);
+            g_tRes -> Draw("PL,same");
+	  
+            std::string thLabel = Form("th%d", th);
+            latex = new TLatex(0.55,0.85-0.04*iter[iBar_enBin_ID],thLabel.c_str());
+            latex -> SetNDC();
+            latex -> SetTextFont(42);
+            latex -> SetTextSize(0.04);
+            latex -> SetTextColor(kBlack+iter[iBar_enBin_ID]);
+            latex -> Draw("same");
+      
+            ++iter[iBar_enBin_ID];
+
+	  }
+        }
+      }
+    }
+  }  
+
+
+
+
+  for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_Vov.begin(); index != c_timeRes_vs_Vov.end(); index++){
+    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_Vov_bar_%d_enBin%d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_Vov_bar_%d_enBin%d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+  }
+
+
+  //summary plot time resolution vs energy bin
+  for(std::map<double,TGraphErrors*>::iterator index = g_timeRes_vs_enBin.begin(); index != g_timeRes_vs_enBin.end(); index++){
+  
+    Vov = float(int(index->first/10000.)/100.);
+    th = int(double(index->first - Vov*1000000)/100.);
+    iBar = int(double(index->first - Vov*1000000 - th*100));
+    double Vov_th_iBar_ID;
+    double iBar_Vov_ID; 
+    Vov_th_iBar_ID = Vov*1000000 + th*100 + iBar;
+    iBar_Vov_ID = Vov*1000000 + iBar;
+
+    for(int bar=0; bar<16; bar++){
+      if(bar==iBar){
+        for(int i=0; i<vec_Vov.size(); i++){
+          if(vec_Vov[i]==Vov){
+	    for(int i=0; i<vec_th.size(); i++){
+              if(vec_th[i]==th){
+                if(c_timeRes_vs_enBin[Vov_th_iBar_ID]==NULL){
+                  c_timeRes_vs_enBin[Vov_th_iBar_ID] = new TCanvas(Form("c_timeRes_vs_enBin_bar_%d_Vov_%f_th_%d",bar,Vov,th),Form("c_timeRes_vs_enBin_bar_%d_Vov_%f_th_%d",bar,Vov,th));
+                  TH1F* hPad = (TH1F*)( gPad->DrawFrame(0,0,30.,600) );
+                  hPad -> SetTitle(";energy bin[a.u.];#sigma_{t_{gaus}}/2 [ps]");
+	          hPad -> Draw();
+	          gPad -> SetGridy();
+		}
+
+	       c_timeRes_vs_enBin[Vov_th_iBar_ID]->cd();
+               TGraph* g_tRes_en = g_timeRes_vs_enBin[Vov_th_iBar_ID];
+            
+               g_tRes_en -> SetLineColor(kBlack);
+               g_tRes_en -> SetMarkerColor(kBlack);
+               g_tRes_en -> SetMarkerStyle(20);
+               g_tRes_en -> Draw("PL");
+	  
+               std::string thVovLabel = Form("th%d Vov%.01f", th, Vov);
+               latex = new TLatex(0.55,0.85-0.04,thVovLabel.c_str());
+               latex -> SetNDC();
+               latex -> SetTextFont(42);
+               latex -> SetTextSize(0.04);
+               latex -> SetTextColor(kBlack);
+              latex -> Draw("same");
+
+	      }
+            }
+          }
+        }
+      }
+    }
   }  
     
 
-  for(std::map<int,TCanvas*>::iterator index = c_timeRes_vs_Vov.begin(); index != c_timeRes_vs_Vov.end(); index++){
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_Vov_bar_%d_enBin%d.png",plotDir.c_str(),index->first-(int(index->first/10000000))*10000000, int(index->first/10000000)));
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_Vov_bar_%d_enBin%d.pdf",plotDir.c_str(),index->first-(int(index->first/10000000))*10000000, int(index->first/10000000)));
+  for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_enBin.begin(); index != c_timeRes_vs_enBin.end(); index++){
+    Vov = float(int(index->first/10000.)/100.);
+    th = int(double(index->first - Vov*1000000)/100.);
+    iBar = int(double(index->first - Vov*1000000 - th*100));
+    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_enBin_bar_%d_Vov_%.02f_th_%d.png",plotDir.c_str(),iBar,Vov, th));
+     index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_enBin_bar_%d_Vov_%.02f_th_%d.pdf",plotDir.c_str(),iBar,Vov, th));
   }
 
+
+  //summary plot time resolution 511 peak vs vs iBar
+ for(std::map<double,TGraphErrors*>::iterator index = g_timeRes511_vs_iBar.begin(); index != g_timeRes511_vs_iBar.end(); index++){
+
+    Vov = float(int(index->first/10000)/100.);
+    th = int((index->first - Vov*1000000)/100);
+
+    Vov_th_ID = Vov*1000000 + th*100;
+    
+        if(c_timeRes511_vs_iBar[Vov_th_ID]==NULL){
+          c_timeRes511_vs_iBar[Vov_th_ID] = new TCanvas(Form("c_timeRes511_vs_iBar_Vov_%.01f_th_%d",Vov,th),Form("c_timeRes511_vs_iBar_Vov_%.01f_th_%d",Vov,th));
+          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,500.) );
+          hPad -> SetTitle(";ID bar;#sigma_{t_{gaus}}/2 [ps]");
+	  hPad -> Draw();
+	  gPad -> SetGridy();       
+	}
+
+        c_timeRes511_vs_iBar[Vov_th_ID]->cd();
+        TGraph* g_timeRes511 = g_timeRes511_vs_iBar[Vov_th_ID];
+         
+        g_timeRes511 -> SetLineColor(kBlack);
+        g_timeRes511 -> SetMarkerColor(kBlack);
+        g_timeRes511 -> SetMarkerStyle(20);
+        g_timeRes511 -> Draw("PL");
+
+        std::string VovthLabel = Form("Vov%.01f th%d", Vov,th);
+        latex = new TLatex(0.55,0.85-0.04,VovthLabel.c_str());
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.04);
+        latex -> SetTextColor(kBlack);
+        latex -> Draw("same");
+    
+  }
+
+
+  for(std::map<double,TCanvas*>::iterator index = c_timeRes511_vs_iBar.begin(); index != c_timeRes511_vs_iBar.end(); index++){
+    index->second-> Print(Form("%s/timeResolution/c_timeRes511_vs_iBar_Vov_%.01f_th_%d.png",plotDir.c_str(),float(int(index->first/10000)/100.),int((index->first - float(int(index->first/10000)/100.)*1000000)/100)));
+    index->second-> Print(Form("%s/timeResolution/c_timeRes511_vs_iBar_Vov_%.01f_th_%d.pdf",plotDir.c_str(),float(int(index->first/10000)/100.),int((index->first - float(int(index->first/10000)/100.)*1000000)/100)));
+  }
+
+
+  //summary plot time resolution 1275 peak vs vs iBar
+  for(std::map<double,TGraphErrors*>::iterator index = g_timeRes1275_vs_iBar.begin(); index != g_timeRes1275_vs_iBar.end(); index++){
+    Vov = float(int(index->first/10000)/100.);
+    th = int((index->first - Vov*1000000)/100);
+    Vov_th_ID = Vov*1000000 + th*100;
+    
+        if(c_timeRes1275_vs_iBar[Vov_th_ID]==NULL){
+          c_timeRes1275_vs_iBar[Vov_th_ID] = new TCanvas(Form("c_timeRes1275_vs_iBar_Vov_%.01f_th_%d",Vov,th),Form("c_timeRes1275_vs_iBar_Vov_%.01f_th_%d",Vov,th));
+          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,500.) );
+          hPad -> SetTitle(";ID bar;#sigma_{t_{gaus}}/2 [ps]");
+	  hPad -> Draw();
+	  gPad -> SetGridy();       
+	}
+
+        c_timeRes1275_vs_iBar[Vov_th_ID]->cd();
+        TGraph* g_timeRes1275 = g_timeRes1275_vs_iBar[Vov_th_ID];
+         
+        g_timeRes1275 -> SetLineColor(kBlack);
+        g_timeRes1275 -> SetMarkerColor(kBlack);
+        g_timeRes1275 -> SetMarkerStyle(20);
+        g_timeRes1275 -> Draw("PL");
+
+        std::string VovthLabel = Form("Vov%.01f th%d", Vov,th);
+        latex = new TLatex(0.55,0.85-0.04,VovthLabel.c_str());
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.04);
+        latex -> SetTextColor(kBlack);
+        latex -> Draw("same");
+    
+  }
+
+
+  for(std::map<double,TCanvas*>::iterator index = c_timeRes1275_vs_iBar.begin(); index != c_timeRes1275_vs_iBar.end(); index++){
+    index->second-> Print(Form("%s/timeResolution/c_timeRes1275_vs_iBar_Vov_%.01f_th_%d.png",plotDir.c_str(),float(int(index->first/10000)/100.),int((index->first - float(int(index->first/10000)/100.)*1000000)/100)));;
+    index->second-> Print(Form("%s/timeResolution/c_timeRes1275_vs_iBar_Vov_%.01f_th_%d.pdf",plotDir.c_str(),float(int(index->first/10000)/100.),int((index->first - float(int(index->first/10000)/100.)*1000000)/100)));;
+  }
 
 
 
