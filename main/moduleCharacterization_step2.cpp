@@ -165,8 +165,12 @@ int main(int argc, char** argv)
 
   std::map<int,TTree*> outTrees;
   std::map<double,TTree*> outTrees2;
-  float energy511;
-  float energy1275;
+  float energy511LR;
+  float energy1275LR;
+  float energy511R;
+  float energy1275R;
+  float energy511L;
+  float energy1275L;
   float theIndex;
   float timeRes;
 
@@ -179,10 +183,17 @@ int main(int argc, char** argv)
 
   std::map<double,TH1F*> h1_deltaT_energyRatioCorr;
   
-  std::map<int,std::vector<float>*> ranges;
-  std::map<int,std::map<std::string,std::pair<float,float> > > peaks;
-	
-  std::map <int, std::map < int, float >> energyBin;
+  std::map<int,std::vector<float>*> rangesLR;
+  std::map<int,std::map<std::string,std::pair<float,float> > > peaksLR;	
+  std::map <int, std::map < int, float >> energyBinLR;
+
+  std::map<int,std::vector<float>*> rangesL;
+  std::map<int,std::map<std::string,std::pair<float,float> > > peaksL;	
+  std::map <int, std::map < int, float >> energyBinL;
+
+  std::map<int,std::vector<float>*> rangesR;
+  std::map<int,std::map<std::string,std::pair<float,float> > > peaksR;
+  std::map <int, std::map < int, float >> energyBinR;
   
   
   
@@ -201,7 +212,9 @@ int main(int argc, char** argv)
   
   //------------------
   //--- draw 1st plots
-  std::vector<double> vec_en511keV; 
+  std::string source = opts.GetOpt<std::string>("Input.sourceName");
+	std::string Na22 = "Na22";
+	std::string Co60 = "Co60";
   for(auto stepLabel : stepLabels)
   {
     float Vov = map_Vovs[stepLabel];
@@ -218,8 +231,12 @@ int main(int argc, char** argv)
       int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
       
       outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1));
-      outTrees[index] -> Branch("energyPeak511",&energy511);
-      outTrees[index] -> Branch("energyPeak1275",&energy1275);
+      outTrees[index] -> Branch("energyPeak511LR",&energy511LR);
+      outTrees[index] -> Branch("energyPeak1275LR",&energy1275LR);
+      outTrees[index] -> Branch("energyPeak511L",&energy511L);
+      outTrees[index] -> Branch("energyPeak1275L",&energy1275L);
+      outTrees[index] -> Branch("energyPeak511R",&energy511R);
+      outTrees[index] -> Branch("energyPeak1275R",&energy1275R);
       outTrees[index] -> Branch("indexID",&theIndex);
       
 
@@ -283,6 +300,198 @@ int main(int argc, char** argv)
         histo -> SetLineColor(kRed);
         histo -> SetLineWidth(2);
         histo -> Draw();
+
+
+	if( LRLabel.compare("L")){
+		if(!source.compare(Na22)){        
+			rangesL[index] = new std::vector<float>;
+			peaksL[index] = Na22SpectrumAnalyzer(histo,rangesL[index]);
+
+			if (peaksL[index]["0.511 MeV"].first== -9999){
+				peaksL.erase(index);
+				rangesL.erase(index);
+				peaksL[index]["0.511 MeV"].first = -10;
+				peaksL[index]["1.275 MeV"].first = -10;
+				
+			}
+
+
+			energy511L = peaksL[index]["0.511 MeV"].first;
+			energy1275L = peaksL[index]["1.275 MeV"].first;
+			theIndex = index;
+			outTrees[index] -> Fill();
+			
+			 
+			
+			for(auto peak : peaksL[index] )
+			{
+			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+			  break;
+			}
+			
+			
+			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
+			if(peaksL[index]["0.511 MeV"].first != -10){
+				for(int i = 1; i < rangesL[index]->size(); i++){
+					TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(rangesL[index]->at(i)) - histo->FindBin(rangesL[index]-> at(i-1)), rangesL[index]-> at(i-1), rangesL[index]->at(i));
+					int j = 1;
+					for (int bin = histo->FindBin(rangesL[index]->at(i-1)) ; bin < histo -> FindBin(rangesL[index]->at(i))  +1 ; bin++){
+						binHisto -> SetBinContent( j, histo->GetBinContent(bin));
+						j++;
+					}
+					energyBinL[index][i] = binHisto -> GetMean();
+					binHisto -> Delete();
+				}
+			}
+		
+			}
+
+		if(!source.compare(Co60)){        
+			rangesL[index] = new std::vector<float>;
+			peaksL[index] = Co60SpectrumAnalyzer(histo,rangesL[index]);
+			
+
+			if (peaksL[index]["1.173 MeV"].first== -9999){
+				peaksL.erase(index);
+				rangesL.erase(index);
+				peaksL[index]["1.173 MeV"].first = -10;
+				peaksL[index]["1.332 MeV"].first = -10;
+				
+			}
+
+
+			energy511L = peaksL[index]["1.173 MeV"].first;
+			energy1275L = peaksL[index]["1.332 MeV"].first;
+			theIndex = index;
+			outTrees[index] -> Fill();
+			
+			 
+			
+			for(auto peak : peaksL[index] )
+			{
+			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+			  break;
+			}
+			
+			
+			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
+			if(peaksL[index]["1.173 MeV"].first != -10){
+				for(int i = 1; i < rangesL[index]->size(); i++){
+					TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(rangesL[index]->at(i)) - histo->FindBin(rangesL[index]-> at(i-1)), rangesL[index]-> at(i-1), rangesL[index]->at(i));
+					int j = 1;
+					for (int bin = histo->FindBin(rangesL[index]->at(i-1)) ; bin < histo -> FindBin(rangesL[index]->at(i))  +1 ; bin++){
+						binHisto -> SetBinContent( j, histo->GetBinContent(bin));
+						j++;
+					}
+					energyBinL[index][i] = binHisto -> GetMean();
+					binHisto -> Delete();
+				}
+			}
+		
+		}	
+					
+		
+		if( source.compare(Na22) && source.compare(Co60)){
+			std::cout << " Missspelled radioactive source " << std::endl;
+			return(0);
+		}
+	}
+
+	if( LRLabel.compare("R")){
+		if(!source.compare(Na22)){        
+			rangesR[index] = new std::vector<float>;
+			peaksR[index] = Na22SpectrumAnalyzer(histo,rangesR[index]);
+
+			if (peaksR[index]["0.511 MeV"].first== -9999){
+				peaksR.erase(index);
+				rangesR.erase(index);
+				peaksR[index]["0.511 MeV"].first = -10;
+				peaksR[index]["1.275 MeV"].first = -10;
+				
+			}
+
+
+			energy511R = peaksR[index]["0.511 MeV"].first;
+			energy1275R = peaksR[index]["1.275 MeV"].first;
+			theIndex = index;
+			outTrees[index] -> Fill();
+			
+			 
+			
+			for(auto peak : peaksR[index] )
+			{
+			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+			  break;
+			}
+			
+			
+			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
+			if(peaksR[index]["0.511 MeV"].first != -10){
+				for(int i = 1; i < rangesR[index]->size(); i++){
+					TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(rangesR[index]->at(i)) - histo->FindBin(rangesR[index]-> at(i-1)), rangesR[index]-> at(i-1), rangesR[index]->at(i));
+					int j = 1;
+					for (int bin = histo->FindBin(rangesR[index]->at(i-1)) ; bin < histo -> FindBin(rangesR[index]->at(i))  +1 ; bin++){
+						binHisto -> SetBinContent( j, histo->GetBinContent(bin));
+						j++;
+					}
+					energyBinR[index][i] = binHisto -> GetMean();
+					binHisto -> Delete();
+				}
+			}
+		
+			}
+
+		if(!source.compare(Co60)){        
+			rangesR[index] = new std::vector<float>;
+			peaksR[index] = Co60SpectrumAnalyzer(histo,rangesR[index]);
+			
+
+			if (peaksR[index]["1.173 MeV"].first== -9999){
+				peaksR.erase(index);
+				rangesR.erase(index);
+				peaksR[index]["1.173 MeV"].first = -10;
+				peaksR[index]["1.332 MeV"].first = -10;
+				
+			}
+
+
+			energy511R = peaksR[index]["1.173 MeV"].first;
+			energy1275R = peaksR[index]["1.332 MeV"].first;
+			theIndex = index;
+			outTrees[index] -> Fill();
+			
+			 
+			
+			for(auto peak : peaksR[index] )
+			{
+			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+			  break;
+			}
+			
+			
+			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
+			if(peaksR[index]["1.173 MeV"].first != -10){
+				for(int i = 1; i < rangesR[index]->size(); i++){
+					TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(rangesR[index]->at(i)) - histo->FindBin(rangesR[index]-> at(i-1)), rangesR[index]-> at(i-1), rangesR[index]->at(i));
+					int j = 1;
+					for (int bin = histo->FindBin(rangesR[index]->at(i-1)) ; bin < histo -> FindBin(rangesR[index]->at(i))  +1 ; bin++){
+						binHisto -> SetBinContent( j, histo->GetBinContent(bin));
+						j++;
+					}
+					energyBinR[index][i] = binHisto -> GetMean();
+					binHisto -> Delete();
+				}
+			}
+		
+		}	
+					
+		
+		if( source.compare(Na22) && source.compare(Co60)){
+			std::cout << " Missspelled radioactive source " << std::endl;
+			return(0);
+		}
+	}
+		
         
         latex -> Draw("same");      
         histo -> Write();
@@ -314,31 +523,29 @@ int main(int argc, char** argv)
         histo -> SetLineColor(kRed);
         histo -> Draw();
         
-       std::string source = opts.GetOpt<std::string>("Input.sourceName");
-	std::string Na22 = "Na22";
-	std::string Co60 = "Co60";
+       
 	
 	if(!source.compare(Na22)){        
-		ranges[index] = new std::vector<float>;
-		peaks[index] = Na22SpectrumAnalyzer(histo,ranges[index]);
+		rangesLR[index] = new std::vector<float>;
+		peaksLR[index] = Na22SpectrumAnalyzer(histo,rangesLR[index]);
 
-		if (peaks[index]["0.511 MeV"].first== -9999){
-			peaks.erase(index);
-			ranges.erase(index);
-			peaks[index]["0.511 MeV"].first = -10;
-			peaks[index]["1.275 MeV"].first = -10;
+		if (peaksLR[index]["0.511 MeV"].first== -9999){
+			peaksLR.erase(index);
+			rangesLR.erase(index);
+			peaksLR[index]["0.511 MeV"].first = -10;
+			peaksLR[index]["1.275 MeV"].first = -10;
 			
 		}
 
 
-		energy511 = peaks[index]["0.511 MeV"].first;
-		energy1275 = peaks[index]["1.275 MeV"].first;
+		energy511LR = peaksLR[index]["0.511 MeV"].first;
+		energy1275LR = peaksLR[index]["1.275 MeV"].first;
 		theIndex = index;
 		outTrees[index] -> Fill();
 		
 		 
 		
-		for(auto peak : peaks[index] )
+		for(auto peak : peaksLR[index] )
 		{
 		  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
 		  break;
@@ -346,15 +553,15 @@ int main(int argc, char** argv)
 		
 		
 		histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
-		if(peaks[index]["0.511 MeV"].first != -10){
-			for(int i = 1; i < ranges[index]->size(); i++){
-				TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(ranges[index]->at(i)) - histo->FindBin(ranges[index]-> at(i-1)), ranges[index]-> at(i-1), ranges[index]->at(i));
+		if(peaksLR[index]["0.511 MeV"].first != -10){
+			for(int i = 1; i < rangesLR[index]->size(); i++){
+				TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(rangesLR[index]->at(i)) - histo->FindBin(rangesLR[index]-> at(i-1)), rangesLR[index]-> at(i-1), rangesLR[index]->at(i));
 				int j = 1;
-				for (int bin = histo->FindBin(ranges[index]->at(i-1)) ; bin < histo -> FindBin(ranges[index]->at(i))  +1 ; bin++){
+				for (int bin = histo->FindBin(rangesLR[index]->at(i-1)) ; bin < histo -> FindBin(rangesLR[index]->at(i))  +1 ; bin++){
 					binHisto -> SetBinContent( j, histo->GetBinContent(bin));
 					j++;
 				}
-				energyBin[index][i] = binHisto -> GetMean();
+				energyBinLR[index][i] = binHisto -> GetMean();
 				binHisto -> Delete();
 			}
 		}
@@ -362,27 +569,27 @@ int main(int argc, char** argv)
 	}
 
 	if(!source.compare(Co60)){        
-		ranges[index] = new std::vector<float>;
-		peaks[index] = Co60SpectrumAnalyzer(histo,ranges[index]);
+		rangesLR[index] = new std::vector<float>;
+		peaksLR[index] = Co60SpectrumAnalyzer(histo,rangesLR[index]);
 		
 
-		if (peaks[index]["1.173 MeV"].first== -9999){
-			peaks.erase(index);
-			ranges.erase(index);
-			peaks[index]["1.173 MeV"].first = -10;
-			peaks[index]["1.332 MeV"].first = -10;
+		if (peaksLR[index]["1.173 MeV"].first== -9999){
+			peaksLR.erase(index);
+			rangesLR.erase(index);
+			peaksLR[index]["1.173 MeV"].first = -10;
+			peaksLR[index]["1.332 MeV"].first = -10;
 			
 		}
 
 
-		energy511 = peaks[index]["1.173 MeV"].first;
-		energy1275 = peaks[index]["1.332 MeV"].first;
+		energy511LR = peaksLR[index]["1.173 MeV"].first;
+		energy1275LR = peaksLR[index]["1.332 MeV"].first;
 		theIndex = index;
 		outTrees[index] -> Fill();
 		
 		 
 		
-		for(auto peak : peaks[index] )
+		for(auto peak : peaksLR[index] )
 		{
 		  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
 		  break;
@@ -390,15 +597,15 @@ int main(int argc, char** argv)
 		
 		
 		histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
-		if(peaks[index]["1.173 MeV"].first != -10){
-			for(int i = 1; i < ranges[index]->size(); i++){
-				TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(ranges[index]->at(i)) - histo->FindBin(ranges[index]-> at(i-1)), ranges[index]-> at(i-1), ranges[index]->at(i));
+		if(peaksLR[index]["1.173 MeV"].first != -10){
+			for(int i = 1; i < rangesLR[index]->size(); i++){
+				TH1F *binHisto = new TH1F ( "binHisto", "binHisto", histo -> FindBin(rangesLR[index]->at(i)) - histo->FindBin(rangesLR[index]-> at(i-1)), rangesLR[index]-> at(i-1), rangesLR[index]->at(i));
 				int j = 1;
-				for (int bin = histo->FindBin(ranges[index]->at(i-1)) ; bin < histo -> FindBin(ranges[index]->at(i))  +1 ; bin++){
+				for (int bin = histo->FindBin(rangesLR[index]->at(i-1)) ; bin < histo -> FindBin(rangesLR[index]->at(i))  +1 ; bin++){
 					binHisto -> SetBinContent( j, histo->GetBinContent(bin));
 					j++;
 				}
-				energyBin[index][i] = binHisto -> GetMean();
+				energyBinLR[index][i] = binHisto -> GetMean();
 				binHisto -> Delete();
 			}
 		}
@@ -457,8 +664,8 @@ int main(int argc, char** argv)
       accept[index1][entry] = false;
       
       
-      if( !ranges[index1] ) continue;
-      int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges[index1])+1;
+      if( !rangesLR[index1] ) continue;
+      int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),rangesLR[index1])+1;
      
       if( energyBinAverage < 1 ) continue;
       
@@ -515,8 +722,8 @@ int main(int argc, char** argv)
       std::string labelLR(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));
       
 
-      if( !ranges[index1] ) continue;
-      int nEnergyBins = ranges[index1]->size()-1;
+      if( !rangesLR[index1] ) continue;
+      int nEnergyBins = rangesLR[index1]->size()-1;
       
 
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
@@ -584,7 +791,7 @@ int main(int argc, char** argv)
       
       if( !accept[index1][entry] ) continue;
       
-      int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges[index1])+1;
+      int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),rangesLR[index1])+1;
      
       double  index2( (10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
       
@@ -638,8 +845,8 @@ int main(int argc, char** argv)
       
       std::string labelLR(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));
       
-      if( !ranges[index1] ) continue;
-      int nEnergyBins = ranges[index1]->size()-1;
+      if( !rangesLR[index1] ) continue;
+      int nEnergyBins = rangesLR[index1]->size()-1;
       
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
       {
@@ -702,7 +909,7 @@ int main(int argc, char** argv)
       if( !accept[index1][entry] ) continue;
 	
    
-      int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges[index1])+1;
+      int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),rangesLR[index1])+1;
       double  index2( 10000000*energyBinAverage+index1 );     
       
       long long deltaT = anEvent->timeR - anEvent->timeL;
@@ -747,9 +954,9 @@ int main(int argc, char** argv)
       
       std::string labelLR(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));
  
-      if( !ranges[index1] ) continue;
+      if( !rangesLR[index1] ) continue;
   
-      int nEnergyBins = ranges[index1]->size()-1;
+      int nEnergyBins = rangesLR[index1]->size()-1;
       
       
       for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
@@ -807,7 +1014,7 @@ int main(int argc, char** argv)
         float effSigma = sigma;
 	
 	
-	enBin = energyBin[index1][iEnergyBin];
+	enBin = energyBinLR[index1][iEnergyBin];
 	theIndex2 = index2;
 	timeRes = fabs(fitFunc2->GetParameter(2));
       
