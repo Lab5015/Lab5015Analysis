@@ -68,7 +68,7 @@ The analysis of the collected data is structured in three steps
 ### Submit the analysis in parallel on pcfatis
 A script under the `scripts` folder allows the submission of multiple jobs (e.g. a set of runs corresponding to an overvoltage/threshold scan) in parallel on `pcfatis`. one job per run. The script is used as follows:
 ```
-python scripts/submit_moduleCharacterization.py --label myTask_stepX -b /path/of/Lab5015Analysis -e bin/moduleCharacterization_stepX.exe -r run1-run2,run3 -c config/moduleCharacterization.cfg --submit
+python scripts/submit_moduleCharacterization.py --label myTask_stepX -b /path/of/Lab5015Analysis -e bin/moduleCharacterization_stepX.exe -r run1-run2,run3 -c cfg/moduleCharacterization.cfg --submit
 ```
 The config file is used as a template for each job, and the run number and file names in it are modified by the script as required. The command can be executed without the `--submit` flag first to inspect the jobs (in the `scripts/jobs` folder) before actually running them.
 
