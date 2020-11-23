@@ -54,7 +54,7 @@ int main(int argc, char** argv)
   
   //--- get parameters
   std::string plotDir = opts.GetOpt<std::string>("Output.plotDir");
-  system(Form("rm -r %s", plotDir.c_str()));
+  //system(Form("rm -r %s", plotDir.c_str())); // questo non va bene se stiamo lavorando in parallelo
   system(Form("mkdir -p %s",plotDir.c_str()));
   system(Form("mkdir -p %s/qfine/",plotDir.c_str()));
   system(Form("mkdir -p %s/tot/",plotDir.c_str()));
