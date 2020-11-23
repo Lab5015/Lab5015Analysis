@@ -1,2 +1,0 @@
-USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-cmsdaq   14402 84.5  1.7 394288 137612 pts/5   S+   12:40   0:24 ./bin/moduleCharacterization_step1.exe cfg/moduleCharacterization.cfg
