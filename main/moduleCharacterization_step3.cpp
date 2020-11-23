@@ -54,17 +54,19 @@ int main(int argc, char** argv)
 
 //--- get parameters
   std::string plotDir = opts.GetOpt<std::string>("Output.plotDirStep3");
-  system(Form("rm -r %s", plotDir.c_str()));
+  //system(Form("rm -r %s", plotDir.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
-  system(Form("mkdir -p %s/tot/",plotDir.c_str()));
-  system(Form("mkdir -p %s/energy/",plotDir.c_str()));
-  system(Form("mkdir -p %s/timeResolution/",plotDir.c_str()));
+  system(Form("mkdir -p %s/summaryPlots/",plotDir.c_str()));
+  system(Form("mkdir -p %s/summaryPlots/tot/",plotDir.c_str()));
+  system(Form("mkdir -p %s/summaryPlots/energy/",plotDir.c_str()));
+  system(Form("mkdir -p %s/summaryPlots/timeResolution/",plotDir.c_str()));
 
   //copia il file .php che si trova in una cartella fuori plotDir in plotDir definita nel config file
   system(Form("cp %s/../index.php %s",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/tot/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/energy/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/timeResolution/",plotDir.c_str(),plotDir.c_str()));
+  system(Form("cp %s/../index.php %s/summaryPlots/",plotDir.c_str(),plotDir.c_str()));
+  system(Form("cp %s/../index.php %s/summaryPlots/tot/",plotDir.c_str(),plotDir.c_str()));
+  system(Form("cp %s/../index.php %s/summaryPlots/energy/",plotDir.c_str(),plotDir.c_str()));
+  system(Form("cp %s/../index.php %s/summaryPlots/timeResolution/",plotDir.c_str(),plotDir.c_str()));
 
 
   //--- open files and make the tree chain
@@ -222,8 +224,8 @@ int main(int argc, char** argv)
 		fitFunc1 -> SetLineWidth(3);
 		fitFunc1 -> Draw("same");     
 		histo -> Write();
-		c -> Print(Form("%s/tot/c_tot__%s.png",plotDir.c_str(),label.c_str()));
-		c -> Print(Form("%s/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
+		c -> Print(Form("%s/summaryPlots/tot/c_tot__%s.png",plotDir.c_str(),label.c_str()));
+		c -> Print(Form("%s/summaryPlots/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
 		delete c;
 
 		
@@ -337,8 +339,8 @@ int main(int argc, char** argv)
 	      //std::cout<<"iter "<<iter<<std::endl;
 	    }
 		  
-	    c1 -> Print(Form("%s/tot/c_tot_vs_th_bar%02d.png",plotDir.c_str(),iBar));
-	    c1 -> Print(Form("%s/tot/c_tot_vs_th_bar%02d.pdf",plotDir.c_str(),iBar));
+	    c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_th_bar%02d.png",plotDir.c_str(),iBar));
+	    c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_th_bar%02d.pdf",plotDir.c_str(),iBar));
 
 
 
@@ -389,8 +391,8 @@ int main(int argc, char** argv)
 	      //std::cout<<"iter "<<iter<<std::endl;
 	    }
 		  
-	    c1 -> Print(Form("%s/tot/c_tot_vs_Vov_bar%02d.png",plotDir.c_str(),iBar));
-	    c1 -> Print(Form("%s/tot/c_tot_vs_Vov_bar%02d.pdf",plotDir.c_str(),iBar));
+	    c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_Vov_bar%02d.png",plotDir.c_str(),iBar));
+	    c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_Vov_bar%02d.pdf",plotDir.c_str(),iBar));
 
 	  }
 
@@ -424,8 +426,8 @@ int main(int argc, char** argv)
 	      	  latex -> SetTextColor(kBlack);
 	      	  latex -> Draw("same");
 
-	      	  c1 -> Print(Form("%s/tot/c_tot_vs_bar_%s_%s.png",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
-	      	  c1 -> Print(Form("%s/tot/c_tot_vs_bar_%s_%s.pdf",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
+	      	  c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_bar_%s_%s.png",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
+	      	  c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_bar_%s_%s.pdf",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
                 }
 	      }
 
@@ -440,8 +442,8 @@ int main(int argc, char** argv)
 		  
 		
 
-		  c1 -> Print(Form("%s/tot/c_tot_vs_bar_%s_%s.png",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
-	          c1 -> Print(Form("%s/tot/c_tot_vs_bar_%s_%s.pdf",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
+		  c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_bar_%s_%s.png",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
+	          c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_bar_%s_%s.pdf",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
 		}
 	      }
 
@@ -1116,48 +1118,48 @@ int main(int argc, char** argv)
   }
 
   for(std::map<int,TCanvas*>::iterator index = c_en511_vs_th.begin(); index != c_en511_vs_th.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_th_bar%02d.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy511_vs_th_bar%02d.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_th_bar%02d.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy511_vs_th_bar%02d.pdf",plotDir.c_str(),index->first));
   }
 
   /*for(std::map<int,TCanvas*>::iterator index = c_en511_vs_th_R.begin(); index != c_en511_vs_th_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_th_bar%02dR.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy511_vs_th_bar%02dR.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_th_bar%02dR.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy511_vs_th_bar%02dR.pdf",plotDir.c_str(),index->first));
   }
   
   for(std::map<int,TCanvas*>::iterator index = c_en511_vs_th_L.begin(); index != c_en511_vs_th_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_th_bar%02dL.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy511_vs_th_bar%02dL.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_th_bar%02dL.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy511_vs_th_bar%02dL.pdf",plotDir.c_str(),index->first));
   }*/
 	
   for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_th.begin(); index != c_en1275_vs_th.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_th_bar%02d.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy1275_vs_th_bar%02d.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_th_bar%02d.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_th_bar%02d.pdf",plotDir.c_str(),index->first));
   }
 	
  /* for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_th_L.begin(); index != c_en1275_vs_th_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_th_bar%02dL.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy1275_vs_th_bar%02dL.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_th_bar%02dL.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_th_bar%02dL.pdf",plotDir.c_str(),index->first));
   }
 	
   for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_th_R.begin(); index != c_en1275_vs_th_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_th_bar%02dR.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy1275_vs_th_bar%02dR.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_th_bar%02dR.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_th_bar%02dR.pdf",plotDir.c_str(),index->first));
   }*/
 
   for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_th.begin(); index != c_enRatio_vs_th.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_th_bar%02d.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energyRatio_vs_th_bar%02d.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_th_bar%02d.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_th_bar%02d.pdf",plotDir.c_str(),index->first));
   }
 
  /* for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_th_L.begin(); index != c_enRatio_vs_th_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_th_bar%02dL.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energyRatio_vs_th_bar%02dL.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_th_bar%02dL.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_th_bar%02dL.pdf",plotDir.c_str(),index->first));
   }
 
   for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_th_R.begin(); index != c_enRatio_vs_th_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_th_bar%02dR.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energyRatio_vs_th_bar%02dR.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_th_bar%02dR.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_th_bar%02dR.pdf",plotDir.c_str(),index->first));
   }*/
       
   //summary plots Energy Peak 511, 1275, Ratio vs Vov (LR, L, R)
@@ -1353,46 +1355,46 @@ int main(int argc, char** argv)
   }
  
   for(std::map<int,TCanvas*>::iterator index = c_en511_vs_Vov.begin(); index != c_en511_vs_Vov.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_Vov_bar%02d.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy511_vs_Vov_bar%02d.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_Vov_bar%02d.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy511_vs_Vov_bar%02d.pdf",plotDir.c_str(),index->first));
   }
 
  /* for(std::map<int,TCanvas*>::iterator index = c_en511_vs_Vov_R.begin(); index != c_en511_vs_Vov_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_Vov_bar%02dR.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy511_vs_Vov_bar%02dR.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_Vov_bar%02dR.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy511_vs_Vov_bar%02dR.pdf",plotDir.c_str(),index->first));
   }
   
   for(std::map<int,TCanvas*>::iterator index = c_en511_vs_Vov_L.begin(); index != c_en511_vs_Vov_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_Vov_bar%02dL.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy511_vs_Vov_bar%02dL.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_Vov_bar%02dL.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy511_vs_Vov_bar%02dL.pdf",plotDir.c_str(),index->first));
   }*/
 	
   for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_Vov.begin(); index != c_en1275_vs_Vov.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_Vov_bar%02d.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy1275_vs_Vov_bar%02d.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_Vov_bar%02d.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_Vov_bar%02d.pdf",plotDir.c_str(),index->first));
   }
 	
   /*for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_Vov_L.begin(); index != c_en1275_vs_Vov_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_Vov_bar%02dL.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy1275_vs_Vov_bar%02dL.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_Vov_bar%02dL.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_Vov_bar%02dL.pdf",plotDir.c_str(),index->first));
   }
 	
   for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_Vov_R.begin(); index != c_en1275_vs_Vov_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_Vov_bar%02dR.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energy1275_vs_Vov_bar%02dR.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_Vov_bar%02dR.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_Vov_bar%02dR.pdf",plotDir.c_str(),index->first));
   } */  
 
   for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_Vov.begin(); index != c_enRatio_vs_Vov.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_Vov_bar%02d.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energyRatio_vs_Vov_bar%02d.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_Vov_bar%02d.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_Vov_bar%02d.pdf",plotDir.c_str(),index->first));
   }
   /*for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_Vov_R.begin(); index != c_enRatio_vs_Vov_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_Vov_bar%02dR.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energyRatio_vs_Vov_bar%02dR.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_Vov_bar%02dR.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_Vov_bar%02dR.pdf",plotDir.c_str(),index->first));
   }
   for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_Vov_L.begin(); index != c_enRatio_vs_Vov_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_Vov_bar%02dL.png",plotDir.c_str(),index->first));
-    index->second -> Print(Form("%s/energy/c_energyRatio_vs_Vov_bar%02dL.pdf",plotDir.c_str(),index->first));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_Vov_bar%02dL.png",plotDir.c_str(),index->first));
+    index->second -> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_Vov_bar%02dL.pdf",plotDir.c_str(),index->first));
   } */
 
   
@@ -1579,51 +1581,51 @@ int main(int argc, char** argv)
   }
 
  for(std::map<int,TCanvas*>::iterator index = c_en511_vs_iBar.begin(); index != c_en511_vs_iBar.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energy511_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 	
  for(std::map<int,TCanvas*>::iterator index = c_en511_vs_iBar_L.begin(); index != c_en511_vs_iBar_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energy511_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 	
  for(std::map<int,TCanvas*>::iterator index = c_en511_vs_iBar_R.begin(); index != c_en511_vs_iBar_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy511_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energy511_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 
 
 
  for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_iBar.begin(); index != c_en1275_vs_iBar.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 
  for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_iBar_L.begin(); index != c_en1275_vs_iBar_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 
  for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_iBar_R.begin(); index != c_en1275_vs_iBar_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energy1275_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 
 
   for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_iBar.begin(); index != c_enRatio_vs_iBar.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 
  for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_iBar_L.begin(); index != c_enRatio_vs_iBar_L.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatiovs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatiovs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 
  for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_iBar_R.begin(); index != c_enRatio_vs_iBar_R.end(); index++){
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/energy/c_energyRatio_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
 
 
@@ -1829,8 +1831,8 @@ int main(int argc, char** argv)
   
 
   for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_th.begin(); index != c_timeRes_vs_th.end(); index++){
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_th_bar%02d_enBin%d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_th_bar%02d_enBin%d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_th_bar%02d_enBin%d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_th_bar%02d_enBin%d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
  }
 
     
@@ -1889,8 +1891,8 @@ int main(int argc, char** argv)
 
 
   for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_Vov.begin(); index != c_timeRes_vs_Vov.end(); index++){
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_Vov_bar%02d_enBin%d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_Vov_bar%02d_enBin%d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_Vov_bar%02d_enBin%d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_Vov_bar%02d_enBin%d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
   }
 
   std::map<double, std::vector<std::pair<float,float>>>vec_tRes;
@@ -1961,8 +1963,8 @@ int main(int argc, char** argv)
     Vov = float(int(index->first/10000.)/100.);
     th = int(double(index->first - Vov*1000000)/100.);
     iBar = int(double(index->first - Vov*1000000 - th*100));
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d.png",plotDir.c_str(),iBar,Vov, th));
-     index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d.pdf",plotDir.c_str(),iBar,Vov, th));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d.png",plotDir.c_str(),iBar,Vov, th));
+     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d.pdf",plotDir.c_str(),iBar,Vov, th));
   }
   
    for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_enBin_thBest.begin(); index != c_timeRes_vs_enBin_thBest.end(); index++){
@@ -1989,8 +1991,8 @@ int main(int argc, char** argv)
     graph-> SetMarkerColor(kBlack);
     graph -> SetMarkerStyle(20);
     graph-> Draw("PL");
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh.png",plotDir.c_str(),iBar,Vov));
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh.pdf",plotDir.c_str(),iBar,Vov));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh.png",plotDir.c_str(),iBar,Vov));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh.pdf",plotDir.c_str(),iBar,Vov));
   }
 
 
@@ -2100,8 +2102,8 @@ int main(int argc, char** argv)
     latex2 -> SetTextColor(kBlue);
     latex2 -> Draw("same");
    
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_bar_Vov%.01f.png",plotDir.c_str(),float(index->first)));
-    index->second-> Print(Form("%s/timeResolution/c_timeRes_vs_bar_Vov%.01f.pdf",plotDir.c_str(),float(index->first)));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_bar_Vov%.01f.png",plotDir.c_str(),float(index->first)));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_bar_Vov%.01f.pdf",plotDir.c_str(),float(index->first)));
   }
 
 
