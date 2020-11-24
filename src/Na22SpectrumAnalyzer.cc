@@ -141,7 +141,7 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
 		std::vector <int> secondPeaksIndex;
 				
 		for( int i = 0 ; i < totalPeaks.size(); i++){
-			if ( totalPeaks[i] > res["0.511 MeV"].first* 2 && totalPeaks[i] < res["0.511 MeV"].first * 4){
+			if ( totalPeaks[i] > res["0.511 MeV"].first* 1.8 && totalPeaks[i] < res["0.511 MeV"].first * 4){
 				secondFound ++;
 				secondPeaksIndex.push_back(i);
 			}
@@ -165,9 +165,18 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
 			}
   }
   
+  if( realPeaks.size() ==1 ){
+		histo -> GetXaxis() -> SetRangeUser(totalPeaks[totalPeaks.size()-1]+2 ,40.);
+ 		int nPeaks2 = 1;
+  	TSpectrum* spectrum2 = new TSpectrum(nPeaks2);
+  	int nFound2 = spectrum2 -> Search(histo, 0.5, "", 0.001);		
+  	double* peaks2 = spectrum2 -> GetPositionX();	
+		if (nFound2 != 0){
+			realPeaks.push_back(peaks2[0]);
+		}
+	}
   
-  
-  
+  histo -> GetXaxis() -> SetRangeUser(0.  ,40.);
   
   //Fitting 1275 keV peak
   if( realPeaks.size() == 2 )

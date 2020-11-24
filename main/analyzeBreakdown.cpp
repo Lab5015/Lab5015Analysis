@@ -50,7 +50,7 @@ std::string exec(std::string command)
 double amp_vs_ov(double* x, double* par)
 {
   double xx = x[0];
-  return par[0] * PDE_vs_OV(xx-par[1]) * Gain_vs_OV(xx-par[1]);
+  return par[0] * PDE_vs_OV_HDR2(xx-par[1]) * Gain_vs_OV_HDR2(xx-par[1]);
 }
 
 
@@ -281,7 +281,7 @@ int main(int argc, char** argv)
     
     TF1* fitFunc = new TF1("fitFunc",amp_vs_ov,-1.,10.,2);
     fitFunc -> SetNpx(10000);
-    fitFunc -> SetParameter(0,20./Gain_vs_OV(3.)/PDE_vs_OV(3.));
+    fitFunc -> SetParameter(0,20./Gain_vs_OV_HDR2(3.)/PDE_vs_OV_HDR2(3.));
     fitFunc -> SetParameter(1,0.);
     g_peak511[ch] -> Fit(fitFunc,"RNS+","",fitMinOV,100.);
     fitFunc -> Draw("same");

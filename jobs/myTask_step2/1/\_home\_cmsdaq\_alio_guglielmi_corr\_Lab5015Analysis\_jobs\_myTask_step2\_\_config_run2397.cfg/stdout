@@ -1,0 +1,5 @@
+> CfgManager --- INFO: parsing /home/cmsdaq/alio_guglielmi_corr/Lab5015Analysis/jobs/myTask_step2//config_run2397.cfg
+>>> 2nd loop: bar00L-R_Vov7.0_th25 reading entry 0 / 9 (0%)
+>>> 2nd loop: bar01L-R_Vov7.0_th25 reading entry 0 / 239648 (0%)>>> 2nd loop: bar01L-R_Vov7.0_th25 reading entry 100000 / 239648 (41.727867539057286%)>>> 2nd loop: bar01L-R_Vov7.0_th25 reading entry 200000 / 239648 (83.455735078114571%)
+>>> 2nd loop: bar03L-R_Vov7.0_th25 reading entry 0 / 2 (0%)
+>>> 2nd loop: bar04L-R_Vov7.0_th25 reading entry 0 / 539400 (0%)

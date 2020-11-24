@@ -50,7 +50,7 @@ std::string exec(std::string command)
 double amp_vs_ov(double* x, double* par)
 {
   double xx = x[0];
-  return par[0] * PDE_vs_OV(xx-par[1]) * Gain_vs_OV(xx-par[1]);
+  return par[0] * PDE_vs_OV_HDR2(xx-par[1]) * Gain_vs_OV_HDR2(xx-par[1]);
 }
 
 
