@@ -1,0 +1,37 @@
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune10.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune20.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune30.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune40.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune50.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune60.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune70.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune80.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune83.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune85.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune86.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune87.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune88.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune89.cfg
+./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune90.cfg
+#./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_Na22_511keV.cfg
+#./bin/analyzeTOFPET2_step1.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_Na22_1275keV.cfg
+
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune10.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune20.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune30.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune40.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune50.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune60.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune70.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune80.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune83.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune85.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune86.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune87.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune88.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune89.cfg
+./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_UVlaser_tune90.cfg
+
+#./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_Na22_511keV.cfg
+#./bin/analyzeTOFPET2_step2.exe cfg/analyzeTOFPET2_wirelessBar_HDR2_Na22_1275keV.cfg
+
