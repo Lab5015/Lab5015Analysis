@@ -110,9 +110,9 @@ int main(int argc, char** argv)
     }
   }
   
-  /*//--- define output root file
+  //--- define output root file
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep3");
-  TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");*/
+  TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");
 
   //--- get plot settings
   TCanvas* c;
@@ -223,7 +223,7 @@ int main(int argc, char** argv)
 		fitFunc1 -> SetLineColor(kBlack);
 		fitFunc1 -> SetLineWidth(3);
 		fitFunc1 -> Draw("same");     
-		histo -> Write();
+		//histo -> Write();
 		c -> Print(Form("%s/summaryPlots/tot/c_tot__%s.png",plotDir.c_str(),label.c_str()));
 		c -> Print(Form("%s/summaryPlots/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
 		delete c;
@@ -1498,9 +1498,11 @@ int main(int argc, char** argv)
 	c_en511_vs_iBar_L[Vov_th_ID]->cd();
         TGraph* g_energy_L = g_en511_vs_iBar_L[Vov_th_ID];
          
+        g_energy_L -> SetLineStyle(2);
         g_energy_L -> SetLineColor(1+iter[Vov_th_ID]);
         g_energy_L -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy_L -> SetMarkerStyle(20);
+        g_energy_L -> SetMarkerStyle(24);
+        g_energy_L -> SetMarkerSize(0.8);
         g_energy_L -> Draw("PL,same");
 
         //latex -> Draw("same");
@@ -1508,10 +1510,35 @@ int main(int argc, char** argv)
 	c_en511_vs_iBar_R[Vov_th_ID]->cd();
         TGraph* g_energy_R = g_en511_vs_iBar_R[Vov_th_ID];
          
+        g_energy_R -> SetLineStyle(2);
         g_energy_R -> SetLineColor(1+iter[Vov_th_ID]);
         g_energy_R -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy_R -> SetMarkerStyle(20);
+        g_energy_R -> SetMarkerStyle(25);
+        g_energy_R -> SetMarkerSize(0.8);
         g_energy_R -> Draw("PL,same");
+
+        c_en511_vs_iBar[Vov_th_ID]->cd();
+        g_energy_L -> Draw("PL,same");
+        g_energy_R -> Draw("PL,same");
+
+        
+        latex = new TLatex(0.20,0.87, Form("Average = %.1f, RMS = %.1f %%", g_energy ->GetMean(2), g_energy->GetRMS(2)/g_energy ->GetMean(2)*100));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.03);
+        latex ->Draw("same");
+        
+        latex = new TLatex(0.20,0.83, Form("Left = %.1f, RMS = %.1f %%", g_energy_L ->GetMean(2), g_energy_L->GetRMS(2)/g_energy_L ->GetMean(2)*100 ));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.03);
+        latex ->Draw("same");
+
+        latex = new TLatex(0.20,0.79, Form("Right = %.1f, RMS = %.1f %%", g_energy_R ->GetMean(2), g_energy_R->GetRMS(2)/g_energy_R ->GetMean(2)*100));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.03);
+        latex ->Draw("same");
 
         //latex -> Draw("same");
 	
@@ -1528,9 +1555,11 @@ int main(int argc, char** argv)
 	c_en1275_vs_iBar_L[Vov_th_ID]->cd();
         TGraph* g_energy1275_L = g_en1275_vs_iBar_L[Vov_th_ID];
          
+        g_energy1275_L -> SetLineStyle(2);
         g_energy1275_L -> SetLineColor(1+iter[Vov_th_ID]);
         g_energy1275_L -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy1275_L -> SetMarkerStyle(20);
+        g_energy1275_L -> SetMarkerStyle(24);
+        g_energy1275_L -> SetMarkerSize(0.8);
         g_energy1275_L -> Draw("PL,same");
 
         //latex -> Draw("same");
@@ -1538,13 +1567,37 @@ int main(int argc, char** argv)
 	c_en1275_vs_iBar_R[Vov_th_ID]->cd();
         TGraph* g_energy1275_R = g_en1275_vs_iBar_R[Vov_th_ID];
          
+        g_energy1275_R -> SetLineStyle(2);
         g_energy1275_R -> SetLineColor(1+iter[Vov_th_ID]);
         g_energy1275_R -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy1275_R -> SetMarkerStyle(20);
+        g_energy1275_R -> SetMarkerStyle(25);
+        g_energy1275_R -> SetMarkerSize(0.8);
         g_energy1275_R -> Draw("PL,same");
 
         //latex -> Draw("same");
-	
+
+        c_en1275_vs_iBar[Vov_th_ID]->cd();
+        g_energy1275_L -> Draw("PL,same");
+        g_energy1275_R -> Draw("PL,same");
+
+        latex = new TLatex(0.20,0.87, Form("Average = %.1f, RMS = %.1f %%", g_energy1275 ->GetMean(2), g_energy1275->GetRMS(2)/g_energy1275 ->GetMean(2)*100));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.03);
+        latex ->Draw("same");
+        
+        latex = new TLatex(0.20,0.83, Form("Left = %.1f, RMS = %.1f %%", g_energy1275_L ->GetMean(2), g_energy1275_L->GetRMS(2)/g_energy1275_L ->GetMean(2)*100 ));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.03);
+        latex ->Draw("same");
+
+        latex = new TLatex(0.20,0.79, Form("Right = %.1f, RMS = %.1f %%", g_energy1275_R ->GetMean(2), g_energy1275_R->GetRMS(2)/g_energy1275_R ->GetMean(2)*100));
+        latex -> SetNDC();
+        latex -> SetTextFont(42);
+        latex -> SetTextSize(0.03);
+        latex ->Draw("same");
+
 	c_enRatio_vs_iBar[Vov_th_ID]->cd();
         TGraph* g_energyRatio = g_enRatio_vs_iBar[Vov_th_ID];
          
