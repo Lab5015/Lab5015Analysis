@@ -306,14 +306,29 @@ int main(int argc, char** argv)
 		if(!source.compare(Na22)){        
 			rangesL[index] = new std::vector<float>;
 			peaksL[index] = Na22SpectrumAnalyzer(histo,rangesL[index]);
+	
+			if (peaksL[index]["0.511 MeV"].first > 0){
+				for(auto peak : peaksL[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+				  break;
+				}
+			}
 
 			if (peaksL[index]["0.511 MeV"].first== -9999){
+				for(auto peak : peaksL[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,40);
+				  break;
+				}
 				peaksL.erase(index);
 				rangesL.erase(index);
 				peaksL[index]["0.511 MeV"].first = -10;
 				peaksL[index]["1.275 MeV"].first = -10;
 				
 			}
+			
+			
 
 
 			energy511L = peaksL[index]["0.511 MeV"].first;
@@ -323,11 +338,7 @@ int main(int argc, char** argv)
 			
 			 
 			
-			for(auto peak : peaksL[index] )
-			{
-			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
-			  break;
-			}
+			
 			
 			
 			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
@@ -350,8 +361,20 @@ int main(int argc, char** argv)
 			rangesL[index] = new std::vector<float>;
 			peaksL[index] = Co60SpectrumAnalyzer(histo,rangesL[index]);
 			
+			if (peaksL[index]["1.173 MeV"].first > 0){
+				for(auto peak : peaksL[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+				  break;
+				}
+			}
 
 			if (peaksL[index]["1.173 MeV"].first== -9999){
+				for(auto peak : peaksL[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,40.);
+				  break;
+				}
 				peaksL.erase(index);
 				rangesL.erase(index);
 				peaksL[index]["1.173 MeV"].first = -10;
@@ -365,13 +388,6 @@ int main(int argc, char** argv)
 			theIndex = index;
 			outTrees[index] -> Fill();
 			
-			 
-			
-			for(auto peak : peaksL[index] )
-			{
-			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
-			  break;
-			}
 			
 			
 			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
@@ -401,8 +417,21 @@ int main(int argc, char** argv)
 		if(!source.compare(Na22)){        
 			rangesR[index] = new std::vector<float>;
 			peaksR[index] = Na22SpectrumAnalyzer(histo,rangesR[index]);
+	
+			if (peaksR[index]["0.511 MeV"].first > 0){
+				for(auto peak : peaksR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+				  break;
+				}
+			}
 
 			if (peaksR[index]["0.511 MeV"].first== -9999){
+				for(auto peak : peaksR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,40.);
+				  break;
+				}
 				peaksR.erase(index);
 				rangesR.erase(index);
 				peaksR[index]["0.511 MeV"].first = -10;
@@ -416,13 +445,6 @@ int main(int argc, char** argv)
 			theIndex = index;
 			outTrees[index] -> Fill();
 			
-			 
-			
-			for(auto peak : peaksR[index] )
-			{
-			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
-			  break;
-			}
 			
 			
 			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
@@ -445,8 +467,20 @@ int main(int argc, char** argv)
 			rangesR[index] = new std::vector<float>;
 			peaksR[index] = Co60SpectrumAnalyzer(histo,rangesR[index]);
 			
+			if (peaksR[index]["1.173 MeV"].first > 0){
+				for(auto peak : peaksR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+				  break;
+				}
+			}
 
 			if (peaksR[index]["1.173 MeV"].first== -9999){
+				for(auto peak : peaksR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,40.);
+				  break;
+				}
 				peaksR.erase(index);
 				rangesR.erase(index);
 				peaksR[index]["1.173 MeV"].first = -10;
@@ -459,14 +493,6 @@ int main(int argc, char** argv)
 			energy1275R = peaksR[index]["1.332 MeV"].first;
 			theIndex = index;
 			outTrees[index] -> Fill();
-			
-			 
-			
-			for(auto peak : peaksR[index] )
-			{
-			  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
-			  break;
-			}
 			
 			
 			histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
@@ -528,8 +554,21 @@ int main(int argc, char** argv)
 	if(!source.compare(Na22)){        
 		rangesLR[index] = new std::vector<float>;
 		peaksLR[index] = Na22SpectrumAnalyzer(histo,rangesLR[index]);
+	
+		if (peaksLR[index]["0.511 MeV"].first > 0){
+				for(auto peak : peaksLR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+				  break;
+				}
+			}
 
 		if (peaksLR[index]["0.511 MeV"].first== -9999){
+			for(auto peak : peaksLR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,40.);
+				  break;
+				}
 			peaksLR.erase(index);
 			rangesLR.erase(index);
 			peaksLR[index]["0.511 MeV"].first = -10;
@@ -543,13 +582,6 @@ int main(int argc, char** argv)
 		theIndex = index;
 		outTrees[index] -> Fill();
 		
-		 
-		
-		for(auto peak : peaksLR[index] )
-		{
-		  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
-		  break;
-		}
 		
 		
 		histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
@@ -572,8 +604,20 @@ int main(int argc, char** argv)
 		rangesLR[index] = new std::vector<float>;
 		peaksLR[index] = Co60SpectrumAnalyzer(histo,rangesLR[index]);
 		
+		if (peaksLR[index]["1.173 MeV"].first > 0){
+				for(auto peak : peaksLR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
+				  break;
+				}
+			}
 
 		if (peaksLR[index]["1.173 MeV"].first== -9999){
+			for(auto peak : peaksLR[index] )
+				{
+				  histo -> GetXaxis() -> SetRangeUser(0.,40);
+				  break;
+				}
 			peaksLR.erase(index);
 			rangesLR.erase(index);
 			peaksLR[index]["1.173 MeV"].first = -10;
@@ -586,14 +630,6 @@ int main(int argc, char** argv)
 		energy1275LR = peaksLR[index]["1.332 MeV"].first;
 		theIndex = index;
 		outTrees[index] -> Fill();
-		
-		 
-		
-		for(auto peak : peaksLR[index] )
-		{
-		  histo -> GetXaxis() -> SetRangeUser(0.,5.*peak.second.first);
-		  break;
-		}
 		
 		
 		histo -> GetYaxis() -> SetRangeUser(3.,5.*histo->GetMaximum());
@@ -622,7 +658,6 @@ int main(int argc, char** argv)
 				
 	
 		
-        
         latex -> Draw("same");
         histo -> Write();
         c -> Print(Form("%s/energy/c_energy__%s.png",plotDir.c_str(),label.c_str()));
@@ -641,7 +676,7 @@ int main(int argc, char** argv)
   
   
   
-  
+
   
   
   //------------------------

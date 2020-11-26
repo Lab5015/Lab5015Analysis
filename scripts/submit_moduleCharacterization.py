@@ -9,6 +9,7 @@ import subprocess
 parser = argparse.ArgumentParser(description='This script splits moduleCharacterization_step* tasks in multiple parallel jobs')
 
 parser.add_argument("-l",  "--label",          required=True, type=str, help="job label")
+parser.add_argument("-f",  "--fileFolder",          required=True, type=str, help="file folder")
 parser.add_argument("-b",  "--baseFolder",     required=True, type=str, help="base folder")
 parser.add_argument("-e",  "--exeName",        required=True, type=str, help="absolute path of executable")
 parser.add_argument("-r",  "--runs",           required=True, type=str, help="comma-separated list of runs to be processed")
@@ -66,7 +67,7 @@ for run in runs:
          fo.write(contents)
       command = 'sed -i \"s%^runs .*$%runs '+str(run)+'%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^step1FileName .*$%step1FileName '+args.baseFolder+'/plots/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
+      command = 'sed -i \"s%^step1FileName .*$%step1FileName '+args.fileFolder+'/plots/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
       command = 'sed -i \"s%^outFileNameStep1 .*$%outFileNameStep1 '+args.baseFolder+'/plots/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
