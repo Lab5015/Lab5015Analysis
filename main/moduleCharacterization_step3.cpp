@@ -51,8 +51,8 @@ int main(int argc, char** argv)
 
   typedef std::numeric_limits<double> dbl;
   std::cout.precision(dbl::max_digits10);
-
-//--- get parameters
+  
+  //--- get parameters
   std::string plotDir = opts.GetOpt<std::string>("Output.plotDirStep3");
   //system(Form("rm -r %s", plotDir.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
@@ -71,6 +71,7 @@ int main(int argc, char** argv)
 
   //--- open files and make the tree chain
   //--- Prima di eseguire cambia il numero del run nel config file
+  std::string inputDir1 = opts.GetOpt<std::string>("Input.inputDir1");
   std::string inputDir = opts.GetOpt<std::string>("Input.inputDir");
   std::string fileBaseName1 = opts.GetOpt<std::string>("Input.fileBaseName1");
   std::string fileBaseName2 = opts.GetOpt<std::string>("Input.fileBaseName2");
@@ -100,7 +101,7 @@ int main(int argc, char** argv)
     {
       std::string fileNameStep1;
       std::string fileNameStep2;
-      fileNameStep1 = Form("%s%s1_%s%04d.root",inputDir.c_str(),fileBaseName1.c_str(),fileBaseName2.c_str(),run);
+      fileNameStep1 = Form("%s%s1_%s%04d.root",inputDir1.c_str(),fileBaseName1.c_str(),fileBaseName2.c_str(),run);
       fileNameStep2 = Form("%s%s2_%s%04d.root",inputDir.c_str(),fileBaseName1.c_str(),fileBaseName2.c_str(),run);
       std::cout << ">>> Adding file " << fileNameStep1 << std::endl;
       std::cout << ">>> Adding file " << fileNameStep2 << std::endl;
@@ -113,6 +114,7 @@ int main(int argc, char** argv)
   //--- define output root file
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep3");
   TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");
+  
 
   //--- get plot settings
   TCanvas* c;
@@ -123,7 +125,9 @@ int main(int argc, char** argv)
   std::vector<std::string> LRLabels;
   LRLabels.push_back("L");
   LRLabels.push_back("R");
-
+  
+  float refTh = opts.GetOpt<float>("Plots.refTh");
+  
   std::map<std::string,TTree*> trees;
   std::map<std::string,TTree*> trees2;
   std::map<std::string,int> VovLabels;
@@ -133,11 +137,13 @@ int main(int argc, char** argv)
   std::map<std::string,float> map_Vovs;
   std::map<std::string,float> map_ths;
   std::map<std::string,float> map_EnBin; 
+
+  std::vector<float> vec_th1;
  
   //define TGraph
   std::map<std::string,TGraphErrors*> g_tot_vs_th;
   std::map<std::string,TGraphErrors*> g_tot_vs_Vov;
-  std::map<std::string,TGraphErrors*> g_tot_vs_iBar;
+  std::map<std::string,TGraphErrors*> g_tot_vs_bar;
 
   for(auto file: listStep1){
 	  
@@ -169,11 +175,17 @@ int main(int argc, char** argv)
 	      std::string string_th = tokens[4];
 	      string_th.erase(0,2);
 	      map_ths[stepLabel] = atof(string_th.c_str());
+	      float vth1 = map_ths[stepLabel];
+              vec_th1.push_back(vth1);
 	    }
 	  }
 	  std::sort(stepLabels.begin(),stepLabels.end());
 	  stepLabels.erase(std::unique(stepLabels.begin(),stepLabels.end()),stepLabels.end());
-	   
+  	  std::sort(vec_th1.begin(),vec_th1.end());
+          vec_th1.erase(std::unique(vec_th1.begin(),vec_th1.end()),vec_th1.end());  
+
+
+
 	  
 	  
 	  for(auto stepLabel : stepLabels)
@@ -193,6 +205,7 @@ int main(int argc, char** argv)
 	      
 	      for(auto LRLabel : LRLabels )
 	      {
+
 		//label histo
 		std::string label(Form("bar%02d%s_%s",iBar,LRLabel.c_str(),stepLabel.c_str()));
 		
@@ -222,11 +235,13 @@ int main(int argc, char** argv)
 		histo -> Fit(fitFunc1,"QNS+", " ", fitFunc1->GetParameter(1)-fitFunc1->GetParameter(2), fitFunc1->GetParameter(1)+fitFunc1->GetParameter(2));
 		fitFunc1 -> SetLineColor(kBlack);
 		fitFunc1 -> SetLineWidth(3);
-		fitFunc1 -> Draw("same");     
+		fitFunc1 -> Draw("same");
+		//outFile -> cd();     
 		//histo -> Write();
-		c -> Print(Form("%s/summaryPlots/tot/c_tot__%s.png",plotDir.c_str(),label.c_str()));
+		
+		/*c -> Print(Form("%s/summaryPlots/tot/c_tot__%s.png",plotDir.c_str(),label.c_str()));
 		c -> Print(Form("%s/summaryPlots/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
-		delete c;
+		delete c;*/
 
 		
 		if(LRLabel=="L"){
@@ -247,13 +262,13 @@ int main(int argc, char** argv)
 		  g_tot_vs_Vov[Form("bar%02dL_%s",iBar,thLabel.c_str())] -> SetPoint(g_tot_vs_Vov[Form("bar%02dL_%s",iBar,thLabel.c_str())]->GetN(),Vov,fitFunc1->GetMaximumX());
 		  g_tot_vs_Vov[Form("bar%02dL_%s",iBar,thLabel.c_str())] -> SetPointError(g_tot_vs_Vov[Form("bar%02dL_%s",iBar,thLabel.c_str())]->GetN()-1,0,0);
 
-		  //g_tot_vs_iBar
+		  //g_tot_vs_bar
 
-		  if( g_tot_vs_iBar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] == NULL ){
-		    g_tot_vs_iBar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] = new TGraphErrors();
+		  if( g_tot_vs_bar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] == NULL ){
+		    g_tot_vs_bar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] = new TGraphErrors();
 		  }
-		  g_tot_vs_iBar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPoint(g_tot_vs_iBar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN(),iBar,fitFunc1->GetMaximumX());
-		  g_tot_vs_iBar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPointError(g_tot_vs_iBar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN()-1,0,0);
+		  g_tot_vs_bar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPoint(g_tot_vs_bar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN(),iBar,fitFunc1->GetMaximumX());
+		  g_tot_vs_bar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPointError(g_tot_vs_bar[Form("L_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN()-1,0,0);
 
 		}
 		if(LRLabel=="R"){
@@ -274,19 +289,20 @@ int main(int argc, char** argv)
 		  g_tot_vs_Vov[Form("bar%02dR_%s",iBar,thLabel.c_str())] -> SetPoint(g_tot_vs_Vov[Form("bar%02dR_%s",iBar,thLabel.c_str())]->GetN(),Vov,fitFunc1->GetMaximumX());
 		  g_tot_vs_Vov[Form("bar%02dR_%s",iBar,thLabel.c_str())] -> SetPointError(g_tot_vs_Vov[Form("bar%02dR_%s",iBar,thLabel.c_str())]->GetN()-1,0,0);
 
-		  //g_tot_vs_iBar
+		  //g_tot_vs_bar
 
-		  if( g_tot_vs_iBar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] == NULL ){
-		    g_tot_vs_iBar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] = new TGraphErrors();
+		  if( g_tot_vs_bar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] == NULL ){
+		    g_tot_vs_bar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] = new TGraphErrors();
 		  }
-		  g_tot_vs_iBar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPoint(g_tot_vs_iBar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN(),iBar,fitFunc1->GetMaximumX());
-		  g_tot_vs_iBar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPointError(g_tot_vs_iBar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN()-1,0,0);
+		  g_tot_vs_bar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPoint(g_tot_vs_bar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN(),iBar,fitFunc1->GetMaximumX());
+		  g_tot_vs_bar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())] -> SetPointError(g_tot_vs_bar[Form("R_%s_%s",VovLabel.c_str(),thLabel.c_str())]->GetN()-1,0,0);
 		}  
 	      }
 	    }
 	  }
-  }	   
-	  
+  }
+   
+    
 	  //------------------
 	  //--- draw summary plots
 
@@ -322,11 +338,15 @@ int main(int argc, char** argv)
 	      g_totL -> SetMarkerColor(1+iter);
 	      g_totL -> SetMarkerStyle(20);
 	      g_totL -> Draw("PL,same");
+	      outFile -> cd();
+	      g_totL -> Write(Form("g_tot_vs_th_bar%02dL_%s",iBar,mapIt.first.c_str()));
 	      
 	      g_totR -> SetLineColor(1+iter);
 	      g_totR -> SetMarkerColor(1+iter);
 	      g_totR -> SetMarkerStyle(25);
 	      g_totR -> Draw("PL,same");
+	      outFile -> cd();
+	      g_totR -> Write(Form("g_tot_vs_th_bar%02dR_%s",iBar,mapIt.first.c_str()));
 	      
 	      latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
 	      latex -> SetNDC();
@@ -374,11 +394,15 @@ int main(int argc, char** argv)
 	      g_totL -> SetMarkerColor(1+iter);
 	      g_totL -> SetMarkerStyle(20);
 	      g_totL -> Draw("PL,same");
+	      outFile -> cd();
+	      g_totL -> Write(Form("g_tot_vs_Vov_bar%02dL_%s",iBar,mapIt.first.c_str()));
 	      
 	      g_totR -> SetLineColor(1+iter);
 	      g_totR -> SetMarkerColor(1+iter);
 	      g_totR -> SetMarkerStyle(25);
 	      g_totR -> Draw("PL,same");
+	      outFile -> cd();
+	      g_totR -> Write(Form("g_tot_vs_Vov_bar%02dR_%s",iBar,mapIt.first.c_str()));
 	      
 	      latex = new TLatex(0.55,0.85-0.04*iter,Form("%s",mapIt.first.c_str()));
 	      latex -> SetNDC();
@@ -398,6 +422,10 @@ int main(int argc, char** argv)
 
 
 	  for(auto mapIt1 : thLabels){
+	    //std::cout<<"ref"<<refTh<<std::endl;
+            //std::cout<<"quiiii"<<Form("th%d",int(refTh))<<std::endl;
+	    if( mapIt1.first != Form("th%d",int(refTh))) continue;
+	    //std::cout<<"quiiiiiii"<<std::endl;
 	    for(auto mapIt2 : VovLabels){
 	     
 	      c1 = new TCanvas(Form("c_tot_vs_bar_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str()),Form("c_tot_vs_bar_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str()));
@@ -410,36 +438,48 @@ int main(int argc, char** argv)
 	      std::string label1(Form("L_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str()));
 	      std::string label2(Form("R_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str()));
 
-	      if( g_tot_vs_iBar[Form("L_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str())]){
-		TGraphErrors* g_totL = g_tot_vs_iBar[label1];
+	      if( g_tot_vs_bar[Form("L_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str())]){
+		TGraphErrors* g_totL = g_tot_vs_bar[label1];
 		if(g_totL->GetN()>0){
 		  g_totL -> SetLineColor(kBlue);
 	          g_totL -> SetMarkerColor(kBlue);
 		  g_totL -> SetMarkerStyle(20);
 		  g_totL -> Draw("P");
+		  outFile -> cd();
+	          g_totL -> Write(Form("g_tot_vs_barL_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str()));
 
-                  std::string label_prova = "Blue: L	Red: R";
+                  /*std::string label_prova = "Blue: L	Red: R";
 		  latex = new TLatex(0.55,0.85-0.04,label_prova.c_str());
 	          latex -> SetNDC();
 	          latex -> SetTextFont(42);
 	          latex -> SetTextSize(0.04);
 	      	  latex -> SetTextColor(kBlack);
-	      	  latex -> Draw("same");
+	      	  latex -> Draw("same");*/
+		  TLegend* legenda = new TLegend(0.55,0.80,0.70,0.85);
+		  legenda->AddEntry(g_totL, "Left", "P");
+		  legenda -> SetBorderSize(0);
+		  legenda->Draw();
+
 
 	      	  c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_bar_%s_%s.png",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
 	      	  c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_bar_%s_%s.pdf",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
                 }
 	      }
 
-	      if(g_tot_vs_iBar[Form("R_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str())]){
-		TGraphErrors* g_totR = g_tot_vs_iBar[label2];
+	      if(g_tot_vs_bar[Form("R_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str())]){
+		TGraphErrors* g_totR = g_tot_vs_bar[label2];
 		if(g_totR->GetN()>0){
 		  g_totR -> SetLineColor(kRed);
 		  g_totR -> SetMarkerColor(kRed);
 		  g_totR -> SetMarkerStyle(20);
 		  g_totR -> Draw("P,same");
+		  outFile -> cd();
+	          g_totR -> Write(Form("g_tot_vs_barR_%s_%s",mapIt2.first.c_str(),mapIt1.first.c_str()));
 	
-		  
+		  TLegend* legenda = new TLegend(0.55,0.85,0.70,0.89);
+		  legenda->AddEntry(g_totR, "Right", "P");
+		  legenda -> SetBorderSize(0);
+		  legenda->Draw();
 		
 
 		  c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_bar_%s_%s.png",plotDir.c_str(),mapIt2.first.c_str(),mapIt1.first.c_str()));
@@ -451,7 +491,6 @@ int main(int argc, char** argv)
 
 	    }
 	  }
-
 
 
 
@@ -545,31 +584,31 @@ int main(int argc, char** argv)
 
   std::map<float,TGraphErrors*> g_en511_vs_th;
   std::map<float,TGraphErrors*> g_en511_vs_Vov;
-  std::map<float,TGraphErrors*> g_en511_vs_iBar;
+  std::map<float,TGraphErrors*> g_en511_vs_bar;
   std::map<float,TGraphErrors*> g_en1275_vs_th;
   std::map<float,TGraphErrors*> g_en1275_vs_Vov;
-  std::map<float,TGraphErrors*> g_en1275_vs_iBar;
+  std::map<float,TGraphErrors*> g_en1275_vs_bar;
   std::map<float,TGraphErrors*> g_enRatio_vs_th;
   std::map<float,TGraphErrors*> g_enRatio_vs_Vov;
-  std::map<float,TGraphErrors*> g_enRatio_vs_iBar;
+  std::map<float,TGraphErrors*> g_enRatio_vs_bar;
   std::map<float,TGraphErrors*> g_en511_vs_th_L;
   std::map<float,TGraphErrors*> g_en511_vs_Vov_L;
-  std::map<float,TGraphErrors*> g_en511_vs_iBar_L;
+  std::map<float,TGraphErrors*> g_en511_vs_bar_L;
   std::map<float,TGraphErrors*> g_en1275_vs_th_L;
   std::map<float,TGraphErrors*> g_en1275_vs_Vov_L;
-  std::map<float,TGraphErrors*> g_en1275_vs_iBar_L;
+  std::map<float,TGraphErrors*> g_en1275_vs_bar_L;
   std::map<float,TGraphErrors*> g_enRatio_vs_th_L;
   std::map<float,TGraphErrors*> g_enRatio_vs_Vov_L;
-  std::map<float,TGraphErrors*> g_enRatio_vs_iBar_L;
+  std::map<float,TGraphErrors*> g_enRatio_vs_bar_L;
   std::map<float,TGraphErrors*> g_en511_vs_th_R;
   std::map<float,TGraphErrors*> g_en511_vs_Vov_R;
-  std::map<float,TGraphErrors*> g_en511_vs_iBar_R;
+  std::map<float,TGraphErrors*> g_en511_vs_bar_R;
   std::map<float,TGraphErrors*> g_en1275_vs_th_R;
   std::map<float,TGraphErrors*> g_en1275_vs_Vov_R;
-  std::map<float,TGraphErrors*> g_en1275_vs_iBar_R;
+  std::map<float,TGraphErrors*> g_en1275_vs_bar_R;
   std::map<float,TGraphErrors*> g_enRatio_vs_th_R;
   std::map<float,TGraphErrors*> g_enRatio_vs_Vov_R;
-  std::map<float,TGraphErrors*> g_enRatio_vs_iBar_R;
+  std::map<float,TGraphErrors*> g_enRatio_vs_bar_R;
   
   //int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
 
@@ -650,28 +689,16 @@ int main(int argc, char** argv)
     if( g_en511_vs_Vov[th_iBar_ID] == NULL ){	
       g_en511_vs_Vov[th_iBar_ID] = new TGraphErrors();
     }
-    if( g_en511_vs_iBar[Vov_th_ID] == NULL ){	
-      g_en511_vs_iBar[Vov_th_ID] = new TGraphErrors();
+    if( g_en511_vs_bar[Vov_th_ID] == NULL ){	
+      g_en511_vs_bar[Vov_th_ID] = new TGraphErrors();
     }
 
-    /*if( g_en511_vs_th_L[Vov_iBar_ID] == NULL ){	
-      g_en511_vs_th_L[Vov_iBar_ID] = new TGraphErrors();
+    if( g_en511_vs_bar_L[Vov_th_ID] == NULL ){	
+      g_en511_vs_bar_L[Vov_th_ID] = new TGraphErrors();
     }
-    if( g_en511_vs_Vov_L[th_iBar_ID] == NULL ){	
-      g_en511_vs_Vov_L[th_iBar_ID] = new TGraphErrors();
-    }*/
-    if( g_en511_vs_iBar_L[Vov_th_ID] == NULL ){	
-      g_en511_vs_iBar_L[Vov_th_ID] = new TGraphErrors();
-    }
-
-    /*if( g_en511_vs_th_R[Vov_iBar_ID] == NULL ){	
-      g_en511_vs_th_R[Vov_iBar_ID] = new TGraphErrors();
-    }
-    if( g_en511_vs_Vov_R[th_iBar_ID] == NULL ){	
-      g_en511_vs_Vov_R[th_iBar_ID] = new TGraphErrors();
-    }*/
-    if( g_en511_vs_iBar_R[Vov_th_ID] == NULL ){	
-      g_en511_vs_iBar_R[Vov_th_ID] = new TGraphErrors();
+    
+    if( g_en511_vs_bar_R[Vov_th_ID] == NULL ){	
+      g_en511_vs_bar_R[Vov_th_ID] = new TGraphErrors();
     }
     
     if (index->second>0.1){
@@ -684,9 +711,9 @@ int main(int argc, char** argv)
       //std::cout<<"N"<<g_en511_vs_Vov[th_iBar_ID]->GetN()<<"Vov"<<Vov<<"en"<<index->second<<"thIbarID"<<th_iBar_ID<<"th"<<th<<std::endl;
       g_en511_vs_Vov[th_iBar_ID]->SetPointError(g_en511_vs_Vov[th_iBar_ID]->GetN()-1, 0., 0.);
 
-      g_en511_vs_iBar[Vov_th_ID]->SetPoint(g_en511_vs_iBar[Vov_th_ID]->GetN(), iBar, index->second);
-      //std::cout<<"N"<<g_en511_vs_iBar[Vov_th_ID]->GetN()<<"Vov"<<Vov<<"en"<<index->second<<"thVovID"<<Vov_th_ID<<"th"<<th<<"bar"<<iBar<<std::endl;
-      g_en511_vs_iBar[Vov_th_ID]->SetPointError(g_en511_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_en511_vs_bar[Vov_th_ID]->SetPoint(g_en511_vs_bar[Vov_th_ID]->GetN(), iBar, index->second);
+      //std::cout<<"N"<<g_en511_vs_bar[Vov_th_ID]->GetN()<<"Vov"<<Vov<<"en"<<index->second<<"thVovID"<<Vov_th_ID<<"th"<<th<<"bar"<<iBar<<std::endl;
+      g_en511_vs_bar[Vov_th_ID]->SetPointError(g_en511_vs_bar[Vov_th_ID]->GetN()-1, 0., 0.);
       
     }
 
@@ -698,8 +725,8 @@ int main(int argc, char** argv)
       g_en511_vs_Vov_L[th_iBar_ID]->SetPoint(g_en511_vs_Vov_L[th_iBar_ID]->GetN(), Vov, map_en511L[index->first]);
       g_en511_vs_Vov_L[th_iBar_ID]->SetPointError(g_en511_vs_Vov_L[th_iBar_ID]->GetN()-1, 0., 0.);*/
 
-      g_en511_vs_iBar_L[Vov_th_ID]->SetPoint(g_en511_vs_iBar_L[Vov_th_ID]->GetN(), iBar, map_en511L[index->first]);
-      g_en511_vs_iBar_L[Vov_th_ID]->SetPointError(g_en511_vs_iBar_L[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_en511_vs_bar_L[Vov_th_ID]->SetPoint(g_en511_vs_bar_L[Vov_th_ID]->GetN(), iBar, map_en511L[index->first]);
+      g_en511_vs_bar_L[Vov_th_ID]->SetPointError(g_en511_vs_bar_L[Vov_th_ID]->GetN()-1, 0., 0.);
       
     }
 
@@ -711,8 +738,8 @@ int main(int argc, char** argv)
       g_en511_vs_Vov_R[th_iBar_ID]->SetPoint(g_en511_vs_Vov_R[th_iBar_ID]->GetN(), Vov, map_en511R[index->first]);
       g_en511_vs_Vov_R[th_iBar_ID]->SetPointError(g_en511_vs_Vov_R[th_iBar_ID]->GetN()-1, 0., 0.);*/
 
-      g_en511_vs_iBar_R[Vov_th_ID]->SetPoint(g_en511_vs_iBar_R[Vov_th_ID]->GetN(), iBar, map_en511R[index->first]);
-      g_en511_vs_iBar_R[Vov_th_ID]->SetPointError(g_en511_vs_iBar_R[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_en511_vs_bar_R[Vov_th_ID]->SetPoint(g_en511_vs_bar_R[Vov_th_ID]->GetN(), iBar, map_en511R[index->first]);
+      g_en511_vs_bar_R[Vov_th_ID]->SetPointError(g_en511_vs_bar_R[Vov_th_ID]->GetN()-1, 0., 0.);
       
     }
 
@@ -741,26 +768,16 @@ int main(int argc, char** argv)
     if( g_en1275_vs_Vov[th_iBar_ID] == NULL ){	
       g_en1275_vs_Vov[th_iBar_ID] = new TGraphErrors();
     }
-    if( g_en1275_vs_iBar[Vov_th_ID] == NULL ){	
-      g_en1275_vs_iBar[Vov_th_ID] = new TGraphErrors();
+    if( g_en1275_vs_bar[Vov_th_ID] == NULL ){	
+      g_en1275_vs_bar[Vov_th_ID] = new TGraphErrors();
     }
-    /*if( g_en1275_vs_th_L[Vov_iBar_ID] == NULL ){	
-      g_en1275_vs_th_L[Vov_iBar_ID] = new TGraphErrors();
+    
+    if( g_en1275_vs_bar_L[Vov_th_ID] == NULL ){	
+      g_en1275_vs_bar_L[Vov_th_ID] = new TGraphErrors();
     }
-    if( g_en1275_vs_Vov_L[th_iBar_ID] == NULL ){	
-      g_en1275_vs_Vov_L[th_iBar_ID] = new TGraphErrors();
-    }*/
-    if( g_en1275_vs_iBar_L[Vov_th_ID] == NULL ){	
-      g_en1275_vs_iBar_L[Vov_th_ID] = new TGraphErrors();
-    }
-    /*if( g_en1275_vs_th_R[Vov_iBar_ID] == NULL ){	
-      g_en1275_vs_th_R[Vov_iBar_ID] = new TGraphErrors();
-    }
-    if( g_en1275_vs_Vov_R[th_iBar_ID] == NULL ){	
-      g_en1275_vs_Vov_R[th_iBar_ID] = new TGraphErrors();
-    }*/
-    if( g_en1275_vs_iBar_R[Vov_th_ID] == NULL ){	
-      g_en1275_vs_iBar_R[Vov_th_ID] = new TGraphErrors();
+    
+    if( g_en1275_vs_bar_R[Vov_th_ID] == NULL ){	
+      g_en1275_vs_bar_R[Vov_th_ID] = new TGraphErrors();
     }
     
     if (index->second>0.1){
@@ -771,8 +788,8 @@ int main(int argc, char** argv)
       g_en1275_vs_Vov[th_iBar_ID]->SetPoint(g_en1275_vs_Vov[th_iBar_ID]->GetN(), Vov, index->second);
       g_en1275_vs_Vov[th_iBar_ID]->SetPointError(g_en1275_vs_Vov[th_iBar_ID]->GetN()-1, 0., 0.);
 
-      g_en1275_vs_iBar[Vov_th_ID]->SetPoint(g_en1275_vs_iBar[Vov_th_ID]->GetN(), iBar, index->second);
-      g_en1275_vs_iBar[Vov_th_ID]->SetPointError(g_en1275_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_en1275_vs_bar[Vov_th_ID]->SetPoint(g_en1275_vs_bar[Vov_th_ID]->GetN(), iBar, index->second);
+      g_en1275_vs_bar[Vov_th_ID]->SetPointError(g_en1275_vs_bar[Vov_th_ID]->GetN()-1, 0., 0.);
     }
 	
     if (map_en1275R[index->first]>0.1){
@@ -783,8 +800,8 @@ int main(int argc, char** argv)
       g_en1275_vs_Vov_R[th_iBar_ID]->SetPoint(g_en1275_vs_Vov_R[th_iBar_ID]->GetN(), Vov, map_en1275R[index->first]);
       g_en1275_vs_Vov_R[th_iBar_ID]->SetPointError(g_en1275_vs_Vov_R[th_iBar_ID]->GetN()-1, 0., 0.);*/
 
-      g_en1275_vs_iBar_R[Vov_th_ID]->SetPoint(g_en1275_vs_iBar_R[Vov_th_ID]->GetN(), iBar, map_en1275R[index->first]);
-      g_en1275_vs_iBar_R[Vov_th_ID]->SetPointError(g_en1275_vs_iBar_R[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_en1275_vs_bar_R[Vov_th_ID]->SetPoint(g_en1275_vs_bar_R[Vov_th_ID]->GetN(), iBar, map_en1275R[index->first]);
+      g_en1275_vs_bar_R[Vov_th_ID]->SetPointError(g_en1275_vs_bar_R[Vov_th_ID]->GetN()-1, 0., 0.);
     }
 		
     if (map_en1275L[index->first]>0.1){
@@ -795,8 +812,8 @@ int main(int argc, char** argv)
       g_en1275_vs_Vov_L[th_iBar_ID]->SetPoint(g_en1275_vs_Vov_L[th_iBar_ID]->GetN(), Vov, map_en1275L[index->first]);
       g_en1275_vs_Vov_L[th_iBar_ID]->SetPointError(g_en1275_vs_Vov_L[th_iBar_ID]->GetN()-1, 0., 0.);*/
 
-      g_en1275_vs_iBar_L[Vov_th_ID]->SetPoint(g_en1275_vs_iBar_L[Vov_th_ID]->GetN(), iBar, map_en1275L[index->first]);
-      g_en1275_vs_iBar_L[Vov_th_ID]->SetPointError(g_en1275_vs_iBar_L[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_en1275_vs_bar_L[Vov_th_ID]->SetPoint(g_en1275_vs_bar_L[Vov_th_ID]->GetN(), iBar, map_en1275L[index->first]);
+      g_en1275_vs_bar_L[Vov_th_ID]->SetPointError(g_en1275_vs_bar_L[Vov_th_ID]->GetN()-1, 0., 0.);
     }
   }
 
@@ -824,30 +841,16 @@ int main(int argc, char** argv)
       g_enRatio_vs_Vov[th_iBar_ID] = new TGraphErrors();
     }
 
-    if( g_enRatio_vs_iBar[Vov_th_ID] == NULL ){	
-      g_enRatio_vs_iBar[Vov_th_ID] = new TGraphErrors();
+    if( g_enRatio_vs_bar[Vov_th_ID] == NULL ){	
+      g_enRatio_vs_bar[Vov_th_ID] = new TGraphErrors();
     }
 		
-    /*if( g_enRatio_vs_th_L[Vov_iBar_ID] == NULL ){	
-      g_enRatio_vs_th_L[Vov_iBar_ID] = new TGraphErrors();
+    if( g_enRatio_vs_bar_L[Vov_th_ID] == NULL ){	
+      g_enRatio_vs_bar_L[Vov_th_ID] = new TGraphErrors();
     }
-    if( g_enRatio_vs_Vov_L[th_iBar_ID] == NULL ){	
-      g_enRatio_vs_Vov_L[th_iBar_ID] = new TGraphErrors();
-    }*/
-
-    if( g_enRatio_vs_iBar_L[Vov_th_ID] == NULL ){	
-      g_enRatio_vs_iBar_L[Vov_th_ID] = new TGraphErrors();
-    }
-
-   /* if( g_enRatio_vs_th_R[Vov_iBar_ID] == NULL ){	
-      g_enRatio_vs_th_R[Vov_iBar_ID] = new TGraphErrors();
-    }
-    if( g_enRatio_vs_Vov_R[th_iBar_ID] == NULL ){	
-      g_enRatio_vs_Vov_R[th_iBar_ID] = new TGraphErrors();
-    }*/
-
-    if( g_enRatio_vs_iBar_R[Vov_th_ID] == NULL ){	
-      g_enRatio_vs_iBar_R[Vov_th_ID] = new TGraphErrors();
+    
+    if( g_enRatio_vs_bar_R[Vov_th_ID] == NULL ){	
+      g_enRatio_vs_bar_R[Vov_th_ID] = new TGraphErrors();
     }
     
     if (index->second>0.1){
@@ -858,8 +861,8 @@ int main(int argc, char** argv)
       g_enRatio_vs_Vov[th_iBar_ID]->SetPoint(g_enRatio_vs_Vov[th_iBar_ID]->GetN(), Vov, index->second);
       g_enRatio_vs_Vov[th_iBar_ID]->SetPointError(g_enRatio_vs_Vov[th_iBar_ID]->GetN()-1, 0., 0.);
 
-      g_enRatio_vs_iBar[Vov_th_ID]->SetPoint(g_enRatio_vs_iBar[Vov_th_ID]->GetN(), iBar, index->second);
-      g_enRatio_vs_iBar[Vov_th_ID]->SetPointError(g_enRatio_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_enRatio_vs_bar[Vov_th_ID]->SetPoint(g_enRatio_vs_bar[Vov_th_ID]->GetN(), iBar, index->second);
+      g_enRatio_vs_bar[Vov_th_ID]->SetPointError(g_enRatio_vs_bar[Vov_th_ID]->GetN()-1, 0., 0.);
     }
 
     if (map_enRatioR[index->first]>0.1){
@@ -870,8 +873,8 @@ int main(int argc, char** argv)
       g_enRatio_vs_Vov_R[th_iBar_ID]->SetPoint(g_enRatio_vs_Vov_R[th_iBar_ID]->GetN(), Vov, map_enRatioR[index->first]);
       g_enRatio_vs_Vov_R[th_iBar_ID]->SetPointError(g_enRatio_vs_Vov_R[th_iBar_ID]->GetN()-1, 0., 0.);*/
 
-      g_enRatio_vs_iBar_R[Vov_th_ID]->SetPoint(g_enRatio_vs_iBar_R[Vov_th_ID]->GetN(), iBar, map_enRatioR[index->first]);
-      g_enRatio_vs_iBar_R[Vov_th_ID]->SetPointError(g_enRatio_vs_iBar_R[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_enRatio_vs_bar_R[Vov_th_ID]->SetPoint(g_enRatio_vs_bar_R[Vov_th_ID]->GetN(), iBar, map_enRatioR[index->first]);
+      g_enRatio_vs_bar_R[Vov_th_ID]->SetPointError(g_enRatio_vs_bar_R[Vov_th_ID]->GetN()-1, 0., 0.);
     }
 
     if (map_enRatioL[index->first]>0.1){
@@ -882,44 +885,43 @@ int main(int argc, char** argv)
       g_enRatio_vs_Vov_L[th_iBar_ID]->SetPoint(g_enRatio_vs_Vov_L[th_iBar_ID]->GetN(), Vov, map_enRatioL[index->first]);
       g_enRatio_vs_Vov_L[th_iBar_ID]->SetPointError(g_enRatio_vs_Vov_L[th_iBar_ID]->GetN()-1, 0., 0.);*/
 
-      g_enRatio_vs_iBar_L[Vov_th_ID]->SetPoint(g_enRatio_vs_iBar_L[Vov_th_ID]->GetN(), iBar, map_enRatioL[index->first]);
-      g_enRatio_vs_iBar_L[Vov_th_ID]->SetPointError(g_enRatio_vs_iBar_L[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_enRatio_vs_bar_L[Vov_th_ID]->SetPoint(g_enRatio_vs_bar_L[Vov_th_ID]->GetN(), iBar, map_enRatioL[index->first]);
+      g_enRatio_vs_bar_L[Vov_th_ID]->SetPointError(g_enRatio_vs_bar_L[Vov_th_ID]->GetN()-1, 0., 0.);
     }
   }
-
-
-
-
-
+  
+  
+  
+  
   std::map<int, TCanvas*> c_en511_vs_th;
   std::map<int, TCanvas*> c_en511_vs_Vov;
-  std::map<int, TCanvas*> c_en511_vs_iBar;
+  std::map<int, TCanvas*> c_en511_vs_bar;
   std::map<int, TCanvas*> c_en1275_vs_th;
   std::map<int, TCanvas*> c_en1275_vs_Vov;
-  std::map<int, TCanvas*> c_en1275_vs_iBar;
+  std::map<int, TCanvas*> c_en1275_vs_bar;
   std::map<int, TCanvas*> c_enRatio_vs_th;
   std::map<int, TCanvas*> c_enRatio_vs_Vov;
-  std::map<int, TCanvas*> c_enRatio_vs_iBar;
+  std::map<int, TCanvas*> c_enRatio_vs_bar;
 
   std::map<int, TCanvas*> c_en511_vs_th_L;
   std::map<int, TCanvas*> c_en511_vs_Vov_L;
-  std::map<int, TCanvas*> c_en511_vs_iBar_L;
+  std::map<int, TCanvas*> c_en511_vs_bar_L;
   std::map<int, TCanvas*> c_en1275_vs_th_L;
   std::map<int, TCanvas*> c_en1275_vs_Vov_L;
-  std::map<int, TCanvas*> c_en1275_vs_iBar_L;
+  std::map<int, TCanvas*> c_en1275_vs_bar_L;
   std::map<int, TCanvas*> c_enRatio_vs_th_L;
   std::map<int, TCanvas*> c_enRatio_vs_Vov_L;
-  std::map<int, TCanvas*> c_enRatio_vs_iBar_L;
+  std::map<int, TCanvas*> c_enRatio_vs_bar_L;
 
   std::map<int, TCanvas*> c_en511_vs_th_R;
   std::map<int, TCanvas*> c_en511_vs_Vov_R;
-  std::map<int, TCanvas*> c_en511_vs_iBar_R;
+  std::map<int, TCanvas*> c_en511_vs_bar_R;
   std::map<int, TCanvas*> c_en1275_vs_th_R;
   std::map<int, TCanvas*> c_en1275_vs_Vov_R;
-  std::map<int, TCanvas*> c_en1275_vs_iBar_R;
+  std::map<int, TCanvas*> c_en1275_vs_bar_R;
   std::map<int, TCanvas*> c_enRatio_vs_th_R;
   std::map<int, TCanvas*> c_enRatio_vs_Vov_R;
-  std::map<int, TCanvas*> c_enRatio_vs_iBar_R;
+  std::map<int, TCanvas*> c_enRatio_vs_bar_R;
 
   std::map<int, int> iter;
   
@@ -1018,6 +1020,8 @@ int main(int argc, char** argv)
         g_energy -> SetMarkerColor(1+iter[bar]);
         g_energy -> SetMarkerStyle(20);
         g_energy -> Draw("PL,same");
+	outFile -> cd();
+	g_energy -> Write(Form("g_en511_vs_th_Vov%.01f_bar%02d",Vov,bar));
 
         std::string VovLabel = Form("Vov%.01f", Vov);
         latex = new TLatex(0.55,0.85-0.04*iter[bar],VovLabel.c_str());
@@ -1055,6 +1059,8 @@ int main(int argc, char** argv)
         g_energy1275 -> SetMarkerColor(1+iter[bar]);
         g_energy1275 -> SetMarkerStyle(20);
         g_energy1275 -> Draw("PL,same");
+        outFile -> cd();
+	g_energy1275 -> Write(Form("g_en1275_vs_th_Vov%.01f_bar%02d",Vov,bar));
 
         latex -> Draw("same");
 	
@@ -1085,6 +1091,9 @@ int main(int argc, char** argv)
         g_energyRatio -> SetMarkerColor(1+iter[bar]);
         g_energyRatio -> SetMarkerStyle(20);
         g_energyRatio -> Draw("PL,same");
+	outFile -> cd();
+	g_energyRatio -> Write(Form("g_enRatio_vs_th_Vov%.01f_bar%02d",Vov,bar));
+	
 
         latex -> Draw("same");
 
@@ -1255,6 +1264,8 @@ int main(int argc, char** argv)
         g_energy -> SetMarkerColor(1+iter[bar]);
         g_energy -> SetMarkerStyle(20);
         g_energy -> Draw("PL,same");
+	outFile -> cd();
+	g_energy -> Write(Form("g_en511_vs_Vov_th%d_bar%02d",th,bar));
 
         std::string thLabel = Form("th%d", th);
         latex = new TLatex(0.55,0.85-0.04*iter[bar],thLabel.c_str());
@@ -1292,6 +1303,8 @@ int main(int argc, char** argv)
         g_energy1275 -> SetMarkerColor(1+iter[bar]);
         g_energy1275 -> SetMarkerStyle(20);
         g_energy1275 -> Draw("PL,same");
+	outFile -> cd();
+	g_energy1275 -> Write(Form("g_en1275_vs_Vov_th%d_bar%02d",th,bar));
 
         latex -> Draw("same");
 	
@@ -1322,6 +1335,8 @@ int main(int argc, char** argv)
         g_energyRatio -> SetMarkerColor(1+iter[bar]);
         g_energyRatio -> SetMarkerStyle(20);
         g_energyRatio -> Draw("PL,same");
+	outFile -> cd();
+	g_energyRatio -> Write(Form("g_enRatio_vs_Vov_th%d_bar%02d",th,bar));
 
        
         latex -> Draw("same");
@@ -1399,94 +1414,64 @@ int main(int argc, char** argv)
 
   
   //summary plots Energy Peak 511, 1275, Ratio vs iBar (LR, L, R)
-  for(std::map<float,TGraphErrors*>::iterator index = g_en511_vs_iBar.begin(); index != g_en511_vs_iBar.end(); index++){
- 
+  for(std::map<float,TGraphErrors*>::iterator index = g_en511_vs_bar.begin(); index != g_en511_vs_bar.end(); index++){
+    
     int th;
     float Vov;
     int Vov_th_ID;
     Vov = float((int(index->first/10000))/100);
     th = int((index->first - Vov*1000000)/100);
     Vov_th_ID = 10000*int(Vov*100.) + 100*th;
-   
-        if(c_en511_vs_iBar[Vov_th_ID]==NULL){
-          c_en511_vs_iBar[Vov_th_ID] = new TCanvas(Form("c_en511_vs_bar_Vov%.01f_th%d",Vov,th),Form("c_en511_vs_bar_Vov%.01f_th%d",Vov,th));
+    
+    if( th != refTh ) continue;
+    
+        if(c_en511_vs_bar[Vov_th_ID]==NULL){
+          c_en511_vs_bar[Vov_th_ID] = new TCanvas(Form("c_en511_vs_bar_Vov%.01f_th%d",Vov,th),Form("c_en511_vs_bar_Vov%.01f_th%d",Vov,th));
           iter[Vov_th_ID] = 0;
           TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,25.) );
           hPad -> SetTitle(";ID bar;energy [a.u.]");
 	  hPad -> Draw();
 	  gPad -> SetGridy();       
 	}
-	if(c_en511_vs_iBar_L[Vov_th_ID]==NULL){
-          c_en511_vs_iBar_L[Vov_th_ID] = new TCanvas(Form("c_en511_vs_barL_Vov%.01f_th%d",Vov,th),Form("c_en511_vs_barL_Vov%.01f_th%d",Vov,th));
-          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,25.) );
-          hPad -> SetTitle(";ID bar;energy [a.u.]");
-	  hPad -> Draw();
-	  gPad -> SetGridy();       
-	}
-	if(c_en511_vs_iBar_R[Vov_th_ID]==NULL){
-          c_en511_vs_iBar_R[Vov_th_ID] = new TCanvas(Form("c_en511_vs_barR_Vov%.01f_th%d",Vov,th),Form("c_en511_vs_barR_Vov%.01f_th%d",Vov,th));
-          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,25.) );
-          hPad -> SetTitle(";ID bar;energy [a.u.]");
-	  hPad -> Draw();
-	  gPad -> SetGridy();       
-	}
-	
-	 if(c_en1275_vs_iBar[Vov_th_ID]==NULL){
-          c_en1275_vs_iBar[Vov_th_ID] = new TCanvas(Form("c_en1275_vs_bar_Vov%.01f_th%d",Vov,th),Form("c_en1275_vs_bar_Vov%.01f_th%d",Vov,th));
+        
+	 if(c_en1275_vs_bar[Vov_th_ID]==NULL){
+          c_en1275_vs_bar[Vov_th_ID] = new TCanvas(Form("c_en1275_vs_bar_Vov%.01f_th%d",Vov,th),Form("c_en1275_vs_bar_Vov%.01f_th%d",Vov,th));
           TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,35.) );
           hPad -> SetTitle(";ID bar;energy [a.u.]");
 	  hPad -> Draw();
 	  gPad -> SetGridy();       
 	}
-	
-	if(c_en1275_vs_iBar_R[Vov_th_ID]==NULL){
-          c_en1275_vs_iBar_R[Vov_th_ID] = new TCanvas(Form("c_en1275_vs_barR_Vov%.01f_th%d",Vov,th),Form("c_en1275_vs_barR_Vov%.01f_th%d",Vov,th));
-          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,35.) );
-          hPad -> SetTitle(";ID bar;energy [a.u.]");
-	  hPad -> Draw();
-	  gPad -> SetGridy();       
-	}
-	
-	if(c_en1275_vs_iBar_L[Vov_th_ID]==NULL){
-          c_en1275_vs_iBar_L[Vov_th_ID] = new TCanvas(Form("c_en1275_vs_barL_Vov%.01f_th%d",Vov,th),Form("c_en1275_vs_barL_Vov%.01f_th%d",Vov,th));
-          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,35.) );
-          hPad -> SetTitle(";ID bar;energy [a.u.]");
-	  hPad -> Draw();
-	  gPad -> SetGridy();       
-	}
-	
-	if(c_enRatio_vs_iBar[Vov_th_ID]==NULL){
-          c_enRatio_vs_iBar[Vov_th_ID] = new TCanvas(Form("c_enRatio_vs_bar_Vov%.01f_th%d",Vov,th),Form("c_enRatio_vs_bar_Vov%.01f_th%d",Vov,th));
-          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,1.,17.,3.) );
-          hPad -> SetTitle(";ID bar;energy [a.u.]");
-	  hPad -> Draw();
-	  gPad -> SetGridy();       
-	}
-	
-	if(c_enRatio_vs_iBar_R[Vov_th_ID]==NULL){
-          c_enRatio_vs_iBar_R[Vov_th_ID] = new TCanvas(Form("c_enRatio_vs_barR_Vov%.01f_th%d",Vov,th),Form("c_enRatio_vs_barR_Vov%.01f_th%d",Vov,th));
-          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,1.,17.,3.) );
-          hPad -> SetTitle(";ID bar;energy [a.u.]");
-	  hPad -> Draw();
-	  gPad -> SetGridy();       
-	}
-	
-	if(c_enRatio_vs_iBar_L[Vov_th_ID]==NULL){
-          c_enRatio_vs_iBar_L[Vov_th_ID] = new TCanvas(Form("c_enRatio_vs_barL_Vov%.01f_th%d",Vov,th),Form("c_enRatio_vs_barL_Vov%.01f_th%d",Vov,th));
-          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,1.,17.,3.) );
-          hPad -> SetTitle(";ID bar;energy [a.u.]");
-	  hPad -> Draw();
-	  gPad -> SetGridy();       
-	}
-
-        c_en511_vs_iBar[Vov_th_ID]->cd();
-        TGraph* g_energy = g_en511_vs_iBar[Vov_th_ID];
          
+	if(c_enRatio_vs_bar[Vov_th_ID]==NULL){
+          c_enRatio_vs_bar[Vov_th_ID] = new TCanvas(Form("c_enRatio_vs_bar_Vov%.01f_th%d",Vov,th),Form("c_enRatio_vs_bar_Vov%.01f_th%d",Vov,th));
+          TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,1.,17.,3.) );
+          hPad -> SetTitle(";ID bar;energy_{1275 keV} / energy_{511 keV}");
+	  hPad -> Draw();
+	  gPad -> SetGridy();       
+	}
+        
+        c_en511_vs_bar[Vov_th_ID]->cd();
+        TGraph* g_energy = g_en511_vs_bar[Vov_th_ID];
+        TGraph* g_energy_L = g_en511_vs_bar_L[Vov_th_ID];
+        TGraph* g_energy_R = g_en511_vs_bar_R[Vov_th_ID];
+
         g_energy -> SetLineColor(1+iter[Vov_th_ID]);
         g_energy -> SetMarkerColor(1+iter[Vov_th_ID]);
         g_energy -> SetMarkerStyle(20);
         g_energy -> Draw("PL,same");
-
+	outFile -> cd();
+	g_energy -> Write(Form("g_en511_vs_bar_Vov%.01f_th%d",Vov,th));
+	g_energy_L -> SetLineStyle(9);
+	g_energy_L -> SetMarkerStyle(24);
+        g_energy_L -> Draw("PL,same");
+	outFile -> cd();
+	g_energy_L -> Write(Form("g_en511_vs_barL_Vov%.01f_th%d",Vov,th));
+	g_energy_R -> SetLineStyle(9);
+	g_energy_R -> SetMarkerStyle(25);
+        g_energy_R -> Draw("PL,same");
+	outFile -> cd();
+	g_energy_R -> Write(Form("g_en511_vs_barR_Vov%.01f_th%d",Vov,th));
+        
         /*std::string VovthLabel = Form("Vov%.01f th%d", Vov,th);
         latex = new TLatex(0.55,0.85-0.04*iter[Vov_th_ID],VovthLabel.c_str());
         latex -> SetNDC();
@@ -1494,197 +1479,112 @@ int main(int argc, char** argv)
         latex -> SetTextSize(0.04);
         latex -> SetTextColor(kBlack+iter[Vov_th_ID]);
         latex -> Draw("same");*/
-
-	c_en511_vs_iBar_L[Vov_th_ID]->cd();
-        TGraph* g_energy_L = g_en511_vs_iBar_L[Vov_th_ID];
-         
-        g_energy_L -> SetLineStyle(2);
-        g_energy_L -> SetLineColor(1+iter[Vov_th_ID]);
-        g_energy_L -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy_L -> SetMarkerStyle(24);
-        g_energy_L -> SetMarkerSize(0.8);
-        g_energy_L -> Draw("PL,same");
-
-        //latex -> Draw("same");
-
-	c_en511_vs_iBar_R[Vov_th_ID]->cd();
-        TGraph* g_energy_R = g_en511_vs_iBar_R[Vov_th_ID];
-         
-        g_energy_R -> SetLineStyle(2);
-        g_energy_R -> SetLineColor(1+iter[Vov_th_ID]);
-        g_energy_R -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy_R -> SetMarkerStyle(25);
-        g_energy_R -> SetMarkerSize(0.8);
-        g_energy_R -> Draw("PL,same");
-
-        c_en511_vs_iBar[Vov_th_ID]->cd();
-        g_energy_L -> Draw("PL,same");
-        g_energy_R -> Draw("PL,same");
-
         
-        latex = new TLatex(0.20,0.87, Form("Average = %.1f, RMS = %.1f %%", g_energy ->GetMean(2), g_energy->GetRMS(2)/g_energy ->GetMean(2)*100));
+        latex = new TLatex(0.25,0.87, Form("Average = %.1f, RMS = %.1f %%", g_energy ->GetMean(2), g_energy->GetRMS(2)/g_energy ->GetMean(2)*100));
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.03);
         latex ->Draw("same");
         
-        latex = new TLatex(0.20,0.83, Form("Left = %.1f, RMS = %.1f %%", g_energy_L ->GetMean(2), g_energy_L->GetRMS(2)/g_energy_L ->GetMean(2)*100 ));
+        latex = new TLatex(0.25,0.83, Form("Left = %.1f, RMS = %.1f %%", g_energy_L ->GetMean(2), g_energy_L->GetRMS(2)/g_energy_L ->GetMean(2)*100 ));
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.03);
         latex ->Draw("same");
 
-        latex = new TLatex(0.20,0.79, Form("Right = %.1f, RMS = %.1f %%", g_energy_R ->GetMean(2), g_energy_R->GetRMS(2)/g_energy_R ->GetMean(2)*100));
+        latex = new TLatex(0.25,0.79, Form("Right = %.1f, RMS = %.1f %%", g_energy_R ->GetMean(2), g_energy_R->GetRMS(2)/g_energy_R ->GetMean(2)*100));
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.03);
         latex ->Draw("same");
-
-        //latex -> Draw("same");
+        
+        TLegend* legenda = new TLegend(0.20,0.78,0.25,0.90);
+	legenda->AddEntry(g_energy, "", "P");
+	legenda->AddEntry(g_energy_L, "", "P");
+	legenda->AddEntry(g_energy_R, "", "P");
+	legenda -> SetBorderSize(0);
+	legenda->Draw();
 	
-	c_en1275_vs_iBar[Vov_th_ID]->cd();
-        TGraph* g_energy1275 = g_en1275_vs_iBar[Vov_th_ID];
+	c_en1275_vs_bar[Vov_th_ID]->cd();
+        TGraph* g_energy1275 = g_en1275_vs_bar[Vov_th_ID];
+        TGraph* g_energy1275_L = g_en1275_vs_bar_L[Vov_th_ID];
+        TGraph* g_energy1275_R = g_en1275_vs_bar_R[Vov_th_ID];
          
         g_energy1275 -> SetLineColor(1+iter[Vov_th_ID]);
         g_energy1275 -> SetMarkerColor(1+iter[Vov_th_ID]);
         g_energy1275 -> SetMarkerStyle(20);
         g_energy1275 -> Draw("PL,same");
-
-        //latex -> Draw("same");
-
-	c_en1275_vs_iBar_L[Vov_th_ID]->cd();
-        TGraph* g_energy1275_L = g_en1275_vs_iBar_L[Vov_th_ID];
-         
-        g_energy1275_L -> SetLineStyle(2);
-        g_energy1275_L -> SetLineColor(1+iter[Vov_th_ID]);
-        g_energy1275_L -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy1275_L -> SetMarkerStyle(24);
-        g_energy1275_L -> SetMarkerSize(0.8);
+	outFile -> cd();
+	g_energy1275 -> Write(Form("g_en1275_vs_bar_Vov%.01f_th%d",Vov,th));
+	g_energy1275_L -> SetLineStyle(9);
+	g_energy1275_L -> SetMarkerStyle(24);
         g_energy1275_L -> Draw("PL,same");
-
-        //latex -> Draw("same");
-
-	c_en1275_vs_iBar_R[Vov_th_ID]->cd();
-        TGraph* g_energy1275_R = g_en1275_vs_iBar_R[Vov_th_ID];
-         
-        g_energy1275_R -> SetLineStyle(2);
-        g_energy1275_R -> SetLineColor(1+iter[Vov_th_ID]);
-        g_energy1275_R -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energy1275_R -> SetMarkerStyle(25);
-        g_energy1275_R -> SetMarkerSize(0.8);
+	outFile -> cd();
+	g_energy1275_L-> Write(Form("g_en1275_vs_barL_Vov%.01f_th%d",Vov,th));
+	g_energy1275_R -> SetLineStyle(9);
+	g_energy1275_R -> SetMarkerStyle(25);
         g_energy1275_R -> Draw("PL,same");
-
-        //latex -> Draw("same");
-
-        c_en1275_vs_iBar[Vov_th_ID]->cd();
-        g_energy1275_L -> Draw("PL,same");
-        g_energy1275_R -> Draw("PL,same");
-
-        latex = new TLatex(0.20,0.87, Form("Average = %.1f, RMS = %.1f %%", g_energy1275 ->GetMean(2), g_energy1275->GetRMS(2)/g_energy1275 ->GetMean(2)*100));
+	outFile -> cd();
+	g_energy1275_R -> Write(Form("g_en1275_vs_barR_Vov%.01f_th%d",Vov,th));
+        
+        latex = new TLatex(0.25,0.87, Form("Average = %.1f, RMS = %.1f %%", g_energy1275 ->GetMean(2), g_energy1275->GetRMS(2)/g_energy1275 ->GetMean(2)*100));
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.03);
         latex ->Draw("same");
         
-        latex = new TLatex(0.20,0.83, Form("Left = %.1f, RMS = %.1f %%", g_energy1275_L ->GetMean(2), g_energy1275_L->GetRMS(2)/g_energy1275_L ->GetMean(2)*100 ));
+        latex = new TLatex(0.25,0.83, Form("Left = %.1f, RMS = %.1f %%", g_energy1275_L ->GetMean(2), g_energy1275_L->GetRMS(2)/g_energy1275_L ->GetMean(2)*100 ));
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.03);
         latex ->Draw("same");
 
-        latex = new TLatex(0.20,0.79, Form("Right = %.1f, RMS = %.1f %%", g_energy1275_R ->GetMean(2), g_energy1275_R->GetRMS(2)/g_energy1275_R ->GetMean(2)*100));
+        latex = new TLatex(0.25,0.79, Form("Right = %.1f, RMS = %.1f %%", g_energy1275_R ->GetMean(2), g_energy1275_R->GetRMS(2)/g_energy1275_R ->GetMean(2)*100));
         latex -> SetNDC();
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.03);
         latex ->Draw("same");
-
-	c_enRatio_vs_iBar[Vov_th_ID]->cd();
-        TGraph* g_energyRatio = g_enRatio_vs_iBar[Vov_th_ID];
+        
+	TLegend* legenda2 = new TLegend(0.20,0.78,0.25,0.90);
+	legenda2->AddEntry(g_energy1275, "", "P");
+	legenda2->AddEntry(g_energy1275_L, "", "P");
+	legenda2->AddEntry(g_energy1275_R, "", "P");
+	legenda2 -> SetBorderSize(0);
+	legenda2->Draw();
+        
+	c_enRatio_vs_bar[Vov_th_ID]->cd();
+        TGraph* g_energyRatio = g_enRatio_vs_bar[Vov_th_ID];
          
         g_energyRatio -> SetLineColor(1+iter[Vov_th_ID]);
         g_energyRatio -> SetMarkerColor(1+iter[Vov_th_ID]);
         g_energyRatio -> SetMarkerStyle(20);
         g_energyRatio -> Draw("PL,same");
-
-        //latex -> Draw("same");
-
-	c_enRatio_vs_iBar_L[Vov_th_ID]->cd();
-        TGraph* g_energyRatio_L = g_enRatio_vs_iBar_L[Vov_th_ID];
-         
-        g_energyRatio_L -> SetLineColor(1+iter[Vov_th_ID]);
-        g_energyRatio_L -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energyRatio_L -> SetMarkerStyle(20);
-        g_energyRatio_L -> Draw("PL,same");
-
-        //latex -> Draw("same");
-
-	c_enRatio_vs_iBar_R[Vov_th_ID]->cd();
-        TGraph* g_energyRatio_R = g_enRatio_vs_iBar_R[Vov_th_ID];
-         
-        g_energyRatio_R -> SetLineColor(1+iter[Vov_th_ID]);
-        g_energyRatio_R -> SetMarkerColor(1+iter[Vov_th_ID]);
-        g_energyRatio_R -> SetMarkerStyle(20);
-        g_energyRatio_R -> Draw("PL,same");
-
-        //latex -> Draw("same");
-	
-
+	outFile -> cd();
+	g_energyRatio -> Write(Form("g_enRatio_vs_bar_Vov%.01f_th%d",Vov,th));
+        
+        
         ++iter[Vov_th_ID];
-    
   }
-
- for(std::map<int,TCanvas*>::iterator index = c_en511_vs_iBar.begin(); index != c_en511_vs_iBar.end(); index++){
+  
+  for(std::map<int,TCanvas*>::iterator index = c_en511_vs_bar.begin(); index != c_en511_vs_bar.end(); index++){
     index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
     index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
-	
- for(std::map<int,TCanvas*>::iterator index = c_en511_vs_iBar_L.begin(); index != c_en511_vs_iBar_L.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-  }
-	
- for(std::map<int,TCanvas*>::iterator index = c_en511_vs_iBar_R.begin(); index != c_en511_vs_iBar_R.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-  }
-
-
-
- for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_iBar.begin(); index != c_en1275_vs_iBar.end(); index++){
+  
+  for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_bar.begin(); index != c_en1275_vs_bar.end(); index++){
     index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
     index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
-
- for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_iBar_L.begin(); index != c_en1275_vs_iBar_L.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-  }
-
- for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_iBar_R.begin(); index != c_en1275_vs_iBar_R.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-  }
-
-
-  for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_iBar.begin(); index != c_enRatio_vs_iBar.end(); index++){
+  
+  for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_bar.begin(); index != c_enRatio_vs_bar.end(); index++){
     index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
     index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
   }
-
- for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_iBar_L.begin(); index != c_enRatio_vs_iBar_L.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatiovs_barL_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_barL_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-  }
-
- for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_iBar_R.begin(); index != c_enRatio_vs_iBar_R.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_barR_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_barR_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-  }
-
-
-
-//Time Resolution
-
+  
+  
+  
+  
+  // Time Resolution
   std::map<double,float> map_timeRes;
   std::map<double,float> map_timeRes511;
   std::map<double,float> map_timeRes1275;
@@ -1694,8 +1594,8 @@ int main(int argc, char** argv)
 
   std::map<double,TGraphErrors*> g_timeRes_vs_th;
   std::map<double,TGraphErrors*> g_timeRes_vs_Vov;
-  std::map<double,TGraphErrors*> g_timeRes511_vs_iBar;
-  std::map<double,TGraphErrors*> g_timeRes1275_vs_iBar;
+  std::map<double,TGraphErrors*> g_timeRes511_vs_bar;
+  std::map<double,TGraphErrors*> g_timeRes1275_vs_bar;
   std::map<double,TGraphErrors*> g_timeRes_vs_enBin;
 
   for (auto mapIt : trees2){
@@ -1762,14 +1662,14 @@ int main(int argc, char** argv)
     }
     
     if (enBin ==3){
-      if( g_timeRes511_vs_iBar[Vov_th_ID] == NULL ){	
-      g_timeRes511_vs_iBar[Vov_th_ID] = new TGraphErrors();
+      if( g_timeRes511_vs_bar[Vov_th_ID] == NULL ){	
+      g_timeRes511_vs_bar[Vov_th_ID] = new TGraphErrors();
       }
     }
 
     if (enBin ==8){
-      if( g_timeRes1275_vs_iBar[Vov_th_ID] == NULL ){	
-      g_timeRes1275_vs_iBar[Vov_th_ID] = new TGraphErrors();
+      if( g_timeRes1275_vs_bar[Vov_th_ID] == NULL ){	
+      g_timeRes1275_vs_bar[Vov_th_ID] = new TGraphErrors();
       }
     }
 
@@ -1789,15 +1689,15 @@ int main(int argc, char** argv)
     }
 
     if (enBin ==3){
-      g_timeRes511_vs_iBar[Vov_th_ID]->SetPoint(g_timeRes511_vs_iBar[Vov_th_ID]->GetN(), iBar, (index->second)/2);
-      //std::cout<<"N"<<g_timeRes511_vs_iBar[Vov_th_ID]->GetN()<<"iBar"<<iBar<<"RES "<<(index->second)/2<<std::endl;
-      g_timeRes511_vs_iBar[Vov_th_ID]->SetPointError(g_timeRes511_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_timeRes511_vs_bar[Vov_th_ID]->SetPoint(g_timeRes511_vs_bar[Vov_th_ID]->GetN(), iBar, (index->second)/2);
+      //std::cout<<"N"<<g_timeRes511_vs_bar[Vov_th_ID]->GetN()<<"iBar"<<iBar<<"RES "<<(index->second)/2<<std::endl;
+      g_timeRes511_vs_bar[Vov_th_ID]->SetPointError(g_timeRes511_vs_bar[Vov_th_ID]->GetN()-1, 0., 0.);
     }
 
     if (enBin ==8){
-      g_timeRes1275_vs_iBar[Vov_th_ID]->SetPoint(g_timeRes1275_vs_iBar[Vov_th_ID]->GetN(), iBar, (index->second)/2);
-      //std::cout<<"N"<<g_timeRes1275_vs_iBar[Vov_th_ID]->GetN()<<"iBar"<<iBar<<"RES "<<(index->second)/2<<std::endl;
-      g_timeRes1275_vs_iBar[Vov_th_ID]->SetPointError(g_timeRes1275_vs_iBar[Vov_th_ID]->GetN()-1, 0., 0.);
+      g_timeRes1275_vs_bar[Vov_th_ID]->SetPoint(g_timeRes1275_vs_bar[Vov_th_ID]->GetN(), iBar, (index->second)/2);
+      //std::cout<<"N"<<g_timeRes1275_vs_bar[Vov_th_ID]->GetN()<<"iBar"<<iBar<<"RES "<<(index->second)/2<<std::endl;
+      g_timeRes1275_vs_bar[Vov_th_ID]->SetPointError(g_timeRes1275_vs_bar[Vov_th_ID]->GetN()-1, 0., 0.);
     }
 
     
@@ -1810,7 +1710,7 @@ int main(int argc, char** argv)
   std::map<double, TCanvas*> c_timeRes_vs_th;
   std::map<double, TCanvas*> c_timeRes_vs_Vov;
   std::map<double, TCanvas*> c_timeRes_vs_enBin;
-  std::map<double, TCanvas*> c_timeRes_vs_iBar;
+  std::map<double, TCanvas*> c_timeRes_vs_bar;
   std::map<double, TCanvas*> c_timeRes_vs_enBin_thBest;
   std::map<double, float> tBest;
   double Vov_iBar_enBin_ID;
@@ -1852,6 +1752,8 @@ int main(int argc, char** argv)
               g_tRes -> SetMarkerColor(1+iter[iBar_enBin_ID]);
               g_tRes -> SetMarkerStyle(20);
               g_tRes -> Draw("PL,same");
+	      outFile -> cd();
+	      g_tRes -> Write(Form("g_timeRes_vs_th_Vov%.01f_bar%02d_enBin%d",Vov,bar,energyBin));
 	  
               std::string VovLabel = Form("Vov%.01f", Vov);
               latex = new TLatex(0.55,0.85-0.04*iter[iBar_enBin_ID],VovLabel.c_str());
@@ -1921,6 +1823,9 @@ int main(int argc, char** argv)
 		  g_tRes -> SetMarkerColor(1+iter[iBar_enBin_ID]);
 		  g_tRes -> SetMarkerStyle(20);
 		  g_tRes -> Draw("PL,same");
+		  outFile -> cd();
+	          g_tRes -> Write(Form("g_timeRes_vs_Vov_th%d_bar%02d_enBin%d",th,bar,energyBin));
+		  
 		  
 		  std::string thLabel = Form("th%d", th);
 		  latex = new TLatex(0.55,0.85-0.04*iter[iBar_enBin_ID],thLabel.c_str());
@@ -1990,12 +1895,16 @@ int main(int argc, char** argv)
                 g_tRes_en -> SetMarkerColor(kBlack);
                 g_tRes_en -> SetMarkerStyle(20);
                 g_tRes_en -> Draw("PL");
+		outFile -> cd();
+	        g_tRes_en -> Write(Form("g_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d",iBar,Vov, th));
+		
+
 	      
 
 	        for ( int nPoint = 0; nPoint < g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetN(); nPoint++){
 	          float eBin = g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetPointX(nPoint);
 		  
-                  if(vec_th[i] == tBest[double(10000000*(nPoint+1)) + double(vec_Vov[i]*1000000) + double(bar)]){ 
+                  if(vec_th[i] == tBest[double(10000000*(nPoint+1)) + double(Vov*1000000) + double(bar)]){ 
 	            vec_tRes[iBar_Vov_ID].push_back(std::make_pair ( eBin, g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetPointY(nPoint)));
 		    vec_tRes_error[iBar_Vov_ID].push_back(std::make_pair ( g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetErrorX(nPoint), g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetErrorY(nPoint)));             
 			
@@ -2044,6 +1953,9 @@ int main(int argc, char** argv)
     graph-> SetMarkerColor(kBlack);
     graph -> SetMarkerStyle(20);
     graph-> Draw("PL");
+    outFile -> cd();
+    graph -> Write(Form("g_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh",iBar,Vov));
+    
     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh.png",plotDir.c_str(),iBar,Vov));
     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh.pdf",plotDir.c_str(),iBar,Vov));
   }
@@ -2054,7 +1966,7 @@ int main(int argc, char** argv)
   std::map<double, std::vector<std::pair<float,float>>>vec_tRes_error_511;
   std::map<double, std::vector<std::pair<float,float>>>vec_tRes_error_1275;
   std::map<double, std::vector<std::pair<float,float>>>vec_tRes_1275;
-  for(std::map<double,TGraphErrors*>::iterator index = g_timeRes511_vs_iBar.begin(); index != g_timeRes511_vs_iBar.end(); index++){
+  for(std::map<double,TGraphErrors*>::iterator index = g_timeRes511_vs_bar.begin(); index != g_timeRes511_vs_bar.end(); index++){
 
     Vov = float(int(index->first/10000)/100.);
     th = int((index->first - Vov*1000000)/100);
@@ -2062,9 +1974,9 @@ int main(int argc, char** argv)
     Vov_th_ID = Vov*1000000 + th*100;
     	
     
-      if(c_timeRes_vs_iBar[Vov]==NULL){
-        c_timeRes_vs_iBar[Vov] = new TCanvas(Form("c_timeRes_vs_bar_Vov%.01f",Vov),Form("c_timeRes_vs_bar_Vov%.01f",Vov));
-        c_timeRes_vs_iBar[Vov]->cd();
+      if(c_timeRes_vs_bar[Vov]==NULL){
+        c_timeRes_vs_bar[Vov] = new TCanvas(Form("c_timeRes_vs_bar_Vov%.01f",Vov),Form("c_timeRes_vs_bar_Vov%.01f",Vov));
+        c_timeRes_vs_bar[Vov]->cd();
         TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,500.) );
         hPad -> SetTitle(";ID bar;#sigma_{t_{Diff}}/2 [ps]");
         hPad -> Draw();
@@ -2072,8 +1984,8 @@ int main(int argc, char** argv)
       }
 
     
-    TGraph* g_timeRes511 = g_timeRes511_vs_iBar[Vov_th_ID];
-    TGraph* g_timeRes1275 = g_timeRes1275_vs_iBar[Vov_th_ID];
+    TGraph* g_timeRes511 = g_timeRes511_vs_bar[Vov_th_ID];
+    TGraph* g_timeRes1275 = g_timeRes1275_vs_bar[Vov_th_ID];
         
     for ( int nPoint = 0; nPoint < g_timeRes511->GetN(); nPoint++){
       if (th == tBest[ double(10000000*3) + double(Vov*1000000) + double(int(g_timeRes511->GetPointX(nPoint)))]){	
@@ -2093,7 +2005,7 @@ int main(int argc, char** argv)
     }   
   } 
 
-  for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_iBar.begin(); index != c_timeRes_vs_iBar.end(); index++){
+  for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_bar.begin(); index != c_timeRes_vs_bar.end(); index++){
    
     index->second -> cd();
 	//Vov = index->first;
@@ -2119,6 +2031,9 @@ int main(int argc, char** argv)
     graph1-> SetMarkerColor(kRed);
     graph1 -> SetMarkerStyle(20);
     graph1-> Draw("PL,same");
+    outFile -> cd();
+    graph1 -> Write(Form("g_timeRes511_vs_bar_Vov%.01f_bestTh",Vov));
+	
 	
     int up2 = vec_tRes_1275[index->first].size();
     for (int k = 0; k < up2; k++){
@@ -2139,6 +2054,9 @@ int main(int argc, char** argv)
     graph2-> SetMarkerColor(kBlue);
     graph2 -> SetMarkerStyle(20);
     graph2-> Draw("PL, same");
+    outFile -> cd();
+    graph2 -> Write(Form("g_timeRes1275_vs_bar_Vov%.01f_bestTh",Vov));
+    
 
     std::string Label1 = "511 keV Peak";
     TLatex* latex1 = new TLatex(0.55,0.85,Label1.c_str());
@@ -2159,6 +2077,16 @@ int main(int argc, char** argv)
     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_bar_Vov%.01f.pdf",plotDir.c_str(),float(index->first)));
   }
 
+
+
+int bytes = outFile -> Write();
+  std::cout << "============================================"  << std::endl;
+  std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
+  std::cout << "nr of KB written:  " << int(bytes/1024.)       << std::endl;
+  std::cout << "nr of MB written:  " << int(bytes/1024./1024.) << std::endl;
+  std::cout << "============================================"  << std::endl;
+
+outFile -> Close();
 
 }
                                                                                                                                                                               

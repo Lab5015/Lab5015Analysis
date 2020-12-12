@@ -45,7 +45,6 @@ int main(int argc, char** argv)
   //--- parse the config file
   CfgManager opts;
   opts.ParseConfigFile(argv[1]);
-  
   int debugMode = 0;
   if( argc > 2 ) debugMode = atoi(argv[2]);
   
@@ -58,6 +57,7 @@ int main(int argc, char** argv)
   int maxEntries = opts.GetOpt<int>("Input.maxEntries");
   int usePedestals = opts.GetOpt<int>("Input.usePedestals");
   TChain* tree = new TChain("data","data");
+
   
   std::stringstream ss(runs);
   std::string token;
@@ -147,13 +147,25 @@ int main(int argc, char** argv)
   
   //--- get plot settings
   std::vector<int> Vov = opts.GetOpt<std::vector<int> >("Plots.Vov");
-  std::vector<int> energyBins = opts.GetOpt<std::vector<int> >("Plots.energyBins");
+	std::vector<int> energyBins;
+  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22")){
+  	energyBins = opts.GetOpt<std::vector<int> >("Plots.energyBinsNa22");
+	}
+	if(!opts.GetOpt<std::string>("Input.sourceName").compare("Co60")){
+  	energyBins = opts.GetOpt<std::vector<int> >("Plots.energyBinsCo60");
+	}
   std::map<int,int> map_energyBins;
   for(unsigned int ii = 0; ii < Vov.size(); ++ii)
     map_energyBins[Vov[ii]] = energyBins[ii];
   
   float energyMin = opts.GetOpt<float>("Plots.energyMin");
-  float energyMax = opts.GetOpt<float>("Plots.energyMax");
+	float energyMax;
+	if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22")){
+  	energyMax = opts.GetOpt<float>("Plots.energyMaxNa22");
+	}
+	if(!opts.GetOpt<std::string>("Input.sourceName").compare("Co60")){
+  	energyMax = opts.GetOpt<float>("Plots.energyMaxCo60");
+	}
   
   
   
@@ -176,95 +188,229 @@ int main(int argc, char** argv)
   
   //------------------------
   //--- 1st loop over events
-  ModuleEventClass anEvent;
-  
-  int nEntries = tree->GetEntries();
-  if( maxEntries > 0 ) nEntries = maxEntries;
-  for(int entry = 0; entry < nEntries; ++entry)
-  {
-    tree -> GetEntry(entry);
-    if( entry%200000 == 0 )
-    {
-      std::cout << "\n>>> 1st loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << std::endl;
-      TrackProcess(cpu, mem, vsz, rss);
-    }
-    
-    float Vov = step1;
-    float vth1 = float(int(step2/10000)-1);;
-    // float vth2 = float(int((step2-10000*vth1)/100)-1);
-    // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
-    
-    
-    for(int iBar = 0; iBar < 16; ++iBar)
-    {
-      int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
-      
-      
-      int chL(chsL[iBar]);
-      int chR(chsR[iBar]);
-              
-      float qfineL(qfine[chL]);
-      float qfineR(qfine[chR]);
-      float totL(0.001*tot[chL]);
-      float totR(0.001*tot[chR]);
-      
-      if( totL <= 0. || totR <= 0. ) continue;
-      if( qfineL < 13. || qfineR < 13. ) continue;
-      
-      float energyL(energy[chL]);
-      float energyR(energy[chR]);
-      long long timeL(time[chL]);
-      long long timeR(time[chR]);
-      
-      
-      //--- create histograms, if needed
-      if( h1_totL[index] == NULL )
-      {
-        h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
-        h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
-        
-        h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",2000,0.,1000.);
-        h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",2000,0.,1000.);
-        
-        h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
-        h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
-        
-        outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1));
-        outTrees[index] -> Branch("event",&anEvent);
-        
-        h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
-      }
-      
-      
-      //--- fill histograms
-      h1_qfineL[index] -> Fill( qfineL );
-      h1_totL[index] -> Fill( totL );
-      h1_energyL[index] -> Fill( energyL );
-      
-      h1_qfineR[index] -> Fill( qfineR );
-      h1_totR[index] -> Fill( totR );
-      h1_energyR[index] -> Fill( energyR );
-      
-      h1_energyLR[index] -> Fill(0.5*(energyL+energyR));
-      
-      anEvent.barID = iBar;
-      anEvent.Vov = Vov;
-      anEvent.vth1 = vth1;
-      anEvent.energyL = energyL;
-      anEvent.energyR = energyR;
-      anEvent.timeL = timeL;
-      anEvent.timeR = timeR;
-      outTrees[index] -> Fill();
-    }
-  }
-  std::cout << std::endl;
-  
-  
-  
-  int bytes = outFile -> Write();
-  std::cout << "============================================"  << std::endl;
-  std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
-  std::cout << "nr of KB written:  " << int(bytes/1024.)       << std::endl;
-  std::cout << "nr of MB written:  " << int(bytes/1024./1024.) << std::endl;
-  std::cout << "============================================"  << std::endl;
+
+	if (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22")){
+
+	  ModuleEventClass anEvent;
+		
+		float qfineL[16];
+		float qfineR[16];
+		float totL[16];
+		float totR[16];
+		long long int timeL[16];
+		long long int timeR[16];
+	  float energyL[16];
+	  float energyR[16];
+		int chL[16];
+	  int chR[16]; 
+	  
+	  int nEntries = tree->GetEntries();
+	  if( maxEntries > 0 ) nEntries = maxEntries;
+	  for(int entry = 0; entry < nEntries; ++entry)
+	  {
+	    tree -> GetEntry(entry);
+	    if( entry%200000 == 0 )
+	    {
+	      std::cout << "\n>>> 1st loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << std::endl;
+	      TrackProcess(cpu, mem, vsz, rss);
+	    }
+	    
+	    float Vov = step1;
+	    float vth1 = float(int(step2/10000)-1);;
+	    // float vth2 = float(int((step2-10000*vth1)/100)-1);
+	    // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
+	    
+	    
+	    for(int iBar = 0; iBar < 16; ++iBar)
+	    {
+	      
+	      
+
+	      chL[iBar]=chsL[iBar];
+	      chR[iBar]=chsR[iBar];
+	      
+
+
+		
+	      qfineL[iBar]=qfine[iBar];
+	      qfineR[iBar]=qfine[iBar];
+	      totL[iBar]=0.001*tot[iBar];
+	      totR[iBar]=0.001*tot[iBar];
+	      
+	      energyL[iBar]=energy[iBar];
+	      energyR[iBar]=energy[iBar];
+	      timeL[iBar]=time[iBar];
+	      timeR[iBar]=time[iBar];
+	      
+	 		}
+
+			int maxEn=0;
+			int maxBar=0;
+
+
+			 for(int iBar = 0; iBar < 16; ++iBar)
+	    {
+
+			  if (qfineL[iBar]>13 && qfineR[iBar]>13){
+					float energyMean=(energyL[iBar]+energyR[iBar])/2;
+					if(energyMean>maxEn){
+							maxEn = energyMean;
+							maxBar = iBar;
+					}
+				}
+
+				int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
+	     
+	      //--- create histograms, if needed
+	      if( h1_totL[index] == NULL )
+	      {
+		h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
+		h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
+		
+		h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",2000,0.,1000.);
+		h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",2000,0.,1000.);
+		
+		h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+		h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+		
+		outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1));
+		outTrees[index] -> Branch("event",&anEvent);
+		
+		h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+	      }
+
+	      }
+	      int index( (10000*int(Vov*100.)) + (100*vth1) + maxBar );
+
+	      //--- fill histograms
+	      h1_qfineL[index] -> Fill( qfineL[maxBar] );
+	      h1_totL[index] -> Fill( totL[maxBar] );
+	      h1_energyL[index] -> Fill( energyL[maxBar] );
+	      
+	      h1_qfineR[index] -> Fill( qfineR[maxBar] );
+	      h1_totR[index] -> Fill( totR[maxBar] );
+	      h1_energyR[index] -> Fill( energyR[maxBar] );
+	      
+	      h1_energyLR[index] -> Fill(0.5*(energyL[maxBar]+energyR[maxBar]));
+	      
+	      anEvent.barID = maxBar;
+	      anEvent.Vov = Vov;
+	      anEvent.vth1 = vth1;
+	      anEvent.energyL = energyL[maxBar];
+	      anEvent.energyR = energyR[maxBar];
+	      anEvent.timeL = timeL[maxBar];
+	      anEvent.timeR = timeR[maxBar];
+	      outTrees[index] -> Fill();
+	    
+	  }
+	  std::cout << std::endl;
+	  
+	  
+	  
+	  int bytes = outFile -> Write();
+	  std::cout << "============================================"  << std::endl;
+	  std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
+	  std::cout << "nr of KB written:  " << int(bytes/1024.)       << std::endl;
+	  std::cout << "nr of MB written:  " << int(bytes/1024./1024.) << std::endl;
+	  std::cout << "============================================"  << std::endl;
+
+	}
+
+	if (!opts.GetOpt<std::string>("Input.sourceName").compare("Co60")){
+	  ModuleEventClass anEvent;
+	  
+	  int nEntries = tree->GetEntries();
+	  if( maxEntries > 0 ) nEntries = maxEntries;
+	  for(int entry = 0; entry < nEntries; ++entry)
+	  {
+	    tree -> GetEntry(entry);
+	    if( entry%200000 == 0 )
+	    {
+	      std::cout << "\n>>> 1st loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << std::endl;
+	      TrackProcess(cpu, mem, vsz, rss);
+	    }
+	    
+	    float Vov = step1;
+	    float vth1 = float(int(step2/10000)-1);;
+	    // float vth2 = float(int((step2-10000*vth1)/100)-1);
+	    // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
+	    
+	    
+	    for(int iBar = 0; iBar < 16; ++iBar)
+	    {
+	      int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
+	      
+	      
+	      int chL(chsL[iBar]);
+	      int chR(chsR[iBar]);
+		      
+	      float qfineL(qfine[chL]);
+	      float qfineR(qfine[chR]);
+	      float totL(0.001*tot[chL]);
+	      float totR(0.001*tot[chR]);
+	      
+	      if( totL <= 0. || totR <= 0. ) continue;
+	      if( qfineL < 13. || qfineR < 13. ) continue;
+	      
+	      float energyL(energy[chL]);
+	      float energyR(energy[chR]);
+	      long long timeL(time[chL]);
+	      long long timeR(time[chR]);
+	      
+	      
+	      //--- create histograms, if needed
+	      if( h1_totL[index] == NULL )
+	  		{
+					h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
+					h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
+					
+					h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",2000,0.,1000.);
+					h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",2000,0.,1000.);
+					
+					h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+					h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+					
+					outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1));
+					outTrees[index] -> Branch("event",&anEvent);
+					
+					h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+	      }
+	      
+	      
+	      //--- fill histograms
+	      h1_qfineL[index] -> Fill( qfineL );
+	      h1_totL[index] -> Fill( totL );
+	      h1_energyL[index] -> Fill( energyL );
+	      
+	      h1_qfineR[index] -> Fill( qfineR );
+	      h1_totR[index] -> Fill( totR );
+	      h1_energyR[index] -> Fill( energyR );
+	      
+	      h1_energyLR[index] -> Fill(0.5*(energyL+energyR));
+	      
+	      anEvent.barID = iBar;
+	      anEvent.Vov = Vov;
+	      anEvent.vth1 = vth1;
+	      anEvent.energyL = energyL;
+	      anEvent.energyR = energyR;
+	      anEvent.timeL = timeL;
+	      anEvent.timeR = timeR;
+	      outTrees[index] -> Fill();
+	    }
+	  }
+	  std::cout << std::endl;
+	  
+	  
+	  
+	  int bytes = outFile -> Write();
+	  std::cout << "============================================"  << std::endl;
+	  std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
+	  std::cout << "nr of KB written:  " << int(bytes/1024.)       << std::endl;
+	  std::cout << "nr of MB written:  " << int(bytes/1024./1024.) << std::endl;
+	  std::cout << "============================================"  << std::endl;
+	}
+
+
+
+
 }
