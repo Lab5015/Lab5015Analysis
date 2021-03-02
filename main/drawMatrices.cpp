@@ -19,6 +19,7 @@
 #include "TCanvas.h"
 #include "TF1.h"
 #include "TGraphErrors.h"
+#include "TSpectrum.h"
 
 
 
@@ -61,13 +62,14 @@ int main(int argc, char** argv)
   time_t timesec;
   for(auto fileBaseName : fileBaseNames)
   {
-    //std::string fileName = Form("%s/%s_ped_t.root",inputDir.c_str(),fileBaseName.c_str());
-    std::string fileName = Form("%s/%s_t.root",inputDir.c_str(),fileBaseName.c_str());
+    std::string fileName = Form("%s/%s_ped_t.root",inputDir.c_str(),fileBaseName.c_str());
+    //std::string fileName = Form("%s/%s_t.root",inputDir.c_str(),fileBaseName.c_str());
     std::cout << ">>> Adding flle " << fileName << std::endl;
     tree -> Add(fileName.c_str());
     
     struct stat t_stat;
-    stat(Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_FNAL_Feb2020/TOFHIR/RawData/%s.rawf",fileBaseName.c_str()), &t_stat);
+    //stat(Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_FNAL_Feb2020/TOFHIR/RawData/%s.rawf",fileBaseName.c_str()), &t_stat);
+    stat(Form("/data/TOFHIR2/raw/%s.rawf",fileBaseName.c_str()), &t_stat);
     struct tm * timeinfo = localtime(&t_stat.st_mtime);
     timesec = mktime(timeinfo);
     std::cout << "Time and date of raw file of run " << fileBaseName << ": " << asctime(timeinfo);
@@ -83,7 +85,6 @@ int main(int argc, char** argv)
   std::vector<unsigned int> channelMapping2 = opts.GetOpt<std::vector<unsigned int> >("Channels.channelMapping2");
   std::vector<unsigned int> channelMapping;
   
-  std::map<int,channel> channels_key;
   std::vector<std::string> arrays = opts.GetOpt<std::vector<std::string> >("Channels.arrays");
   for(auto array : arrays)
   {
@@ -106,12 +107,17 @@ int main(int argc, char** argv)
       offset += 64;
     }
     
-    for(int ii = 0; ii < 32; ++ii)
-    {
-      int chID = channelMapping[ii] + offset;
-      channels_key[chID] = {array,(ii/2),(ii%2)};
-    }
+    for(unsigned int ii = 0; ii < channelMapping.size(); ++ii)
+      channelMapping[ii] += offset;
   }
+  
+  
+  
+  float qfineMin = opts.GetOpt<float>("Cuts.qfineMin");
+  int nEnergyBins = opts.GetOpt<int>("Cuts.nEnergyBins");
+  float energyMin = opts.GetOpt<float>("Cuts.energyMin");
+  float energyMax = opts.GetOpt<float>("Cuts.energyMax");
+  
   
   
   //--- define branches
@@ -135,6 +141,7 @@ int main(int argc, char** argv)
   
   std::map<int,std::map<int,TH1F*> > h1_energy_L;
   std::map<int,std::map<int,TH1F*> > h1_energy_R;
+  std::map<int,std::map<int,TH1F*> > h1_energy_LR;
   // std::map<int,TH2F*> h2_energy_LRCorr;
   
   
@@ -152,6 +159,45 @@ int main(int argc, char** argv)
     VovMap[step1] += 1;
     
     
+    float energyLRMax = -1;
+    int barIDMax = -1;
+    for(int barIt = 0; barIt < 16; ++barIt)
+    {
+      float energyL = qfine[channelMapping[barIt*2+0]] > qfineMin ? energy[channelMapping[barIt*2+0]] : 0.;
+      float energyR = qfine[channelMapping[barIt*2+1]] > qfineMin ? energy[channelMapping[barIt*2+1]] : 0.;
+      float energyLR = 0.5*(energyL+energyR);
+      
+      if( energyLR > energyLRMax )
+      {
+        energyLRMax = energyLR;
+        barIDMax = barIt;
+      }
+    }
+    
+    
+    if( qfine[channelMapping[barIDMax*2+0]] > qfineMin || qfine[channelMapping[barIDMax*2+1]] > qfineMin )
+    {
+      if( h1_energy_L[step1][barIDMax] == NULL )
+      {
+        std::string label_L(Form("h1_energy_%s_bar%02d_L_Vov%.1f","prova",barIDMax,step1));
+        std::string label_R(Form("h1_energy_%s_bar%02d_R_Vov%.1f","prova",barIDMax,step1));
+        std::string label_LR(Form("h_energy_%s_bar%02d_LR_Vov%.1f","prova",barIDMax,step1));
+        
+        h1_energy_L[step1][barIDMax] = new TH1F(label_L.c_str(),"",nEnergyBins,energyMin,energyMax);
+        h1_energy_R[step1][barIDMax] = new TH1F(label_R.c_str(),"",nEnergyBins,energyMin,energyMax);
+        h1_energy_LR[step1][barIDMax] = new TH1F(label_LR.c_str(),"",nEnergyBins,energyMin,energyMax);
+        //h1_energy_L[step1][barID] = new TH1F(label_L.c_str(),"",150,0.,150.);
+        //h1_energy_R[step1][barID] = new TH1F(label_R.c_str(),"",150,0.,150.);
+        // h2_energy_LRCorr[barID] = new TH2F(label_LR.c_str(),"",150,0.,150.,150,0.,150.);
+      }
+      
+      if( qfine[channelMapping[barIDMax*2+0]] > qfineMin ) h1_energy_L[step1][barIDMax] -> Fill( energy[channelMapping[barIDMax*2+0]] );
+      if( qfine[channelMapping[barIDMax*2+1]] > qfineMin ) h1_energy_R[step1][barIDMax] -> Fill( energy[channelMapping[barIDMax*2+1]] );
+      if( qfine[channelMapping[barIDMax*2+1]] > qfineMin ) h1_energy_LR[step1][barIDMax] -> Fill( 0.5 * (energy[channelMapping[barIDMax*2+0]] + energy[channelMapping[barIDMax*2+1]] ) );
+    }
+    
+    
+    /*
     for(auto mapIt: channels_key)
     {
       int chID    = mapIt.first;
@@ -159,7 +205,7 @@ int main(int argc, char** argv)
       int barID   = mapIt.second.barID;
       int lrID    = mapIt.second.lrID;
       
-      if( qfine[chID] > 13 )
+      if( qfine[chID] > qfineMin )
       {
         if( h1_energy_L[step1][barID] == NULL )
         {
@@ -191,7 +237,7 @@ int main(int argc, char** argv)
         //   }
         // }
       }
-    }
+    } */
   }
   std::cout << std::endl;
   
@@ -206,10 +252,12 @@ int main(int argc, char** argv)
     {
       TGraphErrors* g_511keV_L = new TGraphErrors();
       TGraphErrors* g_511keV_R = new TGraphErrors();
+      TGraphErrors* g_511keV_LR = new TGraphErrors();
       
       float maxN = -999.;
       TGraphErrors* g_N_L = new TGraphErrors();
       TGraphErrors* g_N_R = new TGraphErrors();
+      TGraphErrors* g_N_LR = new TGraphErrors();
       
       
       for(int barIt = 0; barIt < 16; ++barIt)
@@ -217,14 +265,16 @@ int main(int argc, char** argv)
         // TCanvas* c1 = new TCanvas(Form("c1_bar%d",barIt),Form("c1_bar%d",barIt),1200,600);
         // c1 -> Divide(2,1);
         TCanvas* c1 = new TCanvas(Form("c1_bar%d",barIt),Form("c1_bar%d",barIt));
+        c1 -> SetLogy();
         // c1 -> Divide(2,1);
-        
         // c1 -> cd(1);
         
         std::string label_L = Form("h1_energy_%s_bar%02d_L_Vov%.1f", array.c_str(),barIt,Vov);
         std::string label_R = Form("h1_energy_%s_bar%02d_R_Vov%.1f", array.c_str(),barIt,Vov);
+        std::string label_LR = Form("h1_energy_%s_bar%02d_LR_Vov%.1f", array.c_str(),barIt,Vov);
         TH1F* histo_L = h1_energy_L[Vov][barIt];
         TH1F* histo_R = h1_energy_R[Vov][barIt];
+        TH1F* histo_LR = h1_energy_LR[Vov][barIt];
         
         if( histo_L == NULL || histo_R == NULL ) continue;
         
@@ -236,24 +286,40 @@ int main(int argc, char** argv)
         
         histo_L -> SetMaximum(1.2*std::max(maxL,maxR));
         histo_R -> SetMaximum(1.2*std::max(maxL,maxR));
-        histo_L -> GetXaxis() -> SetRangeUser(0.,40.);
-        histo_R -> GetXaxis() -> SetRangeUser(0.,40.);
+        histo_L -> GetXaxis() -> SetRangeUser(energyMin,energyMax);
+        histo_R -> GetXaxis() -> SetRangeUser(energyMin,energyMax);
         
         histo_L -> SetTitle(";energy [a.u.];events");
         histo_L -> SetLineColor(kRed);
         histo_L -> Draw("hist");
         histo_R -> SetLineColor(kBlue);
         histo_R -> Draw("hist,sames");
-        
+        histo_LR -> SetLineColor(kBlack);
+        histo_LR -> SetLineWidth(2);
+        histo_LR -> Draw("hist,sames");
         
         if( histo_L->Integral(histo_L->FindBin(7.),histo_L->FindBin(20.)) > 100 )
         {
           std::cout << "barIt: " << barIt << "   left " << std::endl;
+          
+          int nPeaks = 5;
+          TSpectrum* spectrum = new TSpectrum(nPeaks);
+          int bin = histo_L->FindLastBinAbove(0);
+          float emin = histo_L->GetBinCenter(bin)*0.25;
+          histo_L-> GetXaxis()->SetRangeUser(emin,200);
+          int nFound = spectrum -> Search(histo_L, 5.0, "nodraw", 0.01);
+          histo_L-> GetXaxis()->SetRangeUser(0,200);
+          double* peaks = spectrum -> GetPositionX();
+          
           // -- fit 511 keV peak only
-          float xMax = FindXMaximum(histo_L,7.,20.);
-          TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.10*xMax,xMax+0.10*xMax);
+          //float xMax = FindXMaximum(histo_L,5.,20.);
+          float xMax = 0.;
+          for(int jj = 0; jj < nFound; ++jj)
+            if( peaks[jj] > xMax) xMax = peaks[jj];
+          
+          TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.12*xMax,xMax+0.12*xMax);
           histo_L -> Fit(f_gaus,"QNRS+");
-          f_gaus -> SetLineColor(kBlack);
+          f_gaus -> SetLineColor(kRed);
           f_gaus -> SetLineWidth(3);
           f_gaus -> Draw("same");
           
@@ -268,15 +334,29 @@ int main(int argc, char** argv)
           if( integral > maxN ) maxN = integral;
         }
         
-        if( histo_R->Integral(histo_R->FindBin(7.),histo_R->FindBin(20.)) > 100 )
+        if( histo_R->Integral(histo_R->FindBin(5.),histo_R->FindBin(20.)) > 100 )
         {
           std::cout << "barIt: " << barIt << "   right " << std::endl;
+          
+          int nPeaks = 5;
+          TSpectrum* spectrum = new TSpectrum(nPeaks);
+          int bin = histo_R->FindLastBinAbove(0);
+          float emin = histo_R->GetBinCenter(bin)*0.25;
+          histo_R-> GetXaxis()->SetRangeUser(emin,200);
+          int nFound = spectrum -> Search(histo_R, 5., "nodraw", 0.01);
+          histo_R-> GetXaxis()->SetRangeUser(0,200);
+          double* peaks = spectrum -> GetPositionX();
+          
 
           // -- fit 511 keV peak only
-          float xMax = FindXMaximum(histo_R,7.,20.);
-          TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.10*xMax,xMax+0.10*xMax);
+          // float xMax = FindXMaximum(histo_R,5.,20.);
+          float xMax = 0.;
+          for(int jj = 0; jj < nFound; ++jj)
+            if( peaks[jj] > xMax) xMax = peaks[jj];
+          
+          TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.12*xMax,xMax+0.12*xMax);
           histo_R -> Fit(f_gaus,"QNRS+");
-          f_gaus -> SetLineColor(kBlack);
+          f_gaus -> SetLineColor(kBlue);
           f_gaus -> SetLineWidth(3);
           f_gaus -> Draw("same");
           
@@ -288,6 +368,37 @@ int main(int argc, char** argv)
           
           g_N_R -> SetPoint(g_N_R->GetN(),barIt,integral);
           g_N_R -> SetPointError(g_N_R->GetN()-1,0,0.);
+          if( integral > maxN ) maxN = integral;
+        }
+        
+        if( histo_LR->Integral(histo_LR->FindBin(3.),histo_LR->FindBin(20.)) > 100 )
+        {
+          std::cout << "barIt: " << barIt << "   left-right " << std::endl;
+          
+          int nPeaks = 5;
+          TSpectrum* spectrum = new TSpectrum(nPeaks);
+          int nFound = spectrum -> Search(histo_LR, 5., "nodraw", 0.01);
+          double* peaks = spectrum -> GetPositionX();
+          
+          // -- fit 511 keV peak only
+          // float xMax = FindXMaximum(histo_R,5.,20.);
+          float xMax = 0.;
+          for(int jj = 0; jj < nFound; ++jj)
+            if( peaks[jj] > xMax) xMax = peaks[jj];
+          TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.12*xMax,xMax+0.12*xMax);
+          histo_LR -> Fit(f_gaus,"QNRS+");
+          f_gaus -> SetLineColor(kBlack);
+          f_gaus -> SetLineWidth(3);
+          f_gaus -> Draw("same");
+          
+          g_511keV_LR -> SetPoint(g_511keV_LR->GetN(),barIt,f_gaus -> GetParameter(1));
+          g_511keV_LR -> SetPointError(g_511keV_LR->GetN()-1,0,f_gaus -> GetParError(1));
+          
+          float integral = f_gaus->Integral(f_gaus->GetParameter(1)-f_gaus->GetParameter(2),
+                                            f_gaus->GetParameter(1)+f_gaus->GetParameter(2));
+          
+          g_N_LR -> SetPoint(g_N_LR->GetN(),barIt,integral);
+          g_N_LR -> SetPointError(g_N_LR->GetN()-1,0,0.);
           if( integral > maxN ) maxN = integral;
         }
         
@@ -304,7 +415,7 @@ int main(int argc, char** argv)
       
       TCanvas* c2 = new TCanvas("c2","c2");
       
-      TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,0.,17.,20.) );
+      TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,energyMin,17.,energyMax) );
       hPad -> SetTitle(";bar ID;photopeak energy [a.u.]");
       hPad -> Draw();
       gPad -> SetGridy();
@@ -315,10 +426,15 @@ int main(int argc, char** argv)
       g_511keV_R -> SetMarkerColor(kBlue);
       g_511keV_R -> SetMarkerStyle(21);
       g_511keV_R -> Draw("P,same");
+      g_511keV_LR -> SetLineColor(kBlack);
+      g_511keV_LR -> SetMarkerColor(kBlack);
+      g_511keV_LR -> SetMarkerStyle(22);
+      g_511keV_LR -> Draw("PL,same");
       
       outFile -> cd();
       g_511keV_L -> Write(Form("g_511keV_L__%s__Vov%.1f",array.c_str(),Vov));
       g_511keV_R -> Write(Form("g_511keV_R__%s__Vov%.1f",array.c_str(),Vov));
+      g_511keV_LR -> Write(Form("g_511keV_LR__%s__Vov%.1f",array.c_str(),Vov));
       
       c2 -> Print(Form("%s/c2_energy__%s__Vov%.1f.png",plotDir.c_str(),array.c_str(),Vov));
       
@@ -336,10 +452,14 @@ int main(int argc, char** argv)
       g_N_R -> SetMarkerColor(kBlue);
       g_N_R -> SetMarkerStyle(21);
       g_N_R -> Draw("P,same");
+      g_N_LR -> SetMarkerColor(kBlack);
+      g_N_LR -> SetMarkerStyle(22);
+      g_N_LR -> Draw("P,same");
       
       outFile -> cd();
       g_N_L -> Write(Form("g_N_L__%s__Vov%.1f",array.c_str(),Vov));
       g_N_R -> Write(Form("g_N_R__%s__Vov%.1f",array.c_str(),Vov));
+      g_N_LR -> Write(Form("g_N_LR__%s__Vov%.1f",array.c_str(),Vov));
       
       c3 -> Print(Form("%s/c3_N__%s__Vov%.1f.png",plotDir.c_str(),array.c_str(),Vov));
     }
