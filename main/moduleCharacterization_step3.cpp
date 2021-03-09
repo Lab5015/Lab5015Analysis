@@ -63,19 +63,6 @@ int main(int argc, char** argv)
   system(Form("mkdir -p %s/summaryPlots/DeltaTMean/",plotDir.c_str()));
   system(Form("mkdir -p %s/summaryPlots/Entries_CTR/",plotDir.c_str()));
   system(Form("mkdir -p %s/summaryPlots/Energy_linearization/",plotDir.c_str()));
- 
-
-  //copia il file .php che si trova in una cartella fuori plotDir in plotDir definita nel config file
-  system(Form("cp %s/../index.php %s",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/tot/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/energy/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/timeResolution/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/timeResolution/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/DeltaTMean/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/Entries_CTR/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/summaryPlots/Energy_linearization/",plotDir.c_str(),plotDir.c_str()));
-  
 
 
   //--- open files and make the tree chain
@@ -94,7 +81,7 @@ int main(int argc, char** argv)
   std::string Co60SumPeak = "Co60SumPeak";
   std::string Laser = "Laser";
 
-	std::string slewRate = opts.GetOpt<std::string>("Plots.slewRate");
+	
 
 
 
@@ -384,7 +371,6 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 
 	      ++iter;
-	      //std::cout<<"iter "<<iter<<std::endl;
 	    }
 		  
 	    c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_th_bar%02d.png",plotDir.c_str(),iBar));
@@ -440,7 +426,6 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 
 	      ++iter;
-	      //std::cout<<"iter "<<iter<<std::endl;
 	    }
 		  
 	    c1 -> Print(Form("%s/summaryPlots/tot/c_tot_vs_Vov_bar%02d.png",plotDir.c_str(),iBar));
@@ -513,7 +498,6 @@ int main(int argc, char** argv)
 
   std::vector<float> vec_th;	
   for(auto file: listStep2){
-	  //int i=0;
 	  TFile* inFile = TFile::Open(file.c_str(),"READ");
 	  
 	  TList* list = inFile -> GetListOfKeys();
@@ -542,7 +526,6 @@ int main(int argc, char** argv)
 	      std::string string_th = tokens[3];
 	      string_th.erase(0,2);
 	      map_ths[stepLabel] = atof(string_th.c_str());
-	      //i++;
 	    }
 	  
 	  std::sort(stepLabels.begin(),stepLabels.end());
@@ -570,13 +553,9 @@ int main(int argc, char** argv)
 	      std::string string_EnBin = tokens[4];
 	      string_EnBin.erase(0,9);
 	      map_EnBin[stepLabel] = atof(string_EnBin.c_str());
-	      //d++;
 	    }
 	  
 	  }
-	  //std::cout<<"i="<<i<<std::endl;
-	  //std::cout<<"d="<<d<<std::endl;
-
   }
 
   std::sort(vec_Vov.begin(),vec_Vov.end());
@@ -730,11 +709,13 @@ int main(int argc, char** argv)
 
   //energy Peak 511 vs th and vs Vov and vs iBar (LR, L, R)
   for(std::map<float,float>::iterator index = map_en511.begin(); index != map_en511.end(); index++){
-    std::cout<<"index"<<index->first<<std::endl;
+    //std::cout<<"index"<<index->first<<std::endl;
     float Vov;
     int th;
     int iBar;
-    Vov = float((int(index->first/10000))/100);
+
+
+		Vov = float(int(index->first/10000))/100;
     th = int((index->first - Vov*1000000)/100);
     iBar = int(index->first - Vov*1000000 - th*100);
     int Vov_iBar_ID;
@@ -743,6 +724,8 @@ int main(int argc, char** argv)
     Vov_iBar_ID = 10000*int(Vov*100.) + iBar;
     th_iBar_ID = 100*th + iBar;
     Vov_th_ID =(10000*int(Vov*100.)) + (100*th);
+
+
 
     if( g_en511_vs_th[Vov_iBar_ID] == NULL ){	
       g_en511_vs_th[Vov_iBar_ID] = new TGraphErrors();
@@ -815,7 +798,8 @@ int main(int argc, char** argv)
     float Vov;
     int th;
     int iBar;
-    Vov = float((int(index->first/10000))/100);
+    
+		Vov = float(int(index->first/10000))/100;
     th = int((index->first - Vov*1000000)/100);
     iBar = int(index->first - Vov*1000000 - th*100);
     int Vov_iBar_ID;
@@ -823,7 +807,9 @@ int main(int argc, char** argv)
     int Vov_th_ID;
     Vov_iBar_ID = 10000*int(Vov*100.) + iBar;
     th_iBar_ID = 100*th + iBar;
-    Vov_th_ID = 10000*int(Vov*100.) + 100*th;
+    Vov_th_ID =(10000*int(Vov*100.)) + (100*th);
+
+
 
     if( g_en1275_vs_th[Vov_iBar_ID] == NULL ){	
       g_en1275_vs_th[Vov_iBar_ID] = new TGraphErrors();
@@ -888,7 +874,9 @@ int main(int argc, char** argv)
     float Vov;
     int th;
     int iBar;
-    Vov = float((int(index->first/10000))/100);
+    
+		Vov = float(int(index->first/10000))/100;
+
     th = int((index->first - Vov*1000000)/100);
     iBar = int(index->first - Vov*1000000 - th*100);
     int Vov_iBar_ID;
@@ -897,6 +885,8 @@ int main(int argc, char** argv)
     Vov_iBar_ID = 10000*int(Vov*100.) + iBar;
     th_iBar_ID = 100*th + iBar;
     Vov_th_ID = 10000*int(Vov*100.) + 100*th; 
+
+
 
     if( g_enRatio_vs_th[Vov_iBar_ID] == NULL ){	
       g_enRatio_vs_th[Vov_iBar_ID] = new TGraphErrors();
@@ -963,15 +953,16 @@ int main(int argc, char** argv)
 		  float Vov;
 		  int th;
 		  int iBar;
-		  Vov = float((int(index->first/10000))/100);
-		  th = int((index->first - Vov*1000000)/100);
+		  Vov = float(int(index->first/10000))/100;
+
+    	th = int((index->first - Vov*1000000)/100);
 		  iBar = int(index->first - Vov*1000000 - th*100);
 		  int Vov_iBar_ID;
 		  int th_iBar_ID;
 		  int Vov_th_ID;
 		  Vov_iBar_ID = 10000*int(Vov*100.) + iBar;
 		  th_iBar_ID = 100*th + iBar;
-		  Vov_th_ID = 10000*int(Vov*100.) + 100*th;
+		  Vov_th_ID = 10000*int(Vov*100.) + 100*th; 
 
 		  if( g_en1786_vs_th[Vov_iBar_ID] == NULL ){	
 		    g_en1786_vs_th[Vov_iBar_ID] = new TGraphErrors();
@@ -1088,9 +1079,9 @@ int main(int argc, char** argv)
     int Vov_iBar_ID;
     float Vov;
     int iBar;
-    Vov = float((int(index->first/10000))/100);
+    Vov = float(int(index->first/10000))/100;
     iBar = int(index->first - Vov*1000000);
-    Vov_iBar_ID = 10000*int(Vov*100.) + iBar; 
+    Vov_iBar_ID = 10000*int(Vov*100.) + iBar;
     for(int bar=0; bar<16; bar++){
       if(bar==iBar){
         if(c_en511_vs_th[bar]==NULL){
@@ -1372,9 +1363,10 @@ int main(int argc, char** argv)
     int th;
     int iBar;
     int th_iBar_ID;
-    th = int((index->first)/100);
+		th = int((index->first)/100);
     iBar = int(index->first - th*100);
     th_iBar_ID = 100*th + iBar;
+
     
     for(int bar=0; bar<16; bar++){
       if(bar==iBar){
@@ -1655,9 +1647,10 @@ int main(int argc, char** argv)
     int th;
     float Vov;
     int Vov_th_ID;
-    Vov = float((int(index->first/10000))/100);
+		Vov = float(int(index->first/10000))/100;
     th = int((index->first - Vov*1000000)/100);
     Vov_th_ID = 10000*int(Vov*100.) + 100*th;
+		
     
     if( th != refTh ) continue;
     
@@ -1874,26 +1867,26 @@ int main(int argc, char** argv)
   }
   
   for(std::map<int,TCanvas*>::iterator index = c_en511_vs_bar.begin(); index != c_en511_vs_bar.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy511_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
   }
   
   for(std::map<int,TCanvas*>::iterator index = c_en1275_vs_bar.begin(); index != c_en1275_vs_bar.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1275_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
   }
   
   for(std::map<int,TCanvas*>::iterator index = c_enRatio_vs_bar.begin(); index != c_enRatio_vs_bar.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energyRatio_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
   }
   
 
   if(!source.compare(SingleBarNa22)){
 		for(std::map<int,TCanvas*>::iterator index = c_en1786_vs_bar.begin(); index != c_en1786_vs_bar.end(); index++){
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1786_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1786_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int((index->first - (float((int(index->first/10000))/100))*1000000)/100)));
-  }
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1786_vs_bar_Vov%.01f_th%d.png",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
+    index->second-> Print(Form("%s/summaryPlots/energy/c_energy1786_vs_bar_Vov%.01f_th%d.pdf",plotDir.c_str(),float(int(index->first/10000))/100,int((index->first - (float(int(index->first/10000))/100)*1000000)/100)));
+  	}
 	}
 
  
@@ -2029,9 +2022,10 @@ int main(int argc, char** argv)
     int iBar;
     int enBin;
     enBin = int(index->first/10000000.);
-    Vov = float(int(double(index->first-enBin*10000000)/10000.)/100);
-    th = int(double(index->first - enBin*10000000 - Vov*1000000)/100);
-    iBar = int(double(index->first - enBin*10000000 - Vov*1000000 - th*100));
+    Vov = float((int(double(index->first-enBin*10000000)/10000.))/100.);
+    th = int((index->first - enBin*10000000 - (Vov*100)*10000)/100.);
+		iBar = int(double(index->first - enBin*10000000 - Vov*1000000 - th*100));
+	  
     double Vov_iBar_enBin_ID;
     Vov_iBar_enBin_ID = double(10000000*enBin) + double(Vov*1000000) + double(iBar);
     double th_iBar_enBin_ID;
@@ -2042,6 +2036,7 @@ int main(int argc, char** argv)
     Vov_th_ID = double(Vov*1000000) + double(th*100);
     double index2;
     index2 = double(10000000*enBin) + double(Vov*1000000) + double(th*100) + double(iBar);
+
 
     if( g_timeRes_vs_th[Vov_iBar_enBin_ID] == NULL ){
       g_timeRes_vs_th[Vov_iBar_enBin_ID] = new TGraphErrors();
@@ -2074,13 +2069,7 @@ int main(int argc, char** argv)
       }
     }
 
-		if(!slewRate.compare("yes")){
-			if (enBin ==enBin511){
-		    if( g_th_vs_DeltaTMean[Vov_iBar_enBin_ID] == NULL ){	
-		    	g_th_vs_DeltaTMean[Vov_iBar_enBin_ID] = new TGraphErrors();
-		    }
-		  }
-		}
+		
 
 
 		//NB: aggiungo solo nella linearizzazione errore sistematico
@@ -2133,13 +2122,6 @@ int main(int argc, char** argv)
       //std::cout<<"N"<<g_timeRes1275_vs_bar[Vov_th_ID]->GetN()<<"iBar"<<iBar<<"RES "<<(index->second)/2<<std::endl;
       g_timeRes1275_vs_bar[Vov_th_ID]->SetPointError(g_timeRes1275_vs_bar[Vov_th_ID]->GetN()-1, 0., 0.);
     }
-
-		if(!slewRate.compare("yes")){
-			if (enBin ==enBin511){
-				g_th_vs_DeltaTMean[Vov_iBar_enBin_ID]->SetPoint(g_th_vs_DeltaTMean[Vov_iBar_enBin_ID]->GetN(), map_DeltaTMean[index->first], th);
-				g_th_vs_DeltaTMean[Vov_iBar_enBin_ID]->SetPointError(g_th_vs_DeltaTMean[Vov_iBar_enBin_ID]->GetN()-1, 0., 0.);
-			} 
-  	}
       
   }
 
@@ -2177,13 +2159,12 @@ int main(int argc, char** argv)
 
   //summary plot time resolution vs th
   for(std::map<double,TGraphErrors*>::iterator index = g_timeRes_vs_th.begin(); index != g_timeRes_vs_th.end(); index++){
- 
-    enBin = int(double(index->first/10000000.));
-    //std::cout<<"quiiii"<<enBin<<std::endl;
-    Vov = float(int(double(index->first-enBin*10000000.)/10000.)/100.);
+		enBin = int(index->first/10000000.);
+    Vov = float((int(double(index->first-enBin*10000000)/10000.))/100.);
     iBar = int(double(index->first - enBin*10000000 - Vov*1000000));
     Vov_iBar_enBin_ID = double(10000000*enBin) + double(Vov*1000000) + double(iBar);
     iBar_enBin_ID = 10000000*enBin + iBar;
+		
 
     for(int bar=0; bar<16; bar++){
       if(bar==iBar){
@@ -2246,77 +2227,18 @@ int main(int argc, char** argv)
 
   for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_th.begin(); index != c_timeRes_vs_th.end(); index++){
 	    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_th_bar%02d_enBin%02d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
-	    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_th_bar%02d_enBin%d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
+	    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_th_bar%02d_enBin%02d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
  }
-
-
-
-
-
-
-
-
-  //summary plot PulseShape
- 	if(!slewRate.compare("yes")){
-		for(std::map<double,TGraphErrors*>::iterator index = g_th_vs_DeltaTMean.begin(); index != g_th_vs_DeltaTMean.end(); index++){
-	 
-		  enBin = int(double(index->first/10000000.));
-		  //std::cout<<"quiiii"<<enBin<<std::endl;
-		  Vov = float(int(double(index->first-enBin*10000000.)/10000.)/100.);
-		  iBar = int(double(index->first - enBin*10000000 - Vov*1000000));
-		  Vov_iBar_enBin_ID = double(index->first/10000000.) + double(Vov*1000000) + double(iBar);
-
-		  for(int bar=0; bar<16; bar++){
-		    if(bar==iBar){
-		//ATTENZIONE!!!!!!!!
-		      for(int energyBin=1; energyBin<enBin1275+t; energyBin++){
-		        if(energyBin==enBin511){
-		          for(float ov : vec_Vov){
-								if(ov == Vov){  
-				          if(c_th_vs_DeltaTMean[Vov_iBar_enBin_ID]==NULL){
-				            c_th_vs_DeltaTMean[Vov_iBar_enBin_ID] = new TCanvas(Form("c_th_vs_DeltaTMean_Vov%.01f_bar%02d_enBin%02d",Vov, bar,energyBin),Form("c_th_vs_DeltaTMean_Vov%.01f_bar%02d_enBin%02d",Vov, bar,energyBin));
-				            TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,0,64.,500) );
-				            hPad -> SetTitle(";#DeltaTMeanCorr[ps];threshold [DAC]");
-					    			hPad -> Draw();
-					 					gPad -> SetGridy();
-				          }
-									TGraph* g_tRes = g_th_vs_DeltaTMean[Vov_iBar_enBin_ID];
-									outFile -> cd();
-									g_tRes -> Write(Form("g_th_vs_DeltaTMean_Vov%.1f_bar%02d_enBin%d",Vov,bar,energyBin));
-									c_th_vs_DeltaTMean[Vov_iBar_enBin_ID]->cd();
-												  
-							    g_tRes -> SetLineColor(kBlack);
-							    g_tRes -> SetMarkerColor(kBlack);
-							    g_tRes -> SetMarkerStyle(20);
-							    g_tRes -> Draw("PL,same");
-			    				
-												
-								}  		  
-							}	
-						}		
-					}
-				}
-		  }
-		}  
-
-
-
-		for(std::map<double,TCanvas*>::iterator index = c_th_vs_DeltaTMean.begin(); index != c_th_vs_DeltaTMean.end(); index++){
-			  index->second-> Print(Form("%s/summaryPlots/PulseShape/c_th_vs_DeltaTMean_Vov%.01f_bar%02d_enBin%02d.png",plotDir.c_str(),float(int(double(index->first-(int(double(index->first/10000000.)))*10000000.)/10000.)/100.),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
-			  index->second-> Print(Form("%s/summaryPlots/PulseShape/c_th_vs_DeltaTMean_Vov%.01f_bar%02d_enBin%02d.pdf",plotDir.c_str(),float(int(double(index->first-(int(double(index->first/10000000.)))*10000000.)/10000.)/100.),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
-	 	}
-	}
 
 
   
 for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin(); index != g_DeltaTMean_vs_th.end(); index++){
- 
-    enBin = int(double(index->first/10000000.));
-    //std::cout<<"quiiii"<<enBin<<std::endl;
-    Vov = float(int(double(index->first-enBin*10000000.)/10000.)/100.);
+		enBin = int(index->first/10000000.);
+    Vov = float((int(double(index->first-enBin*10000000)/10000.))/100.);
     iBar = int(double(index->first - enBin*10000000 - Vov*1000000));
     Vov_iBar_enBin_ID = double(10000000*enBin) + double(Vov*1000000) + double(iBar);
     iBar_enBin_ID = 10000000*enBin + iBar;
+
 
     for(int bar=0; bar<16; bar++){
       if(bar==iBar){
@@ -2411,7 +2333,7 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
   //summary plot time resolution vs Vov
   for(std::map<double,TGraphErrors*>::iterator index = g_timeRes_vs_Vov.begin(); index != g_timeRes_vs_Vov.end(); index++){
     //std::cout<<"indexfirst= "<<index->first<<std::endl;
-    enBin = int(double(index->first/10000000.));
+		enBin = int(double(index->first/10000000.));
     th = int(double(index->first - enBin*10000000)/100);
     iBar = int(double(index->first - enBin*10000000- th*100));
     th_iBar_enBin_ID = 10000000*enBin + th*100 + iBar;
@@ -2471,7 +2393,7 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
   for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_Vov.begin(); index != c_timeRes_vs_Vov.end(); index++){
     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_Vov_bar%02d_enBin%02d.png",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_Vov_bar%02d_enBin%02d.pdf",plotDir.c_str(),int(index->first-double((int(index->first/10000000))*10000000)), int(double(index->first/10000000.))));
-  }
+	}
 
   std::map<double, std::vector<std::pair<float,float>>>vec_tRes;
   std::map<double, std::vector<std::pair<float,float>>>vec_tRes_error;
@@ -2481,9 +2403,9 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
 
   //summary plot time resolution vs energy bin
   for(std::map<double,TGraphErrors*>::iterator index = g_timeRes_vs_enBin.begin(); index != g_timeRes_vs_enBin.end(); index++){
-    Vov = float(int(index->first/10000.)/100.);
-    th = int(double(index->first - Vov*1000000)/100.);
-    iBar = int(double(index->first - Vov*1000000 - th*100));
+		Vov = float((int(double(index->first)/10000.))/100.);    
+    th = int(double(index->first - Vov*1000000)/100.);    
+    iBar = int(double(index->first - Vov*1000000 - th*100));		
     double Vov_th_iBar_ID;
     double iBar_Vov_ID; 
     Vov_th_iBar_ID = Vov*1000000 + th*100 + iBar;
@@ -2498,7 +2420,6 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
                 if(c_timeRes_vs_enBin[Vov_th_iBar_ID]==NULL){
                   c_timeRes_vs_enBin[Vov_th_iBar_ID] = new TCanvas(Form("c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d",bar,Vov,th),Form("c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d",bar,Vov,th));
                   TH1F* hPad = (TH1F*)( gPad->DrawFrame(0,0,30., 1.1*g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetHistogram()->GetMaximum()) );
-									//std::cout<<"maximum "<<1.1*g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetHistogram()->GetMaximum()<<std::endl;
                   hPad -> SetTitle(";energy [a.u.];#sigma_{t_{Diff}}/2 [ps]");
 	          			hPad -> Draw();
 	          			gPad -> SetGridy();
@@ -2506,7 +2427,6 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
 								if(c_timeRes_vs_enBin_thBest[iBar_Vov_ID]==NULL){
                   c_timeRes_vs_enBin_thBest[iBar_Vov_ID] = new TCanvas(Form("c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh",bar,Vov),Form("c_timeRes_vs_enBin_bar%02d_Vov%.01f_bestTh",bar,Vov));
                   TH1F* hPad = (TH1F*)( gPad->DrawFrame(0,0,30., 1.1*g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetHistogram()->GetMaximum()) );
-									//std::cout<<""<<1.1*g_timeRes_vs_enBin[Vov_th_iBar_ID]->GetHistogram()->GetMaximum()<<std::endl;
                   hPad -> SetTitle(";energy [a.u.];#sigma_{t_{Diff}}/2 [ps]");
 	          			hPad -> Draw();
 	          			gPad -> SetGridy();
@@ -2567,7 +2487,7 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
     th = int(double(index->first - Vov*1000000)/100.);
     iBar = int(double(index->first - Vov*1000000 - th*100));
     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d.png",plotDir.c_str(),iBar,Vov, th));
-     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d.pdf",plotDir.c_str(),iBar,Vov, th));
+    index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_enBin_bar%02d_Vov%.01f_th%d.pdf",plotDir.c_str(),iBar,Vov, th));
   }
   std::map<float, std::map<int, TGraph*>> g_tRes_vs_energy;
    for(std::map<double,TCanvas*>::iterator index = c_timeRes_vs_enBin_thBest.begin(); index != c_timeRes_vs_enBin_thBest.end(); index++){
@@ -2613,9 +2533,8 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
   std::map<double, std::vector<std::pair<float,float>>>vec_tRes_1275;
   for(std::map<double,TGraphErrors*>::iterator index = g_timeRes511_vs_bar.begin(); index != g_timeRes511_vs_bar.end(); index++){
 
-    Vov = float(int(index->first/10000)/100.);
-    th = int((index->first - Vov*1000000)/100);
-
+		Vov = float(int(index->first/10000)/100.);
+    th = int((index->first - Vov*1000000)/100);	
     Vov_th_ID = Vov*1000000 + th*100;
     	
     
@@ -2674,8 +2593,6 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
 				}
       }
       graph1 -> SetPoint( i, vec_tRes_511[index->first][minIndex].first, vec_tRes_511[index->first][minIndex].second);
-			
-			//std::cout<<"point"<<i<<"vec_tRes_511[index->first][minIndex].first"<<vec_tRes_511[index->first][minIndex].first<<"res"<<vec_tRes_511[index->first][minIndex].second<<std::endl;
       graph1 -> SetPointError( i, vec_tRes_error_511[index->first][minIndex].first, vec_tRes_error_511[index->first][minIndex].second);
       vec_tRes_511[index->first].erase(vec_tRes_511[index->first].begin() + minIndex);
       vec_tRes_error_511[index->first].erase(vec_tRes_error_511[index->first].begin() + minIndex);
