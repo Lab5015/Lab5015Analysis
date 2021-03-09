@@ -287,6 +287,10 @@ int main(int argc, char** argv)
       }
       
       int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
+
+
+      if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
+      if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
       
       //--- create histograms, if needed
       if( h1_totL[index] == NULL )
