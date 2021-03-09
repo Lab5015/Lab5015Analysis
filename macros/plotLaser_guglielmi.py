@@ -48,7 +48,7 @@ def GetSaturationCorrection(Ncells, Edep, LY, PDE, LCE):
 
 
 
-#to run python plotLaser_guglielmi.py /home/cmsdaq/guglielmi_bis/Lab5015Analysis/ /data/ALIO/plots/ /home/cmsdaq/guglielmi_bis/Lab5015Analysis/plots/
+#to run python plotLaser_guglielmi.py /home/cmsdaq/guglielmi/Lab5015Analysis/ /data/ALIO/plots/ /home/cmsdaq/guglielmi/Lab5015Analysis/plots/
 
 ###
 outdir = '/var/www/html/ModuleCharacterization/guglielmi/Laser/new_funcTot/'
@@ -273,7 +273,7 @@ g_Linearization = ROOT.TGraph( n, np.array(x), np.array(y) )
 	
 c_lin = ROOT.TCanvas('Linearization','Linearization',1300,600)
 c_lin.Divide(2,2)	
-c_lin.cd(1)
+'''c_lin.cd(1)
 hPad_lin = ROOT.gPad.DrawFrame(0.,0.,35.,10.)
 hPad_lin.GetYaxis().SetTitleSize(0.04)
 hPad_lin.GetXaxis().SetTitle('TOFPET2 amp (a.u.)')
@@ -315,7 +315,7 @@ g_Linearization_Na22.Draw("P")
 g_Linearization_Co60_rescaled.SetMarkerStyle(20)
 g_Linearization_Co60_rescaled.SetMarkerSize(1.)
 g_Linearization_Co60_rescaled.SetMarkerColor(kYellow)
-g_Linearization_Co60_rescaled.Draw("P,same")
+g_Linearization_Co60_rescaled.Draw("P,same")'''
 c_lin.cd(4)
 hPad_lin3 = ROOT.gPad.DrawFrame(0.,0.,35.,10.)
 hPad_lin3.GetYaxis().SetTitleSize(0.04)
@@ -488,10 +488,10 @@ for eBin in range(2,13):
 
 	c1 = ROOT.TCanvas('c1%d' %eBin, 'c1%d' %eBin)
 	linearizedEnergy[eBin] = funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Na22.GetPointX(eBin-1))
-	print('Na22')
+	#print('Na22')
 	k = GetSaturationCorrection(Ncells,linearizedEnergy[eBin], LY, PDE, LCE)
 	linearizedEnergy[eBin] = linearizedEnergy[eBin]/k
-	print(linearizedEnergy[eBin])
+	#print(linearizedEnergy[eBin])
 	g_tRes_vs_linearizedEnergy_Na22.SetPoint(g_tRes_vs_linearizedEnergy_Na22.GetN(), linearizedEnergy[eBin], g_tRes_vs_energy_Na22.GetPointY(eBin-1))
 	linEnergy_err = 0.5 *(funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Na22.GetPointX(eBin-1)*(1+energy_err_sys)) - funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Na22.GetPointX(eBin-1)*(1-energy_err_sys)) )/k
 	tRes_err = g_tRes_vs_energy_Na22.GetErrorY(eBin-1)
@@ -523,10 +523,10 @@ g_tRes_vs_threshold_Na22_coinc = f7.Get('g_timeRes_vs_th_Vov%.1f_bar00_enBin%d' 
 
 for eBin in range(1,2):
 	linearizedEnergy[eBin] = funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Na22_coinc.GetPointX(eBin-1))
-	print('Coinc:')
+	#print('Coinc:')
 	k = GetSaturationCorrection(Ncells,linearizedEnergy[eBin], LY, PDE, LCE)
 	linearizedEnergy[eBin] = linearizedEnergy[eBin]/k
-	print(linearizedEnergy[eBin])
+	#print(linearizedEnergy[eBin])
 	g_tRes_vs_linearizedEnergy_Na22_coinc.SetPoint(g_tRes_vs_linearizedEnergy_Na22_coinc.GetN(), linearizedEnergy[eBin], g_tRes_vs_energy_Na22_coinc.GetPointY(eBin-1))
 	linEnergy_err = 0.5 *(funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Na22_coinc.GetPointX(eBin-1)*(1+energy_err_sys)) - funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Na22_coinc.GetPointX(eBin-1)*(1-energy_err_sys)) )/k
 	tRes_err = g_tRes_vs_energy_Na22_coinc.GetErrorY(eBin-1)
@@ -556,11 +556,11 @@ g_tRes_vs_threshold_Co60 = f_Co60.Get('g_timeRes_vs_th_Vov%.1f_bar00_enBin1' %Vo
 for eBin in range(1,2):
 	linearizedEnergy[eBin] = funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Co60.GetPointX(eBin-1)/0.93)
 	#k = GetSaturationCorrection(Ncells, linearizedEnergy[eBin], LY, PDE, LCE, ECF)
-	print ('Co60')
+	#print ('Co60')
 	
 	k = GetSaturationCorrection(Ncells,linearizedEnergy[eBin], LY, PDE, LCE)
 	linearizedEnergy[eBin] = linearizedEnergy[eBin]/k
-	print(linearizedEnergy[eBin])
+	#print(linearizedEnergy[eBin])
 	g_tRes_vs_linearizedEnergy_Co60.SetPoint(g_tRes_vs_linearizedEnergy_Co60.GetN(), linearizedEnergy[eBin], g_tRes_vs_energy_Co60.GetPointY(eBin-1))
 	linEnergy_err = 0.5 *(funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Co60.GetPointX(eBin-1)*(1+energy_err_sys)) - funcLinearizedEnergy.Eval(g_tRes_vs_energy_th20_Co60.GetPointX(eBin-1)*(1-energy_err_sys)) )/k
 	tRes_err = g_tRes_vs_energy_Co60.GetErrorY(eBin-1)
@@ -800,10 +800,22 @@ fitFunc.SetParameter(1, 100)
 fitFunc.FixParameter(2, 15)
 fitFunc.SetParLimits(0, 0.00001, 1000)
 fitFunc.SetParLimits(1, 0.00001, 1000)
+
+fitFunc2 = ROOT.TF1('fitFunc2','sqrt(pow([0]/x,2)+pow([1]/sqrt(x),2)+pow([2],2))',0.0,10.0)
+fitFunc2.SetRange(0.1, 7.0)
+fitFunc2.SetParName(0,'n')
+fitFunc2.SetParName(1,'s')
+fitFunc2.SetParName(2,'c')
+fitFunc2.SetLineColor(kBlack)
+fitFunc2.SetParameter(0, 50)
+fitFunc2.SetParameter(1, 100)
+fitFunc2.FixParameter(2, 15)
+fitFunc2.SetParLimits(0, 0.00001, 1000)
+fitFunc2.SetParLimits(1, 0.00001, 1000)
 #fitFunc.SetParLimits(2, 0.00001, 1000)
-g_tRes_vs_linearizedEnergy.Fit('fitFunc','QRES')
-fitFunc.SetLineColor(kRed)
-g_tRes_vs_linearizedEnergy_Na22.Fit('fitFunc','QRES+')
+g_tRes_vs_linearizedEnergy.Fit('fitFunc','QRS')
+fitFunc2.SetLineColor(kRed)
+g_tRes_vs_linearizedEnergy_Na22.Fit('fitFunc2','QRS+')
 canvas5.Modified()
 canvas5.Update()
 gPad.Update()
@@ -861,7 +873,9 @@ for ipeak,eBin in enumerate(refPeaks):
 # print difference in quadrature Na22 vs Na22coincidence
 g_diff_vs_linearizedEnergy_Na22Coinc = ROOT.TGraphErrors()
 
-for ipeak,eBin in enumerate(refPeaks):
+refPeaksCoin = [5]
+
+for ipeak,eBin in enumerate(refPeaksCoin):
   diff = -1
   diff = math.sqrt(fabs(g_tRes_vs_energy_Na22.Eval(g_tRes_vs_energy_Na22.GetPointX(eBin-1))*g_tRes_vs_energy_Na22.Eval(g_tRes_vs_energy_Na22.GetPointX(eBin-1)) - g_tRes_vs_energy_Na22_coinc.Eval(g_tRes_vs_energy_Na22_coinc.GetPointX(eBin-1))* g_tRes_vs_energy_Na22_coinc.Eval(g_tRes_vs_energy_Na22_coinc.GetPointX(eBin-1)) ))
   print '%d a.u.  -->   Na22Coinc = %.02f ps    Na22 = %.02f ps     diff = %.02f ps '%(g_tRes_vs_energy_Na22.GetPointX(eBin-1), g_tRes_vs_energy_Na22_coinc.Eval(g_tRes_vs_energy_Na22_coinc.GetPointX(eBin-1)), g_tRes_vs_energy_Na22.Eval(g_tRes_vs_energy_Na22.GetPointX(eBin-1)), diff)
@@ -959,7 +973,17 @@ fitFunc.SetLineColor(kBlack)
 fitFunc.SetParameter(0, 50)
 fitFunc.SetParameter(1, 100)
 fitFunc.SetParameter(2, 50)
-g_tRes_vs_linearizedEnergy_bestTh.Fit('fitFunc','QRES')
+g_tRes_vs_linearizedEnergy_bestTh.Fit('fitFunc','QRS')
+'''fitFunc1 = ROOT.TF1('fitFunc1','sqrt(pow([0]/x,2)+pow([1]/sqrt(x),2)+pow([2],2))',0.0,10.0)
+fitFunc1.SetRange(0.25,6.7)
+fitFunc1.SetParName(0,'n')
+fitFunc1.SetParName(1,'s')
+fitFunc1.SetParName(2,'c')
+fitFunc1.SetLineColor(kBlack)
+fitFunc1.SetParameter(0, 50)
+fitFunc1.SetParameter(1, 100)
+fitFunc1.SetParameter(2, 50)
+g_tRes_vs_linearizedEnergy_Na22_bestTh.Fit('fitFunc1','QRS')'''
 canvas10.Modified()
 canvas10.Update()
 st1 = g_tRes_vs_linearizedEnergy_bestTh.GetListOfFunctions().FindObject('stats')

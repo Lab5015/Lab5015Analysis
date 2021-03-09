@@ -62,9 +62,8 @@ int main(int argc, char** argv)
   system(Form("mkdir -p %s/summaryPlots/timeResolution/",plotDir.c_str()));
   system(Form("mkdir -p %s/summaryPlots/DeltaTMean/",plotDir.c_str()));
   system(Form("mkdir -p %s/summaryPlots/Entries_CTR/",plotDir.c_str()));
-	system(Form("mkdir -p %s/summaryPlots/entries511/",plotDir.c_str()));
   system(Form("mkdir -p %s/summaryPlots/Energy_linearization/",plotDir.c_str()));
-  system(Form("mkdir -p %s/NoBin1/summaryPlots/Energy_linearization/",plotDir.c_str()));
+ 
 
   //copia il file .php che si trova in una cartella fuori plotDir in plotDir definita nel config file
   system(Form("cp %s/../index.php %s",plotDir.c_str(),plotDir.c_str()));
@@ -75,9 +74,8 @@ int main(int argc, char** argv)
   system(Form("cp %s/../index.php %s/summaryPlots/timeResolution/",plotDir.c_str(),plotDir.c_str()));
   system(Form("cp %s/../index.php %s/summaryPlots/DeltaTMean/",plotDir.c_str(),plotDir.c_str()));
   system(Form("cp %s/../index.php %s/summaryPlots/Entries_CTR/",plotDir.c_str(),plotDir.c_str()));
-	system(Form("cp %s/../index.php %s/summaryPlots/entries511/",plotDir.c_str(),plotDir.c_str()));
   system(Form("cp %s/../index.php %s/summaryPlots/Energy_linearization/",plotDir.c_str(),plotDir.c_str()));
-  system(Form("cp %s/../index.php %s/NoBin1/summaryPlots/Energy_linearization/",plotDir.c_str(),plotDir.c_str()));
+  
 
 
   //--- open files and make the tree chain
@@ -602,8 +600,6 @@ int main(int argc, char** argv)
 	std::map<float,float> map_en1786L;
   std::map<float,float> map_enRatioL;
 
-  std::map<float,float> map_entries511L;
-  std::map<float,float> map_entries511R;
 
 
   std::map<float,TGraphErrors*> g_en511_vs_th;
@@ -650,8 +646,6 @@ int main(int argc, char** argv)
     float energy511R = -1;
     float energy1275R = -1;
 		float energy1786R = -1;
-    float entries511R = -1;
-    float entries511L = -1;
     float theIndex = -1;
     mapIt.second -> SetBranchStatus("*",0);
     mapIt.second -> SetBranchStatus("energyPeak511LR",  1); mapIt.second -> SetBranchAddress("energyPeak511LR",  &energy511);
@@ -660,8 +654,6 @@ int main(int argc, char** argv)
     mapIt.second -> SetBranchStatus("energyPeak1275L",  1); mapIt.second -> SetBranchAddress("energyPeak1275L",  &energy1275L);
     mapIt.second -> SetBranchStatus("energyPeak511R",  1); mapIt.second -> SetBranchAddress("energyPeak511R",  &energy511R);
     mapIt.second -> SetBranchStatus("energyPeak1275R",  1); mapIt.second -> SetBranchAddress("energyPeak1275R",  &energy1275R);
-    mapIt.second -> SetBranchStatus("entriesPeak511R",  1); mapIt.second -> SetBranchAddress("entriesPeak511R",  &entries511R);
-    mapIt.second -> SetBranchStatus("entriesPeak511L",  1); mapIt.second -> SetBranchAddress("entriesPeak511L",  &entries511L);
     mapIt.second -> SetBranchStatus("indexID",  1); mapIt.second -> SetBranchAddress("indexID",   &theIndex);
 		if(!source.compare(SingleBarNa22)){ 
 			mapIt.second -> SetBranchStatus("energyPeak1786LR",  1); mapIt.second -> SetBranchAddress("energyPeak1786LR",  &energy1786);
@@ -710,14 +702,6 @@ int main(int argc, char** argv)
       map_enRatioR[theIndex] = energy1275R/energy511R;
     }
 
-    if(entries511R > 0.1){
-      map_entries511R[theIndex] = entries511R;
-    }
-
-    if(entries511L > 0.1){
-      map_entries511L[theIndex] = entries511L;
-    }
-
     if(!source.compare(SingleBarNa22)){
 			if(energy1786 > 0.1){  
       map_en1786[theIndex] = energy1786;
@@ -746,7 +730,7 @@ int main(int argc, char** argv)
 
   //energy Peak 511 vs th and vs Vov and vs iBar (LR, L, R)
   for(std::map<float,float>::iterator index = map_en511.begin(); index != map_en511.end(); index++){
-    //std::cout<<"index"<<index->first<<std::endl;
+    std::cout<<"index"<<index->first<<std::endl;
     float Vov;
     int th;
     int iBar;
@@ -1914,137 +1898,7 @@ int main(int argc, char** argv)
 
  
 
-  //Entries511
-	if(!source.compare("SingleBarNa22")) {
-		std::map<float,TGraphErrors*> g_entries511L_vs_th;
-		std::map<float,TGraphErrors*> g_entries511R_vs_th;
-
-
-		for(std::map<float,float>::iterator index = map_entries511L.begin(); index != map_entries511L.end(); index++){
-	 
-			float Vov;
-		  int th;
-		  int iBar;
-		  Vov = float((int(index->first/10000))/100);
-		  th = int((index->first - Vov*1000000)/100);
-		  iBar = int(index->first - Vov*1000000 - th*100);
-		  int Vov_iBar_ID;
-		  int th_iBar_ID;
-		  int Vov_th_ID;
-		  Vov_iBar_ID = 10000*int(Vov*100.) + iBar;
-		  th_iBar_ID = 100*th + iBar;
-		  Vov_th_ID =(10000*int(Vov*100.)) + (100*th);
-
-		  
-			  if( g_entries511L_vs_th[Vov_iBar_ID] == NULL ){
-			    g_entries511L_vs_th[Vov_iBar_ID] = new TGraphErrors();
-			  }
-				
-				if (index->second>-1){
-		    g_entries511L_vs_th[Vov_iBar_ID]->SetPoint(g_entries511L_vs_th[Vov_iBar_ID]->GetN(), th, map_entries511L[index->first]);
-		    //std::cout<<"N"<<g_DeltaTMean_vs_th[Vov_iBar_enBin_ID]->GetN()<<"th"<<th<<"RES "<<map_DeltaTMean[index->first]<<"   VovIbarenBinID"<<Vov_iBar_enBin_ID<<"Vov"<<Vov<<std::endl;
-		    g_entries511L_vs_th[Vov_iBar_ID]->SetPointError(g_entries511L_vs_th[Vov_iBar_ID]->GetN()-1, 0., 0.);			
-		  	}   
-		    
-		}
-
-	for(std::map<float,float>::iterator index = map_entries511R.begin(); index != map_entries511R.end(); index++){
-			float Vov;
-		  int th;
-		  int iBar;
-		  Vov = float((int(index->first/10000))/100);
-		  th = int((index->first - Vov*1000000)/100);
-		  iBar = int(index->first - Vov*1000000 - th*100);
-		  int Vov_iBar_ID;
-		  int th_iBar_ID;
-		  int Vov_th_ID;
-		  Vov_iBar_ID = 10000*int(Vov*100.) + iBar;
-		  th_iBar_ID = 100*th + iBar;
-		  Vov_th_ID =(10000*int(Vov*100.)) + (100*th);
-
-
-			  if( g_entries511R_vs_th[Vov_iBar_ID] == NULL ){
-			    g_entries511R_vs_th[Vov_iBar_ID] = new TGraphErrors();
-			  }
-				if (index->second>-1){
-		    g_entries511R_vs_th[Vov_iBar_ID]->SetPoint(g_entries511R_vs_th[Vov_iBar_ID]->GetN(), th, map_entries511R[index->first]);
-		    //std::cout<<"N"<<g_DeltaTMean_vs_th[Vov_iBar_enBin_ID]->GetN()<<"th"<<th<<"RES "<<map_DeltaTMean[index->first]<<"   VovIbarenBinID"<<Vov_iBar_enBin_ID<<"Vov"<<Vov<<std::endl;
-		    g_entries511R_vs_th[Vov_iBar_ID]->SetPointError(g_entries511R_vs_th[Vov_iBar_ID]->GetN()-1, 0., 0.);			
-		  	}
-		 
-		    
-		}
-
-		std::map<int, TCanvas*> c_entries511_vs_th;
-
-		for(std::map<float,TGraphErrors*>::iterator index = g_entries511R_vs_th.begin(); index != g_entries511R_vs_th.end(); index++){
-		  //std::cout<<"indexfirst= "<<index->first<<std::endl;
-		  int Vov_iBar_ID;
-		  float Vov;
-		  int iBar;
-		  Vov = float((int(index->first/10000))/100);
-		  iBar = int(index->first - Vov*1000000);
-		  Vov_iBar_ID = 10000*int(Vov*100.) + iBar; 
-		  for(int bar=0; bar<16; bar++){
-		    if(bar==iBar){
-					for(float ov : vec_Vov){
-						if(Vov==ov){
-						  if(c_entries511_vs_th[Vov_iBar_ID ]==NULL){
-						    c_entries511_vs_th[Vov_iBar_ID ] = new TCanvas(Form("c_entries511_vs_th_Vov%.01f_bar%02d",Vov,bar),Form("c_entries511_vs_th_Vov%.01f_bar%02d",Vov, bar));
-						    TH1F* hPad = (TH1F*)( gPad->DrawFrame(-1.,200000.,64.,400000.) );
-						    hPad -> SetTitle(";threshold [DAC];energy [a.u.]");
-								hPad -> Draw();
-								gPad -> SetGridy();
-							}
-										
-						  c_entries511_vs_th[Vov_iBar_ID ]->cd();
-						  TGraph* g_entries511R = g_entries511R_vs_th[Vov_iBar_ID];         
-						  g_entries511R -> SetLineColor(kRed);
-						  g_entries511R -> SetMarkerColor(kRed);
-						  g_entries511R -> SetMarkerStyle(20);
-						  g_entries511R -> Draw("PL,same");
-							outFile -> cd();
-							g_entries511R -> Write(Form("g_entries511R_vs_th_Vov%.01f_bar%02d",Vov,bar));
-
-						  std::string entriesRLabel = "entries511R";
-						  latex = new TLatex(0.55,0.90,entriesRLabel.c_str());
-						  latex -> SetNDC();
-						  latex -> SetTextFont(42);
-						  latex -> SetTextSize(0.04);
-						  latex -> SetTextColor(kRed);
-						  latex -> Draw("same");
-
-
-							TGraph* g_entries511L = g_entries511L_vs_th[Vov_iBar_ID];         
-						  g_entries511L -> SetLineColor(kBlue);
-						  g_entries511L -> SetMarkerColor(kBlue);
-						  g_entries511L -> SetMarkerStyle(20);
-						  g_entries511L -> Draw("PL,same");
-							outFile -> cd();
-							g_entries511L -> Write(Form("g_entries511L_vs_th_Vov%.01f_bar%02d",Vov,bar));
-
-						  std::string entriesLLabel = "entries511L";
-						  latex = new TLatex(0.55,0.85,entriesLLabel.c_str());
-						  latex -> SetNDC();
-						  latex -> SetTextFont(42);
-						  latex -> SetTextSize(0.04);
-						  latex -> SetTextColor(kBlue);
-						  latex -> Draw("same");
-
-						}
-					}
-				}
-		  }    
-		}
-
-
-
-		for(std::map<int,TCanvas*>::iterator index = c_entries511_vs_th.begin(); index != c_entries511_vs_th.end(); index++){
-		  index->second-> Print(Form("%s/summaryPlots/entries511/c_entries511_vs_th_Vov%.01f_bar%02d.png",plotDir.c_str(),float((int(index->first/10000))/100),int(index->first - (float((int(index->first/10000))/100))*1000000)));
-		  index->second-> Print(Form("%s/summaryPlots/entries511/c_entries511_vs_th_Vov%.01f_bar%02d.pdf",plotDir.c_str(),float((int(index->first/10000))/100),int(index->first - (float((int(index->first/10000))/100))*1000000)));
-		}
-
-}
+  
   
   
   // Time Resolution
@@ -2885,6 +2739,8 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
     index->second-> Print(Form("%s/summaryPlots/timeResolution/c_timeRes_vs_bar_Vov%.01f.pdf",plotDir.c_str(),float(index->first)));
   }
 
+
+
 //energy linearization
 	
 	gStyle->SetOptFit(1111);
@@ -2974,8 +2830,9 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
 					if(!source.compare(Na22) || !source.compare(SingleBarNa22)){
 						std::cout << ">>> 0.511:   ov = " << ov << "    amp: " << amp << std::endl;
 
-						int Npe_511  = LY * 0.511 * LCE * PDE_vs_OV(ov, SiPMType);
+						int Npe_511  = LY * 0.511 * LCE * PDE_vs_OV(ov, SiPMType);						
 						float corr_511 = Npe_511 / ( 40000*(1.-exp(-1.*Npe_511 /40000.)) );
+				
 						
 						energy_scaled = 0.511 * ( PDE_vs_OV(ov,SiPMType) * Gain_vs_OV(ov,SiPMType) * ECF_vs_OV(ov,SiPMType) ) /  ( PDE_vs_OV(Vov,SiPMType) * Gain_vs_OV(Vov,SiPMType) * ECF_vs_OV(Vov,SiPMType) ) / corr_511 ;
 
@@ -2983,6 +2840,9 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
 
 					}
 
+
+									
+	
 					if(!source.compare(Co60) ){
 						std::cout << ">>> 1.173:   ov = " << ov << "    amp: " << amp << std::endl;
 
@@ -3146,7 +3006,7 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
 				g_Vov7->Write(Form("g_ov7_Vov%.01f", Vov));
 
 
-			
+
 
 
 				c -> cd(1);
@@ -3469,143 +3329,7 @@ for(std::map<double,TGraphErrors*>::iterator index = g_DeltaTMean_vs_th.begin();
 
 
 
-	if( !source.compare(Co60SumPeak) ) {
-		for( float Vov : vec_Vov){
-
-			TFile* inFileLin = TFile::Open("/home/cmsdaq/guglielmi/Lab5015Analysis/plots/moduleCharacterization_single_HPK_HDR2_Co60_step3.root", "READ"); 
-			TGraph* g_lin = (TGraph*)( inFileLin->Get(Form("g_linearity_Vov%.01f", Vov)) );
-		
-
-			TF1 *f_linearity = (TF1*)inFileLin->Get(Form("f_linearity_Vov%.01f", Vov));
-						
-			for(int iBar=0; iBar<16; iBar++){
-				TCanvas* c = new TCanvas(Form("c_bar%02d_%s",iBar, label.c_str()),Form("c_bar%02d_%s",iBar, label.c_str()),1300,600);
-				c -> Divide(2,1);
-				c -> cd(1);
-
-				TH1F* hPad1 = (TH1F*)( gPad->DrawFrame(0.,0.,30.,7.) );
-				hPad1 -> SetTitle(Form(";TOFPET2 amp (a.u.);E_{MeV} #times G #times PDE #times ECF #times k_{sat}/[G #times PDE #times ECF]_{%.1f V}",Vov));
-				hPad1 -> GetYaxis() -> SetTitleSize(0.04);
-				hPad1 -> Draw();
-				gPad -> SetGridx();
-				gPad -> SetGridy();
-				
-
-				g_lin -> SetMarkerStyle(20);
-				g_lin -> SetMarkerSize(1.);
-				
-				g_lin -> Draw("P,same");				
-				g_lin -> Fit(f_linearity,"QNRS+");
-				f_linearity -> Draw("same");
-				
-			
-				c -> cd(2);
-
-				float energy_err_sys = 0.015;
-				int Npe_sumPeak  = LY * 2.505 * LCE * PDE_vs_OV(Vov, SiPMType);
-				float k = ( 40000*(1.-exp(-1.*Npe_sumPeak /40000.)) )/ Npe_sumPeak;
-				
-
-				TGraphErrors* g_tRes_vs_linEnergy = new TGraphErrors();
-			  if(g_tRes_vs_energy[Vov][iBar]==NULL) continue;
-				if(g_tRes_vs_energy_th20[Vov][iBar]==NULL) continue;
-				for(int point = 0; point < g_tRes_vs_energy[Vov][iBar]->GetN(); ++point){
-				  double x,y;
-					x = g_tRes_vs_energy_th20[Vov][iBar] -> GetPointX(point);
-				  y = g_tRes_vs_energy[Vov][iBar] -> GetPointY(point);
-
-
-				  if(y < 50 ) continue;
-				  g_tRes_vs_linEnergy -> SetPoint(g_tRes_vs_linEnergy->GetN(),(f_linearity->Eval(x))/k,y);
-					float linEnergy_err = 0.5 *(f_linearity->Eval(g_tRes_vs_energy_th20[Vov][iBar]->GetPointX(point)*(1+energy_err_sys)) - f_linearity->Eval(g_tRes_vs_energy_th20[Vov][iBar]->GetPointX(point)*(1-energy_err_sys)) )/k;
-					tRes_err =  g_tRes_vs_energy[Vov][iBar] -> GetErrorY(point);
-					tRes_err = pow((tRes_err*tRes_err + tRes_err_sys*tRes_err_sys), 0.5);
-
-				  g_tRes_vs_linEnergy -> SetPointError(g_tRes_vs_linEnergy->GetN()-1, linEnergy_err,tRes_err);
-
-				}
-
-				TH1F* hPad2 = (TH1F*)( gPad->DrawFrame(0.,0.,3.,500.) );
-				hPad2 -> SetTitle(";energy [MeV];#sigma_{t} [ps]");
-				hPad2 -> Draw();
-				gPad -> SetGridx();
-				gPad -> SetGridy();
-
-				g_tRes_vs_linEnergy -> SetMarkerStyle(20);
-				g_tRes_vs_linEnergy -> SetMarkerSize(1.);
-				g_tRes_vs_linEnergy -> Draw("P,same");
-				
-				TF1* f_tRes = new TF1("f_tRes","sqrt(pow([0]/x,2)+pow([1]/sqrt(x),2)+pow([2],2))",0.,10.);
-				f_tRes -> SetParameters(20.,100.,50.);
-				f_tRes -> SetParLimits(0, 0.00001, 10000000);
-				f_tRes -> SetParLimits(1, 0.00001, 10000000);
-				f_tRes -> SetParLimits(2, 0.00001, 10000000);
-				
-				//f_tRes -> FixParameter(2,50.);
-				g_tRes_vs_linEnergy -> Fit(f_tRes,"ERS+");
-				f_tRes -> Draw("same");
-				
 	
-
-				TLatex* latex = new TLatex(0.18,0.85,Form("f(E) = (%.1f ps)/E[MeV] #oplus (%.1f ps)/#sqrt{E[MeV]} #oplus %.1f ps",f_tRes->GetParameter(0),f_tRes->GetParameter(1),f_tRes->GetParameter(2)));
-				latex -> SetNDC();
-				latex -> SetTextFont(42);
-				latex -> SetTextSize(0.03);
-				latex -> SetTextColor(kRed);
-				latex -> Draw("same");
-				
-				g_noise_vs_iBar[Vov] -> SetPoint(g_noise_vs_iBar[Vov]->GetN(),iBar,f_tRes->GetParameter(0));
-				g_stoch_vs_iBar[Vov] -> SetPoint(g_stoch_vs_iBar[Vov]->GetN(),iBar,f_tRes->GetParameter(1));
-				g_const_vs_iBar[Vov] -> SetPoint(g_const_vs_iBar[Vov]->GetN(),iBar,f_tRes->GetParameter(2));
-				
-				c->Modified();
-				c->Update();
-				outFile->cd();
-				g_tRes_vs_linEnergy -> Write(Form("g_timeRes_vs_linearizedEnergy_Vov%.01f_bestTh", Vov));
-				c->Write(Form("c_tRes_vs_energy_%s_bar%.2d_Vov%.1f.png",label.c_str(),iBar, Vov));
-				c-> Print(Form("%s/summaryPlots/Energy_linearization/c_tRes_vs_energy_bar%.2d_Vov%.1f_%s.png",plotDir.c_str(),iBar, Vov,label.c_str()));
-				c-> Print(Form("%s/summaryPlots/Energy_linearization/c_tRes_vs_energy_bar%.2d_Vov%.1f_%s.pdf",plotDir.c_str(),iBar, Vov, label.c_str()));
-				c->Close();
-				
-			}
-			TCanvas* can2 = new TCanvas(Form("can2_%.01f",Vov), Form("can2_%.01f", Vov));
-			
-			TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,0.,17.,250.) );
-			hPad -> SetTitle(Form(";bar ID;time resolution terms [ps]"));
-			hPad -> Draw();
-			gPad -> SetGridx();
-			gPad -> SetGridy();
-			
-			g_noise_vs_iBar[Vov] -> SetMarkerColor(kRed);
-			g_stoch_vs_iBar[Vov] -> SetMarkerColor(kBlue);
-			g_const_vs_iBar[Vov] -> SetMarkerColor(kGreen);
-			
-			g_noise_vs_iBar[Vov] -> SetMarkerStyle(20);
-			g_stoch_vs_iBar[Vov] -> SetMarkerStyle(20);
-			g_const_vs_iBar[Vov] -> SetMarkerStyle(20);
-			
-			g_noise_vs_iBar[Vov] -> Draw("P,same");
-			g_stoch_vs_iBar[Vov] -> Draw("P,same");
-			g_const_vs_iBar[Vov] -> Draw("P,same");
-			
-			TLegend* legend_s = new TLegend ( 0.6, 0.75, 0.80, 0.9);
-			legend_s -> SetBorderSize(0);
-			legend_s -> AddEntry( g_noise_vs_iBar[Vov], "noise" , "p");
-			legend_s -> AddEntry( g_stoch_vs_iBar[Vov], "stochastic" , "p");
-			legend_s -> AddEntry( g_const_vs_iBar[Vov], "constant" , "p");
-			legend_s ->Draw();
-			can2 -> Modified();
-			can2 -> Update();
-			outFile->cd();
-			can2->Write(Form("c_tResTerms_vs_bar_Vov%.01f_%s.png",Vov, label.c_str()));
-			can2-> Print(Form("%s/summaryPlots/Energy_linearization/c_tResTerms_vs_bar_Vov%.01f_%s.png",plotDir.c_str(),Vov, label.c_str()));
-			can2-> Print(Form("%s/summaryPlots/Energy_linearization/c_tResTerms_vs_bar_Vov%.01f_%s.pdf",plotDir.c_str(),Vov, label.c_str()));
-			
-			can2 -> Close();
-		}
-	}
-
-
 	int  bytes = outFile -> Write();
   std::cout << "============================================"  << std::endl;
   std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
