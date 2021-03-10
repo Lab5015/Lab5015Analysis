@@ -319,12 +319,12 @@ int main(int argc, char** argv)
         gPad -> SetLogy();
         
         histo = (TH1F*)( inFile->Get(Form("h1_energy_%s",label.c_str())) );      
+        if( !histo ) continue;
         histo -> SetTitle(";energy [a.u.];entries");
         histo -> SetLineColor(kRed);
         histo -> SetLineWidth(2);
         histo -> Draw();
 	
-
 
         // --- look for peaks and define energy ranges
         if( source.compare(Na22) && source.compare(Na22SingleBar) && source.compare(Co60) && source.compare(Co60SumPeak) && source.compare(Laser)){
@@ -426,6 +426,7 @@ int main(int argc, char** argv)
 
 
 
+
        // --- now fill the output tree.  
        // *********** MM: Ma serve ? non basterebbe leggere i valori di posizione dei picchi e numero di eventi dagli istogrammi che vengono comunque salvati nel file di output? 
 
@@ -448,6 +449,7 @@ int main(int argc, char** argv)
        }
 
        if(!source.compare(Co60)){
+  
          energy511R  = peaks["R"][index]["1.173 MeV"].first;
          energy511L  = peaks["L"][index]["1.173 MeV"].first;
          energy511LR = peaks["L-R"][index]["1.173 MeV"].first;
@@ -459,20 +461,16 @@ int main(int argc, char** argv)
          energy1786R = peaks["R"][index]["2.505 MeV"].first;
          energy1786L = peaks["L"][index]["2.505 MeV"].first;
          energy1786LR = peaks["L-R"][index]["2.505 MeV"].first;
-       }
 
+       }
 
        outTrees[index] -> Fill();
 
+    }// -- end loop over bars
 
-     }// -- end loop over bars
-
-   } // -- end loop over stepLabels
-
+  } // -- end loop over stepLabels
 
    // ---  end 1st plots
-
-
 
 
    //------------------------
