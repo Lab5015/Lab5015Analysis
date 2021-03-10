@@ -31,7 +31,7 @@
 
 
 // find energy bins
-void GetEnergyBins(TH1F *h, std::vector<float> *r, std::map<int, float> b){
+void GetEnergyBins(TH1F *h, std::vector<float> *r, std::map<int, float> & b){
 
   for(unsigned int i = 1; i < r->size(); i++){
     TH1F *binHisto = new TH1F ( "binHisto", "binHisto", h -> FindBin(r->at(i)) - h->FindBin(r-> at(i-1)), r-> at(i-1), r->at(i));
