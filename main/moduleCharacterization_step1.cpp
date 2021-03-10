@@ -278,7 +278,7 @@ int main(int argc, char** argv)
       
     for(int iBar = 0; iBar < 16; ++iBar)
     {
-      if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin){
+      if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin && totL[iBar] > 0. && totR[iBar]>0.){
         float energyMean=(energyL[iBar]+energyR[iBar])/2;
         if(energyMean>maxEn){
           maxEn = energyMean;
@@ -288,10 +288,6 @@ int main(int argc, char** argv)
       
       int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
 
-
-      if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
-      if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
-      
       //--- create histograms, if needed
       if( h1_totL[index] == NULL )
       {
@@ -313,6 +309,11 @@ int main(int argc, char** argv)
       //--- fill histograms for each bar for Co60 analysis
       if (!opts.GetOpt<std::string>("Input.sourceName").compare("Co60") || !opts.GetOpt<std::string>("Input.sourceName").compare("Co60SumPeak"))
       {
+
+        if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
+        if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
+      
+
         h1_qfineL[index] -> Fill( qfineL[iBar] );
         h1_totL[index] -> Fill( totL[iBar]  );
         h1_energyL[index] -> Fill( energyL[iBar] );
