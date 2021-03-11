@@ -1,9 +1,9 @@
-#include "interface/Na22SpectrumAnalyzer.h"
+#include "interface/Na22SpectrumAnalyzerSingleBar.h"
 #include "CfgManager/interface/CfgManager.h"
 #include "CfgManager/interface/CfgManagerT.h"
 
 
-std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
+std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzerSingleBar(TH1F* histo,
                                                                    std::vector<float>* ranges)
 {
   gStyle -> SetOptFit(0);
@@ -221,7 +221,7 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
   histo -> GetXaxis() -> SetRangeUser(0.  ,40.);
   
   //Fitting 1275 keV peak
-  if( realPeaks.size() == 2 )
+ if( realPeaks.size() == 2 )
   {  
     TF1* fitFunc_1275 = new TF1("fitFunc_1275","gaus",realPeaks[1]-0.5, realPeaks[1]+0.5);
 		fitFunc_1275 -> SetParameter(1, realPeaks[1]);
@@ -237,8 +237,44 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
     res["1.275 MeV"] = std::make_pair(fitFunc_1275->GetParameter(1),fitFunc_1275->GetParameter(2));
   }
 
+   //Fitting 1786 keV peak
+  int c = 0;
+  if((nFound==5 && totalPeaks[4]>realPeaks[1])){
+  	TF1* fitFunc_1786 = new TF1("fitFunc_1786","gaus",totalPeaks[4]-0.5, totalPeaks[4]+0.5);
+	  fitFunc_1786 -> SetParameter(1, totalPeaks[5]);
+		fitFunc_1786 -> SetParameter(2, res["1275 Mev"].second/2.);
+    histo -> Fit(fitFunc_1786,"QRS+");
+    
+    fitFunc_1786 -> SetParameter(0, fitFunc_1786 -> GetParameter(0));
+    fitFunc_1786 -> SetParameter(1, fitFunc_1786 -> GetParameter(1));
+    fitFunc_1786 -> SetParameter(2, fitFunc_1786 -> GetParameter(2));    
+    fitFunc_1786 -> SetLineColor(kBlack);
+    fitFunc_1786 -> SetLineWidth(2);
+    histo -> Fit(fitFunc_1786,"QRS+", "", fitFunc_1786->GetParameter(1)-fitFunc_1786->GetParameter(2),fitFunc_1786->GetParameter(1)+fitFunc_1786->GetParameter(2));
+		histo -> Fit(fitFunc_1786,"QRS+", "", fitFunc_1786->GetParameter(1)-fitFunc_1786->GetParameter(2),fitFunc_1786->GetParameter(1)+fitFunc_1786->GetParameter(2));		
+    res["1.786 MeV"] = std::make_pair(fitFunc_1786->GetParameter(1),fitFunc_1786->GetParameter(2));
+		c = 1;
+  } 
 
-  
+
+	if((nFoundAdd==1 && totalPeaks[nFoundAdd+nFound-1]>realPeaks[1] && c==0)){
+  	TF1* fitFunc_1786 = new TF1("fitFunc_1786","gaus",totalPeaks[nFoundAdd+nFound-1]-0.5, totalPeaks[nFoundAdd+nFound-1]+0.5);
+	  fitFunc_1786 -> SetParameter(1, totalPeaks[nFoundAdd+nFound-1]);
+		fitFunc_1786 -> SetParameter(2, res["1275 Mev"].second/2.);
+    histo -> Fit(fitFunc_1786,"QRS+");
+    
+    fitFunc_1786 -> SetParameter(0, fitFunc_1786 -> GetParameter(0));
+    fitFunc_1786 -> SetParameter(1, fitFunc_1786 -> GetParameter(1));
+    fitFunc_1786 -> SetParameter(2, fitFunc_1786 -> GetParameter(2));    
+    fitFunc_1786 -> SetLineColor(kBlack);
+    fitFunc_1786 -> SetLineWidth(2);
+    histo -> Fit(fitFunc_1786,"QRS+", "", fitFunc_1786->GetParameter(1)-fitFunc_1786->GetParameter(2),fitFunc_1786->GetParameter(1)+fitFunc_1786->GetParameter(2));
+		histo -> Fit(fitFunc_1786,"QRS+", "", fitFunc_1786->GetParameter(1)-fitFunc_1786->GetParameter(2),fitFunc_1786->GetParameter(1)+fitFunc_1786->GetParameter(2));		
+    res["1.786 MeV"] = std::make_pair(fitFunc_1786->GetParameter(1),fitFunc_1786->GetParameter(2));
+  } 
+	
+
+
 
   
   //Not Na22 spectrum controll
@@ -257,35 +293,54 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
   }
 
 
+	/*for(int i=0; i<nFound+nFoundAdd; i++){
+		std::cout<<"nFound="<<nFound<<std::endl;
+		std::cout<<"nFoundAdd="<<nFoundAdd<<std::endl;
+		//std::cout<<"Add="<<peaksAdd[0]<<std::endl;
+		std::cout<<i<<"  "<<totalPeaks[i]<<std::endl;
+	}*/
+
+
  //Locating and drawing ranges of interest singleBar_CoinNa22
  /*if ( realPeaks.size() > 0 && realPeaks.size() < 3 ){
 	ranges->push_back(res["0.511 MeV"].first-0.1*res["0.511 MeV"].first);
 	ranges->push_back(res["0.511 MeV"].first+0.1*res["0.511 MeV"].first);
-   }*/	
+   }*/
 
  
  
 
 
-//module
 
- if ( realPeaks.size() > 0 && realPeaks.size() < 3 ){
-  ranges->push_back(0.5*(histo->GetBinCenter(unemptyBin)+res["0.511 MeV"].first-0.6*res["0.511 MeV"].first));
-  ranges->push_back(res["0.511 MeV"].first-0.6*res["0.511 MeV"].first);
-  ranges->push_back(res["0.511 MeV"].first-0.4*res["0.511 MeV"].first);
-	ranges->push_back((res["0.511 MeV"].first-0.4*res["0.511 MeV"].first+res["0.511 MeV"].first-0.1*res["0.511 MeV"].first)/2.);
-	ranges->push_back(res["0.511 MeV"].first-0.1*res["0.511 MeV"].first);
-	ranges->push_back(res["0.511 MeV"].first+0.1*res["0.511 MeV"].first);
-	ranges->push_back(res["0.511 MeV"].first+0.35*res["0.511 MeV"].first);	
+
+
+//single Bar
+					
+if ( realPeaks.size() > 0 && realPeaks.size() < 3 ){
+  	  ranges->push_back(0.5*(histo->GetBinCenter(unemptyBin)+res["0.511 MeV"].first-0.6*res["0.511 MeV"].first));
+	  ranges->push_back(res["0.511 MeV"].first-0.6*res["0.511 MeV"].first);
+  	  ranges->push_back(res["0.511 MeV"].first-0.4*res["0.511 MeV"].first);
+	  ranges->push_back((res["0.511 MeV"].first-0.4*res["0.511 MeV"].first+res["0.511 MeV"].first-0.1*res["0.511 MeV"].first)/2.);
+	  ranges->push_back(res["0.511 MeV"].first-0.1*res["0.511 MeV"].first);
+	  ranges->push_back(res["0.511 MeV"].first+0.1*res["0.511 MeV"].first);
+	  ranges->push_back(res["0.511 MeV"].first+0.3*res["0.511 MeV"].first);
+	//ranges->push_back(res["0.511 MeV"].first+0.4*res["0.511 MeV"].first);		
    }	
 
 
   if ( realPeaks.size() == 2 ){
-		ranges->push_back(0.5*(res["0.511 MeV"].first+0.35*res["0.511 MeV"].first+res["1.275 MeV"].first-0.2*res["1.275 MeV"].first));
+		ranges->push_back(0.5*(res["0.511 MeV"].first+0.4*res["0.511 MeV"].first+res["1.275 MeV"].first-0.2*res["1.275 MeV"].first));
 		ranges->push_back(res["1.275 MeV"].first-0.2*res["1.275 MeV"].first);
 		ranges->push_back(res["1.275 MeV"].first-0.04*res["1.275 MeV"].first);
 		ranges->push_back(res["1.275 MeV"].first+0.04*res["1.275 MeV"].first);
+		ranges->push_back(res["1.786 MeV"].first-0.03*res["1.786 MeV"].first);
+		ranges->push_back(res["1.786 MeV"].first+0.03*res["1.786 MeV"].first);
+		
+		//ranges->push_back((histo->GetBinCenter(ultimo_bin)-(res["1.275 MeV"].first+0.05*res["1.275 MeV"].first))/4+res["1.275 MeV"].first+0.05*res["1.275 MeV"].first);
+		//ranges->push_back(histo->GetBinCenter(ultimo_bin));
    }
+
+
 
 
   if ( realPeaks.size() == 1 ){
@@ -294,6 +349,9 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
 		ranges->push_back(second-0.2*second);
 		ranges->push_back(second-0.1*second);
 		ranges->push_back(second+0.1*second);
+		//ranges->push_back((histo->GetBinCenter(ultimo_bin)-(res["1.275 MeV"].first+0.1*res["1.275 MeV"].first))/3+res["1.275 MeV"].first+0.1*res["1.275 MeV"].first);
+		//ranges->push_back((res["1.275 MeV"].first)*1.25+0.2*(res["1.275 MeV"].first)*1.25);
+		//ranges->push_back(histo->GetBinCenter(ultimo_bin));
    }
   
   for(auto range: (*ranges)){
