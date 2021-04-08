@@ -461,7 +461,7 @@ int main(int argc, char** argv)
         // -- if Co60 sum peak or laser, we don't use the spectrum analyzers - just gaussian fit to the energy peak.
         if(!source.compare(Co60SumPeak) ||  !source.compare(Laser)) { 
 	  
-          TF1* fitFunc = new TF1 ( Form("funcL_%d",index), "gaus(0)", histo -> GetBinCenter(histo->GetMaximumBin()) - 2*histo->GetRMS(), histo -> GetBinCenter(histo->GetMaximumBin()) + 2*histo->GetRMS());
+          TF1* fitFunc = new TF1 ( Form("func_%d",index), "gaus(0)", histo -> GetBinCenter(histo->GetMaximumBin()) - 2*histo->GetRMS(), histo -> GetBinCenter(histo->GetMaximumBin()) + 2*histo->GetRMS());
           fitFunc -> SetLineColor(kBlack);
           fitFunc -> SetLineWidth(2);
           histo -> Fit( fitFunc, "NQR");
@@ -539,7 +539,7 @@ int main(int argc, char** argv)
           if (LRLabel == "L") energy511L = f_gaus[index]->GetParameter(1);					
           if (LRLabel == "R") energy511R = f_gaus[index]->GetParameter(1);					
           if (LRLabel == "L-R") energy511LR = f_gaus[index]->GetParameter(1);
-	  
+
 	  for(auto range: (*ranges[LRLabel][index])){
 	    TLine* line = new TLine(range,0.,range, histo->GetMaximum());
             line -> SetLineWidth(2);
@@ -599,7 +599,16 @@ int main(int argc, char** argv)
 	energy1786LR = peaks["L-R"][index]["2.505 MeV"].first;
 	
       }
-			
+
+      if (!source.compare(TB)){
+	energy1275LR = -10; 
+	energy1786LR = -10;  
+	energy1275R  = -10; 
+	energy1786R  = -10;
+	energy1275R  = -10;
+	energy1786R  = -10;
+      }
+      
       outTrees[index] -> Fill();
       
     }// -- end loop over bars
@@ -1002,6 +1011,8 @@ int main(int argc, char** argv)
 	  
 	  int nEnergyBins = ranges["L-R"][index1]->size()-1;
 	  	  
+	  std::cout <<  " AAAAAAAAAAAAa  nEnergyBins =   " << nEnergyBins <<std::endl;
+
 	  for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin)
 	    {
 	      double  index2( 10000000*iEnergyBin + index1 );
@@ -1299,7 +1310,7 @@ int main(int argc, char** argv)
 		contr = 1;
 	      }
 	      
-	      outTrees2[index2]->Fill();
+	      //outTrees2[index2]->Fill();
 	      
 	      if (!source.compare("Laser")) histo -> GetXaxis() -> SetRangeUser(fitFunc->GetParameter(1)-10.*fitFunc->GetParameter(2),
 										fitFunc->GetParameter(1)+10.*fitFunc->GetParameter(2));
