@@ -53,6 +53,12 @@ public:
   float energy2R;
   long long time1;
   long long time2;
+  float t1fine1;
+  float t1fine1L;
+  float t1fine1R;
+  float t1fine2;
+  float t1fine2L;
+  float t1fine2R;
   
   ClassDef(EventClass,1);
 };
@@ -69,6 +75,9 @@ public:
   float energyR;
   long long timeL;
   long long timeR;
+  float t1fineL;
+  float t1fineR;
+  
   
   ClassDef(ModuleEventClass,1);
 };
@@ -108,6 +117,12 @@ struct Event
   float energy2R;
   long long time1;
   long long time2;
+  float t1fine1;
+  float t1fine1L;
+  float t1fine1R;
+  float t1fine2;
+  float t1fine2L;
+  float t1fine2R;
 };
 
 
