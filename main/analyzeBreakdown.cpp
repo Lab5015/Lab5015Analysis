@@ -82,6 +82,7 @@ int main(int argc, char** argv)
   float energyRangeMin = opts.GetOpt<float>("Plots.energyRangeMin");
   float energyRangeMax = opts.GetOpt<float>("Plots.energyRangeMax");
   float fitMinOV = opts.GetOpt<float>("Plots.fitMinOV");
+  float fitMaxOV = opts.GetOpt<float>("Plots.fitMaxOV");
   
   //--- open files and make the tree chain
   std::string inputRecoDir = opts.GetOpt<std::string>("Input.inputRecoDir");
@@ -122,20 +123,26 @@ int main(int argc, char** argv)
   int combineChannels = opts.GetOpt<int>("Channels.combineChannels");
   
   
+
+  
   
   //--- define branches
-  float step1;
-  float energy[256];
-  float qfine[256];
-  float tot[256];
+  float step1, step2;
+  int channelIdx[128];
+  std::vector<float> *qfine = 0;
+  std::vector<float> *tot = 0;
+  std::vector<float> *energy = 0;
   
   tree -> SetBranchStatus("*",0);
-  tree -> SetBranchStatus("step1", 1); tree -> SetBranchAddress("step1", &step1);
-  tree -> SetBranchStatus("energy",1); tree -> SetBranchAddress("energy",energy);
-  tree -> SetBranchStatus("qfine", 1); tree -> SetBranchAddress("qfine",  qfine);
-  tree -> SetBranchStatus("tot",   1); tree -> SetBranchAddress("tot",      tot);
+  tree -> SetBranchStatus("step1",  1); tree -> SetBranchAddress("step1",  &step1);
+  tree -> SetBranchStatus("step2",  1); tree -> SetBranchAddress("step2",  &step2);
   
+  tree -> SetBranchStatus("channelIdx",  1); tree -> SetBranchAddress("channelIdx",  channelIdx);
   
+  tree -> SetBranchStatus("qfine",  1); tree -> SetBranchAddress("qfine",   &qfine);  
+  tree -> SetBranchStatus("tot",    1); tree -> SetBranchAddress("tot",       &tot);
+  tree -> SetBranchStatus("energy", 1); tree -> SetBranchAddress("energy", &energy);
+
   
   //--- define histograms
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileName");
@@ -162,14 +169,14 @@ int main(int argc, char** argv)
       {
         int ch1 = channels.at(0+it*2);
         int ch2 = channels.at(1+it*2);
-        std::string label(Form("ch%d-ch%d_ov%.1f",ch1,ch2,step1));
+
+        if (channelIdx[ch1] <0 || channelIdx[ch2] <0) continue;
+  
+ 
+       std::string label(Form("ch%d-ch%d_ov%.1f",ch1,ch2,step1));
         if( !h1_energy[label] )
           h1_energy[label] = new TH1F(label.c_str(),"",energyBins,energyMin,energyMax);
-        
-        if( qfine[ch1] > 13 && qfine[ch2] > 13 )
-        {
-          h1_energy[label] -> Fill( 0.5*(energy[ch1]+energy[ch2]) );
-        }
+        h1_energy[label] -> Fill( 0.5*((*energy)[channelIdx[ch1]]+(*energy)[channelIdx[ch2]]) );
       }
     }
     
@@ -181,11 +188,8 @@ int main(int argc, char** argv)
         if( !h1_energy[label] )
           h1_energy[label] = new TH1F(label.c_str(),"",energyBins,energyMin,energyMax);
         
-        if( qfine[ch] > 13 )
-        {
-          h1_energy[label] -> Fill( energy[ch] );
-        }
-      } 
+        h1_energy[label] -> Fill( (*energy)[channelIdx[ch]] );
+       } 
     }
   }
   std::cout << std::endl;
@@ -273,7 +277,7 @@ int main(int argc, char** argv)
     TCanvas* c1 = new TCanvas(Form("%s",ch.c_str()),Form("%s",ch.c_str()));
     c1 -> cd(1);
     
-    TH1F* hpad = (TH1F*)( gPad->DrawFrame(-1.,0.,7.,energyMax) );
+    TH1F* hpad = (TH1F*)( gPad->DrawFrame(-1.,0.,10.,energyMax) );
     hpad -> SetTitle(";over-voltage [V];511 keV peak amplitude [a.u.]");
     hpad -> Draw();
     
@@ -283,7 +287,7 @@ int main(int argc, char** argv)
     fitFunc -> SetNpx(10000);
     fitFunc -> SetParameter(0,20./Gain_vs_OV(3.)/PDE_vs_OV(3.));
     fitFunc -> SetParameter(1,0.);
-    g_peak511[ch] -> Fit(fitFunc,"RNS+","",fitMinOV,100.);
+    g_peak511[ch] -> Fit(fitFunc,"RNS+","",fitMinOV,fitMaxOV);
     fitFunc -> Draw("same");
     
     TLatex* latex = new TLatex(0.25,0.85,Form("#Delta_{OV} = (%.2f #pm %.2f) V",fitFunc->GetParameter(1),fitFunc->GetParError(1)));
@@ -295,6 +299,15 @@ int main(int argc, char** argv)
     
     c1 -> Print(Form("%s/c1_scan_vs_ov_%s.png",plotDir.c_str(),ch.c_str()));
     delete c1;
+    
+    
+    TGraph* g_nonLinearity = new TGraph();
+    for(float jj = 0; jj < 10; jj+=0.1)
+    {
+      g_nonLinearity -> SetPoint(g_nonLinearity->GetN(),g_peak511[ch]->Eval(jj),fitFunc->Eval(jj)/g_peak511[ch]->Eval(jj));
+    }
+    outFile -> cd();
+    g_nonLinearity -> Write("g_nonLinearity");
   }
   
   
