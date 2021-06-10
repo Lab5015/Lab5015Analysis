@@ -2,25 +2,29 @@
 
 void drawPulseShape(const int& run, const std::string& vthMode, const float frequency = 10.)
 {
-  int ch1 = 47;
-  int ch2 = 111;
+  int ch1 = 111;
+  int ch2 = 47;
   std::vector<int> channels;
   channels.push_back(ch1);
   channels.push_back(ch2);
   
+  cout << ch1 << endl;
+  cout << ch2 << endl;
   
   //------------------------
   // define global variables
   // float timeOffset = 237.;
   float timeOffset[2];
-  timeOffset[ch1] = 254.;
-  timeOffset[ch2] = 257.;
+  // timeOffset[ch1] = 236.;
+  // timeOffset[ch2] = 233.;
+  timeOffset[ch1] = 240.;
+  timeOffset[ch2] = 237.;
   
   
   //------------------------------
   // open file and define branches
   TFile* inFile = TFile::Open(Form("/data/TOFHIR2/reco/run%04d_ped_e.root",run),"READ");
-  //TFile* inFile = TFile::Open(Form("./run%04d_e.root",run),"READ");
+  //TFile* inFile = TFile::Open(Form("/data/TOFHIR2/reco/run%04d_e.root",run),"READ");
   TTree* data = (TTree*)( inFile->Get("data") );
   
   float step1, step2;
@@ -39,6 +43,10 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
   
   //------------------
   // define histograms
+  //---------------
+  // define outfile
+  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
+  
   std::map<float, std::map<int,TH1F*> > h1_tot_ch1;
   std::map<float, std::map<int,TH1F*> > h1_energy_ch1;
   std::map<float, std::map<int,TH1F*> > h1_tot_ch2;
@@ -88,8 +96,8 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
         
         h1_tot_totSel_ch1[Vov][vth]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_vth%02d",Vov,vth),"",1000,0.,100.);
         h1_energy_totSel_ch1[Vov][vth]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_vth%02d",Vov,vth),"",1000,-0.5,999.5);
-        h1_time1_totSel_ch1[Vov][vth]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_vth%02d",Vov,vth),"",1000,timeOffset[ch1]-50.,timeOffset[ch1]+50.);
-        h1_time2_totSel_ch1[Vov][vth]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_vth%02d",Vov,vth),"",1000,timeOffset[ch1]-50.,timeOffset[ch1]+50.);
+        h1_time1_totSel_ch1[Vov][vth]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_vth%02d",Vov,vth),"",5000,timeOffset[ch1]-50.,timeOffset[ch1]+50.);
+        h1_time2_totSel_ch1[Vov][vth]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_vth%02d",Vov,vth),"",5000,timeOffset[ch1]-50.,timeOffset[ch1]+50.);
         
         h1_deltaT1_totSel[Vov][vth] = new TH1F(Form("h1_deltaT1_totSel_Vov%.1f_vth%02d",Vov,vth),"",10000,-100.,100.);
         h1_deltaT2_totSel[Vov][vth] = new TH1F(Form("h1_deltaT2_totSel_Vov%.1f_vth%02d",Vov,vth),"",10000,-100.,100.);
@@ -144,10 +152,6 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
   std::cout << std::endl;
   
   
-  //---------------
-  // define outfile
-  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
-  
   
   //-----------------
   // draw pulse shape
@@ -187,6 +191,7 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
 	  
 	  if( !g_N_ch1[Vov] ) g_N_ch1[Vov] = new TGraphErrors();
 	  g_N_ch1[Vov] -> SetPoint(g_N_ch1[Vov]->GetN(),vth,histo->Integral());
+          g_N_ch1[Vov] -> SetPointError(g_N_ch1[Vov]->GetN()-1,0,sqrt(histo->Integral()));
 	  
 	  if( !g_tot_ch1[Vov] ) g_tot_ch1[Vov] = new TGraphErrors();
 	  g_tot_ch1[Vov] -> SetPoint(g_tot_ch1[Vov]->GetN(),vth,histo->GetMean());
@@ -315,59 +320,59 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
   */
   
   for(auto mapIt : h1_time1_totSel_ch1)
+  {
+    float Vov = mapIt.first;
+    for(auto mapIt2 : mapIt.second)
     {
-      float Vov = mapIt.first;
-      for(auto mapIt2 : mapIt.second)
-      {
-	  int vth = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  if( histo->Integral() <= 1000. ) continue;
-	  
-	  if( !g_ps_totSel_ch1[Vov] ) g_ps_totSel_ch1[Vov] = new TGraphErrors();
-	  g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[ch1],vth*dac_to_mV);
-	  g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
-	  
-	  histo -> Write();
-      }
-      for(auto mapIt2 : mapIt.second)
-      {
-	  int vth = mapIt2.first;
-	  TH1F* histo = h1_time2_totSel_ch1[Vov][vth];
-	  if( histo->Integral() <= 1000. ) continue;
-	  
-	  g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[ch1],vth*dac_to_mV);
-	  g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
-	  
-	  histo -> Write();
-	}
+      int vth = mapIt2.first;
+      TH1F* histo = mapIt2.second;
+      if( histo->Integral() <= 1000. ) continue;
+      
+      if( !g_ps_totSel_ch1[Vov] ) g_ps_totSel_ch1[Vov] = new TGraphErrors();
+      g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[ch1],vth*dac_to_mV);
+      g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
+      
+      histo -> Write();
     }
+    for(auto mapIt2 : mapIt.second)
+    {
+      int vth = mapIt2.first;
+      TH1F* histo = h1_time2_totSel_ch1[Vov][vth];
+      if( histo->Integral() <= 1000. ) continue;
+      
+      g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[ch1],vth*dac_to_mV);
+      g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
+      
+      histo -> Write();
+    }
+  }
   for(auto mapIt : h1_time1_totSel_ch2)
+  {
+    float Vov = mapIt.first;
+    for(auto mapIt2 : mapIt.second)
     {
-      float Vov = mapIt.first;
-      for(auto mapIt2 : mapIt.second)
-      {
-	  int vth = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  if( histo->Integral() <= 1000. ) continue;
-	  
-	  if( !g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] = new TGraphErrors();
-	  g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[ch2],vth*dac_to_mV);
-	  g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
-	  
-	  histo -> Write();
-        }
-      for(auto mapIt2 : mapIt.second)
-      {
-	  int vth = mapIt2.first;
-	  TH1F* histo = h1_time2_totSel_ch2[Vov][vth];
-	  if( histo->Integral() <= 1000. ) continue;
-          
-	  g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[ch2],vth*dac_to_mV);
-	  g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
-	  
-	  histo -> Write();
-	}
+      int vth = mapIt2.first;
+      TH1F* histo = mapIt2.second;
+      if( histo->Integral() <= 1000. ) continue;
+      
+      if( !g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] = new TGraphErrors();
+      g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[ch2],vth*dac_to_mV);
+      g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
+      
+      histo -> Write();
     }
+    for(auto mapIt2 : mapIt.second)
+    {
+      int vth = mapIt2.first;
+      TH1F* histo = h1_time2_totSel_ch2[Vov][vth];
+      if( histo->Integral() <= 1000. ) continue;
+      
+      g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[ch2],vth*dac_to_mV);
+      g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
+      
+      histo -> Write();
+    }
+  }
   
   
   //-----------
@@ -384,72 +389,98 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
       float Vov = mapIt.first;
       
       c = new TCanvas("c","c");
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000.) );
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
       hPad -> SetTitle(Form(";%s [DAC]; number of hits in ch111",vthMode.c_str()));
       hPad -> Draw();
       g_N_ch1[Vov] -> SetMarkerColor(kRed);
       g_N_ch1[Vov] -> SetMarkerStyle(22);
-      g_N_ch1[Vov] -> Draw("PL,same");
-      g_N_ch2[Vov] -> SetMarkerColor(kBlue);
-      g_N_ch2[Vov] -> SetMarkerStyle(23);
-      g_N_ch2[Vov] -> Draw("PL,same");
+      g_N_ch1[Vov] -> Draw("P,same");
+      if( g_N_ch2[Vov] ) g_N_ch2[Vov] -> SetMarkerColor(kBlue);
+      if( g_N_ch2[Vov] ) g_N_ch2[Vov] -> SetMarkerStyle(23);
+      if( g_N_ch2[Vov] ) g_N_ch2[Vov] -> Draw("PL,same");
       g_N_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
       g_N_totSel_ch1[Vov] -> SetMarkerStyle(26);
-      g_N_totSel_ch1[Vov] -> Draw("PL,same");
-      g_N_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-      g_N_totSel_ch2[Vov] -> SetMarkerStyle(32);
-      g_N_totSel_ch2[Vov] -> Draw("PL,same");
+      g_N_totSel_ch1[Vov] -> Draw("P,same");
+      if( g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
+      if( g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] -> SetMarkerStyle(32);
+      if( g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] -> Draw("PL,same");
+      
+      TF1* f_sigmoid_ch1 = new TF1("f_sigmoid_ch1","[0]*(1-0.5*(1.+TMath::Erf((x-[1])/[2])))",0.,64.);
+      f_sigmoid_ch1 -> SetNpx(10000);
+      f_sigmoid_ch1 -> SetLineWidth(1);
+      f_sigmoid_ch1 -> SetLineColor(kRed-4);
+      int index = 0;
+      for (int j = 0; j < g_N_ch1[Vov] -> GetN(); j++ ){
+        if ( g_N_ch1[Vov]->GetPointY(j) < g_N_ch1[Vov]->GetPointY(0)/2){
+          index = j;
+          break;
+        } 
+      }
+      //f_sigmoid_ch1 -> SetParameters(g_N_ch1[Vov]->GetPointY(0),12.,3.);
+      f_sigmoid_ch1 -> SetParameters(g_N_ch1[Vov]->GetPointY(0), g_N_ch1[Vov]->GetPointX(index),3.);
+      g_N_ch1[Vov] -> Fit(f_sigmoid_ch1,"QRS");
+      f_sigmoid_ch1->Draw("same");
+      
+      TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("amplitude = %.1f mV",dac_to_mV*f_sigmoid_ch1->GetParameter(1)));
+      latex_ch1 -> SetNDC();
+      latex_ch1 -> SetTextFont(82);
+      latex_ch1 -> SetTextSize(0.04);
+      latex_ch1 -> SetTextAlign(11);
+      latex_ch1 -> SetTextColor(kRed-4);
+      latex_ch1 -> Draw("same");
+      
       c -> Print(Form("%s/g_N_Vov%.1f.png",plotDir.c_str(),Vov));
+      
       delete c;
     }
   
   for(auto mapIt : h1_tot_ch1)
-    {  
-      float Vov = mapIt.first;
-      
-      c = new TCanvas("c","c");
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,20.) );
-      hPad -> SetTitle(Form(";%s [DAC]; ToT [ns]",vthMode.c_str()));
-      hPad -> Draw();
-      g_tot_ch1[Vov] -> SetMarkerColor(kRed);
-      g_tot_ch1[Vov] -> SetMarkerStyle(22);
-      g_tot_ch1[Vov] -> Draw("PL,same");
-      g_tot_ch2[Vov] -> SetMarkerColor(kBlue);
-      g_tot_ch2[Vov] -> SetMarkerStyle(23);
-      g_tot_ch2[Vov] -> Draw("PL,same");
-      g_tot_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
-      g_tot_totSel_ch1[Vov] -> SetMarkerStyle(26);
-      g_tot_totSel_ch1[Vov] -> Draw("PL,same");
-      g_tot_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-      g_tot_totSel_ch2[Vov] -> SetMarkerStyle(32);
-      g_tot_totSel_ch2[Vov] -> Draw("PL,same");
-      c -> Print(Form("%s/g_tot_Vov%.1f.png",plotDir.c_str(),Vov));
-      delete c;
-    }
+  {  
+    float Vov = mapIt.first;
+    
+    c = new TCanvas("c","c");
+    hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,20.) );
+    hPad -> SetTitle(Form(";%s [DAC]; ToT [ns]",vthMode.c_str()));
+    hPad -> Draw();
+    g_tot_ch1[Vov] -> SetMarkerColor(kRed);
+    g_tot_ch1[Vov] -> SetMarkerStyle(22);
+    g_tot_ch1[Vov] -> Draw("PL,same");
+    if( g_tot_ch2[Vov] ) g_tot_ch2[Vov] -> SetMarkerColor(kBlue);
+    if( g_tot_ch2[Vov] ) g_tot_ch2[Vov] -> SetMarkerStyle(23);
+    if( g_tot_ch2[Vov] ) g_tot_ch2[Vov] -> Draw("PL,same");
+    g_tot_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
+    g_tot_totSel_ch1[Vov] -> SetMarkerStyle(26);
+    g_tot_totSel_ch1[Vov] -> Draw("PL,same");
+    if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
+    if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> SetMarkerStyle(32);
+    if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> Draw("PL,same");
+    c -> Print(Form("%s/g_tot_Vov%.1f.png",plotDir.c_str(),Vov));
+    delete c;
+  }
   
   for(auto mapIt : h1_energy_ch1)
-    {  
-      float Vov = mapIt.first;
-      
-      c = new TCanvas("c","c");
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,1023.5) );
-      hPad -> SetTitle(Form(";%s [DAC]; energy [ADC]",vthMode.c_str()));
-      hPad -> Draw();
-      g_energy_ch1[Vov] -> SetMarkerColor(kRed);
-      g_energy_ch1[Vov] -> SetMarkerStyle(22);
-      g_energy_ch1[Vov] -> Draw("PL,same");
-      g_energy_ch2[Vov] -> SetMarkerColor(kBlue);
-      g_energy_ch2[Vov] -> SetMarkerStyle(23);
-      g_energy_ch2[Vov] -> Draw("PL,same");
-      g_energy_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
-      g_energy_totSel_ch1[Vov] -> SetMarkerStyle(26);
-      g_energy_totSel_ch1[Vov] -> Draw("PL,same");
-      g_energy_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-      g_energy_totSel_ch2[Vov] -> SetMarkerStyle(32);
-      g_energy_totSel_ch2[Vov] -> Draw("PL,same");
-      c -> Print(Form("%s/g_energy_Vov%.1f.png",plotDir.c_str(),Vov));
-      delete c;
-    }
+  {  
+    float Vov = mapIt.first;
+    
+    c = new TCanvas("c","c");
+    hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,1023.5) );
+    hPad -> SetTitle(Form(";%s [DAC]; energy [ADC]",vthMode.c_str()));
+    hPad -> Draw();
+    g_energy_ch1[Vov] -> SetMarkerColor(kRed);
+    g_energy_ch1[Vov] -> SetMarkerStyle(22);
+    g_energy_ch1[Vov] -> Draw("PL,same");
+    if( g_energy_ch2[Vov] ) g_energy_ch2[Vov] -> SetMarkerColor(kBlue);
+    if( g_energy_ch2[Vov] )g_energy_ch2[Vov] -> SetMarkerStyle(23);
+    if( g_energy_ch2[Vov] )g_energy_ch2[Vov] -> Draw("PL,same");
+    g_energy_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
+    g_energy_totSel_ch1[Vov] -> SetMarkerStyle(26);
+    g_energy_totSel_ch1[Vov] -> Draw("PL,same");
+    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
+    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> SetMarkerStyle(32);
+    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> Draw("PL,same");
+    c -> Print(Form("%s/g_energy_Vov%.1f.png",plotDir.c_str(),Vov));
+    delete c;
+  }
   
   
   /*
@@ -473,71 +504,74 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
   */
   
   for(auto mapIt : h1_time1_totSel_ch1)
-    {  
-      float Vov = mapIt.first;
-      
-      float fitXMin = 0.;
-      float fitXMax = 999.;
-      
-      c = new TCanvas("c","c");
-      //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,40.) );
-      //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,100.) );
-      hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,65*dac_to_mV) );
-      hPad -> SetTitle(Form(";time [ns]; pulse shape [mV]"));
-      hPad -> Draw();
-      g_ps_totSel_ch1[Vov] -> SetLineColor(kRed-4);
-      g_ps_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
-      g_ps_totSel_ch1[Vov] -> SetMarkerStyle(26);
-      g_ps_totSel_ch1[Vov] -> Draw("P,same");
-      g_ps_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-      g_ps_totSel_ch2[Vov] -> SetLineColor(kBlue-4);
-      g_ps_totSel_ch2[Vov] -> SetMarkerStyle(32);
-      g_ps_totSel_ch2[Vov] -> Draw("P,same");
-      float slewRate = 0.;
-      TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,10.);
-      for(int point1 = 0; point1 < g_ps_totSel_ch1[Vov]->GetN()-4; ++point1)
+  {  
+    float Vov = mapIt.first;
+    
+    float fitXMin = 0.;
+    float fitXMax = 999.;
+    
+    c = new TCanvas("c","c");
+    //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,40.) );
+    //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,100.) );
+    hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,65*dac_to_mV) );
+    hPad -> SetTitle(Form(";time [ns]; pulse shape [mV]"));
+    hPad -> Draw();
+    g_ps_totSel_ch1[Vov] -> SetLineColor(kRed-4);
+    g_ps_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
+    g_ps_totSel_ch1[Vov] -> SetMarkerStyle(26);
+    g_ps_totSel_ch1[Vov] -> Draw("P,same");
+    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
+    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> SetLineColor(kBlue-4);
+    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> SetMarkerStyle(32);
+    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> Draw("P,same");
+    
+    float slewRate = 0.;
+    TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,10.);
+    for(int point1 = 0; point1 < g_ps_totSel_ch1[Vov]->GetN()-4; ++point1)
+    {
+      TGraph* g_temp = new TGraph();
+      for(int point2 = point1; point2 < point1+4; ++point2)
       {
-        TGraph* g_temp = new TGraph();
-        for(int point2 = point1; point2 < point1+4; ++point2)
-        {
-          g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch1[Vov]->GetPointX(point2),g_ps_totSel_ch1[Vov]->GetPointY(point2));
-        }
-        
-        TF1* f_temp = new TF1("f_temp","pol1",0.,100.);
-        g_temp -> Fit(f_temp,"QNRS");
-        
-        if( f_temp->GetParameter(1) > slewRate )
-        {
-          slewRate = f_temp->GetParameter(1);
-          fitFunc_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
-        }
+        g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch1[Vov]->GetPointX(point2),g_ps_totSel_ch1[Vov]->GetPointY(point2));
       }
-      // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-      //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 30. )
-      //   {
-      //     fitXMin = g_ps_totSel_ch1[Vov]->GetPointX(point);
-      //     break;
-      //   }
-      // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-      //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 100. )
-      //   {
-      //     fitXMax = g_ps_totSel_ch1[Vov]->GetPointX(point);
-      //     std::cout << fitXMax << std::endl;
-      //     break;
-      //   }
-      // TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,7.);
-      // fitFunc_ch1 -> SetParameters(0.,250.);
-      // g_ps_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QNS+","",fitXMin,fitXMax);
-      fitFunc_ch1 -> SetLineColor(kRed-4);
-      // fitFunc_ch1 -> Draw("same");
-      TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("slew rate = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));
-      latex_ch1 -> SetNDC();
-      latex_ch1 -> SetTextFont(82);
-      latex_ch1 -> SetTextSize(0.04);
-      latex_ch1 -> SetTextAlign(11);
-      latex_ch1 -> SetTextColor(kRed-4);
-      // latex_ch1 -> Draw("same");
       
+      TF1* f_temp = new TF1("f_temp","pol1",0.,100.);
+      g_temp -> Fit(f_temp,"QNRS");
+      
+      if( f_temp->GetParameter(1) > slewRate )
+      {
+        slewRate = f_temp->GetParameter(1);
+        fitFunc_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+      }
+    }
+    // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
+    //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 30. )
+    //   {
+    //     fitXMin = g_ps_totSel_ch1[Vov]->GetPointX(point);
+    //     break;
+    //   }
+    // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
+    //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 100. )
+    //   {
+    //     fitXMax = g_ps_totSel_ch1[Vov]->GetPointX(point);
+    //     std::cout << fitXMax << std::endl;
+    //     break;
+    //   }
+    // TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,7.);
+    // fitFunc_ch1 -> SetParameters(0.,250.);
+    // g_ps_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QNS+","",fitXMin,fitXMax);
+    fitFunc_ch1 -> SetLineColor(kRed-4);
+    // fitFunc_ch1 -> Draw("same");
+    TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("slew rate = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));
+    latex_ch1 -> SetNDC();
+    latex_ch1 -> SetTextFont(82);
+    latex_ch1 -> SetTextSize(0.04);
+    latex_ch1 -> SetTextAlign(11);
+    latex_ch1 -> SetTextColor(kRed-4);
+    // latex_ch1 -> Draw("same");
+    
+    if( g_ps_totSel_ch2[Vov] )
+    {
       fitXMin = 0.;
       fitXMax = 999.;
       for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
@@ -564,22 +598,31 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
       latex_ch2 -> SetTextAlign(11);
       latex_ch2 -> SetTextColor(kBlue-4);
       //latex_ch2 -> Draw("same");
-      c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.1f.png",plotDir.c_str(),Vov));
-      delete c;
     }
+    
+    c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.1f.png",plotDir.c_str(),Vov));
+    delete c;
+  }
   
   //-----------
   // save plots
   
   for(auto mapIt : g_ps_totSel_ch1)
-    {
-      mapIt.second -> Write(Form("g_ps_totSel_ch1_Vov%.1f",mapIt.first));
-    }
+  {
+    mapIt.second -> Write(Form("g_ps_totSel_ch1_Vov%.1f",mapIt.first));
+  }
   for(auto mapIt : g_ps_totSel_ch2)
-    {
-      mapIt.second -> Write(Form("g_ps_totSel_ch2_Vov%.1f",mapIt.first));
-    }
+  {
+    mapIt.second -> Write(Form("g_ps_totSel_ch2_Vov%.1f",mapIt.first));
+  }
+
+  for (auto mapIt:  g_N_ch1)
+  {
+    mapIt.second -> Write(Form("g_N_ch1_Vov%.1f",mapIt.first));
+  } 
+
   gApplication->Terminate(); 
+  
   /*
   p_tot_vs_qT -> Write();
   
@@ -591,7 +634,7 @@ void drawPulseShape(const int& run, const std::string& vthMode, const float freq
   g_tot_totSel -> Write("g_tot_totSel");
   g_energy_totSel -> Write("g_energy_totSel");
   g_ps_totSel -> Write("g_ps_totSel");
-  
-  outFile -> Close();
   */
+
+  outFile -> Close();
 }

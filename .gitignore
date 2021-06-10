@@ -37,3 +37,7 @@
 
 # HTCondor files
 *.sub
+
+# Misc
+*.pdf
+*.png

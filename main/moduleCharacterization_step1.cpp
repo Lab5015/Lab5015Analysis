@@ -80,8 +80,8 @@ int main(int argc, char** argv)
     
     for(int run = runMin; run <= runMax; ++run) {
       std::string fileName;
-      if( !usePedestals ) fileName = Form("%s/%s%04d_t2.root",inputDir.c_str(),fileBaseName.c_str(),run);
-      else                fileName = Form("%s/%s%04d_ped_t2.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      if( !usePedestals ) fileName = Form("%s/%s%04d_e.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      else                fileName = Form("%s/%s%04d_ped_e.root",inputDir.c_str(),fileBaseName.c_str(),run);
       std::cout << ">>> Adding file " << fileName << std::endl;
       tree -> Add(fileName.c_str());
       
@@ -114,12 +114,12 @@ int main(int argc, char** argv)
   //--- define branches
   float step1, step2;
   int channelIdx[128];
-  std::vector<float> *qfine = 0;
+  std::vector<unsigned short> *qfine = 0;
   std::vector<float> *tot = 0;
   std::vector<float> *energy = 0;
   std::vector<long long> *time = 0;
   std::vector<float>* qT1 = 0;
-  std::vector<float>* t1fine = 0;
+  std::vector<unsigned short>* t1fine = 0;
   
   
   tree -> SetBranchStatus("*",0);
@@ -189,11 +189,15 @@ int main(int argc, char** argv)
 	  std::cout << "\n>>> external bar loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << std::endl;
 	  TrackProcess(cpu, mem, vsz, rss);
 	}
-	
+        
 	float Vov = step1;
-	float vth1 = float(int(step2/10000)-1);
-	//float vth2 = int((step2-10000*(vth1+1))/100.)-1;
-	
+        float vth1 = float(int(step2/10000)-1);
+        float vth2 = int((step2-10000*(vth1+1))/100.)-1;
+        float vth = 0;
+	if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
+	if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
+        
+
 	if (channelIdx[chL_ext] <0 || channelIdx[chR_ext] <0) continue;
 	
 	qfineL_ext = (*qfine)[channelIdx[chL_ext]];
@@ -204,13 +208,13 @@ int main(int argc, char** argv)
 	if (qfineL_ext < qfineMin) continue;
 	if (qfineR_ext < qfineMin) continue;      
 	
-	int index( (10000*int(Vov*100.)) + (100*vth1) + 99 );
+	int index( (10000*int(Vov*100.)) + (100*vth) + 99 );
 	
 	//--- create histograms, if needed
 	if( h1_energyLR_ext[index] == NULL ){
-	  c[index] = new TCanvas(Form("c1_Vov%.1f_th%02.0f",Vov,vth1), Form("c1_Vov%.1f_th%02.0f",Vov,vth1));
+	  c[index] = new TCanvas(Form("c1_Vov%.1f_th%02.0f",Vov,vth), Form("c1_Vov%.1f_th%02.0f",Vov,vth));
 	  c[index] -> cd();
-	  h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.1f_th%02.0f",Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.1f_th%02.0f",Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
 	}
 
 	acceptEvent[entry] = true;
@@ -234,7 +238,11 @@ int main(int argc, char** argv)
 	  
 	  float Vov = float ((int(index.first /10000))/100.);
 	  float vth1 = float(int((index.first-Vov*100000*100)/100.));
-	  
+	  float vth2 = int((step2-10000*(vth1+1))/100.)-1;
+          float vth = 0;
+          if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
+          if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
+
 	  if( opts.GetOpt<int>("Channels.array") == 0){
 	    index.second->GetXaxis()->SetRangeUser(85 + Vov*10,1000);
 	  }
@@ -243,7 +251,7 @@ int main(int argc, char** argv)
 	  }
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1000);
-	  TF1* f_gaus_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth1), "gaus", max-50, max +50);
+	  TF1* f_gaus_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "gaus", max-50, max +50);
 	  f_gaus_pre -> SetLineColor(kBlack); 
 	  f_gaus_pre -> SetLineWidth(2); 
 	  f_gaus_pre->SetParameters(index.second->GetMaximumBin(), max, 70);
@@ -264,14 +272,14 @@ int main(int argc, char** argv)
   
   ModuleEventClass anEvent;
 
-  float qfineL[16];
-  float qfineR[16];    
+  unsigned short qfineL[16];
+  unsigned short qfineR[16];    
   float totL[16];
   float totR[16];
-  long long int timeL[16];
-  long long int timeR[16];
-  float t1fineL[16]; 
-  float t1fineR[16]; 
+  long long timeL[16];
+  long long timeR[16];
+  unsigned short t1fineL[16]; 
+  unsigned short t1fineR[16]; 
   float energyL[16];
   float energyR[16];
     
@@ -286,8 +294,11 @@ int main(int argc, char** argv)
       }
     
     float Vov = step1;
-    float vth1 = float(int(step2/10000)-1);;
-    // float vth2 = float(int((step2-10000*vth1)/100)-1);
+    float vth1 = float(int(step2/10000)-1);
+    float vth2 = int((step2-10000*(vth1+1))/100.)-1;
+    float vth = 0;
+    if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
+    if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
     // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
     
     // --- check coincidence with another channel 
@@ -300,7 +311,7 @@ int main(int argc, char** argv)
       float energyL_ext = (*energy)[channelIdx[chL_ext]];
       float energyR_ext = (*energy)[channelIdx[chR_ext]];
       
-      int label = (10000*int(Vov*100.)) + (100*vth1) + 99;
+      int label = (10000*int(Vov*100.)) + (100*vth) + 99;
       int eBin = opts.GetOpt<int>("Coincidence.peak511eBin");
       float avEn = 0.5 * ( energyL_ext + energyR_ext);
       if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22")) &&  avEn > rangesLR[label]-> at(eBin)) {
@@ -328,7 +339,6 @@ int main(int argc, char** argv)
 	timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
 	t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
 	t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
-	
       }
       else {
 	
@@ -359,26 +369,26 @@ int main(int argc, char** argv)
 	}
       }
       
-      int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
+      int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
       
       
       //--- create histograms, if needed
       if( h1_totL[index] == NULL )
 	{
 	  
-	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
-	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",512,-0.5,511.5);
+	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
+	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  
-	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",100,0.,20.);
-	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",100,0.,20.);
+	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",100,0.,20.);
+	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",100,0.,20.);
 	  
-	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
-	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
 	  
-	  outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1));
+	  outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth));
 	  outTrees[index] -> Branch("event",&anEvent);
 	  
-	  h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
 	}
       
       //--- fill histograms for each bar for Co60 & TB analysis
@@ -386,7 +396,7 @@ int main(int argc, char** argv)
 	{
 	  
 	  if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
-	  if( totL[iBar] >= 20. ||  totR[iBar] >= 20.) continue;
+	  if( totL[iBar] >= 100. ||  totR[iBar] >= 100.) continue;
 	  if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
 	  
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
@@ -401,9 +411,11 @@ int main(int argc, char** argv)
 	  
 	  anEvent.barID = iBar;
 	  anEvent.Vov = Vov;
-	  anEvent.vth1 = vth1;
+	  anEvent.vth1 = vth;
 	  anEvent.energyL = energyL[iBar];
 	  anEvent.energyR = energyR[iBar];
+	  anEvent.totL = totL[iBar];
+	  anEvent.totR = totR[iBar];
 	  anEvent.timeL = timeL[iBar];
 	  anEvent.timeR = timeR[iBar];
 	  anEvent.t1fineL = t1fineL[iBar];
@@ -415,10 +427,10 @@ int main(int argc, char** argv)
     // --- for Na22 or Laser analysis use only the bar with max energy to remove cross-talk between adjacent bars
     if (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Laser"))
       {
-	int index( (10000*int(Vov*100.)) + (100*vth1) + maxBar );
+	int index( (10000*int(Vov*100.)) + (100*vth) + maxBar );
 	
 	if( totL[maxBar] <= 0. || totR[maxBar] <= 0. ) continue;
-	if( totL[maxBar] >= 20. ||  totR[maxBar] >= 20.) continue;
+	if( totL[maxBar] >= 100. ||  totR[maxBar] >= 100.) continue;
 	if( qfineL[maxBar] < qfineMin || qfineR[maxBar] < qfineMin ) continue;
 	
 	//--- fill histograms
@@ -434,9 +446,11 @@ int main(int argc, char** argv)
 	
 	anEvent.barID = maxBar;
 	anEvent.Vov = Vov;
-	anEvent.vth1 = vth1;
+	anEvent.vth1 = vth;
 	anEvent.energyL = energyL[maxBar];
 	anEvent.energyR = energyR[maxBar];
+	anEvent.totL = totL[maxBar];
+	anEvent.totR = totR[maxBar];
 	anEvent.timeL = timeL[maxBar];
 	anEvent.timeR = timeR[maxBar];
 	anEvent.t1fineL = t1fineL[maxBar];

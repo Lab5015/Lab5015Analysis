@@ -73,11 +73,12 @@ public:
   int vth1;
   float energyL;
   float energyR;
+  float totL;
+  float totR;
   long long timeL;
   long long timeR;
-  float t1fineL;
-  float t1fineR;
-  
+  unsigned short t1fineL;
+  unsigned short t1fineR;
   
   ClassDef(ModuleEventClass,1);
 };
