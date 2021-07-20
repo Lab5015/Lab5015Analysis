@@ -11,7 +11,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Module characterization summary plots')
 parser.add_argument("-r",  "--runs",          required=True, type=str, help="comma-separated list of runs to be processed")
 parser.add_argument("-m",  "--resMode",       required=True, type=int, help="comma-separated list of runs to be processed")
-parser.add_argument("-b",  "--outFolder",     required=True, type=str, help="out folder")
+parser.add_argument("-o",  "--outFolder",     required=True, type=str, help="out folder")
 args = parser.parse_args()
 
 
@@ -54,7 +54,7 @@ if (args.resMode == 1): kscale = math.sqrt(2)
 outdir = args.outFolder
 print 'Saving plots in ', outdir
 
-source = 'Laser'
+source = 'TB'
 
 peaks = []
 enBins = []
@@ -73,10 +73,10 @@ if (source == 'TB'):
 # --- prepare output dir
 if (os.path.isdir(outdir) == False): 
     os.system('mkdir %s'%outdir)
-    os.system('mkdir %s/summaryPlots/'%outdir)
-    os.system('mkdir %s/summaryPlots/tot/'%outdir)
-    os.system('mkdir %s/summaryPlots/energy/'%outdir)
-    os.system('mkdir %s/summaryPlots/timeResolution/'%outdir)
+os.system('mkdir %s/summaryPlots/'%outdir)
+os.system('mkdir %s/summaryPlots/tot/'%outdir)
+os.system('mkdir %s/summaryPlots/energy/'%outdir)
+os.system('mkdir %s/summaryPlots/timeResolution/'%outdir)
     
 
 # -- ref threhsold
@@ -87,7 +87,8 @@ bars = []
 thresholds = []
 Vovs = [] 
 for run in run_list:
-    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/moduleCharacterization_step2_run%04d.root'%run)
+    #inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/moduleCharacterization_step2_run%04d.root'%run)
+    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/MTDTB_CERN_Jul21/moduleCharacterization_step2_run%04d_array1_coinc.root'%run)
     listOfKeys = [key.GetName().replace('h1_deltaT_energyRatioCorr_','') for key in ROOT.gDirectory.GetListOfKeys() if key.GetName().startswith('h1_deltaT_energyRatioCorr')]
     for k in listOfKeys:
         barNum = int (k.split('_')[0][3:5])
@@ -149,7 +150,7 @@ for vov in Vovs:
 
 # --- Read the histograms from moduleCharacterization_step2 file
 for run in run_list:
-    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/moduleCharacterization_step2_run%04d.root'%run)
+    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization//MTDTB_CERN_Jul21/moduleCharacterization_step2_run%04d_array1_coinc.root'%run)
 
     for bar in bars:
         for l in ['L','R','L-R']:
@@ -188,6 +189,13 @@ for run in run_list:
                             h1_energy.Fit('fitFunc','QNS+','', fitFunc.GetParameter(1)-fitFunc.GetParameter(2), fitFunc.GetParameter(1)+fitFunc.GetParameter(2))
                             for peak in peaks:
                                 energyPeak[peak] = [ fitFunc.GetParameter(1), fitFunc.GetParError(1)]
+                        elif ( source == 'TB'):
+                            #fitFunc = h1_energy.GetFunction('fit_energy_bar%02d%s_Vov%.01f_vth1_%02d'%(bar, l, vov, thr))
+                            fitFunc = h1_energy.GetFunction('f_landau_bar%02d%s_Vov%.01f_vth1_%02d'%(bar, l, vov, thr))
+                            for peak in peaks:
+                                energyPeak[peak] = [fitFunc.GetParameter(1), fitFunc.GetParError(1)] 
+
+
                 
                         for peak in peaks:
                             g_energy_vs_th[bar, l, vov, peak].SetPoint(g_energy_vs_th[bar, l, vov, peak].GetN(), thr, energyPeak[peak][0] )
@@ -215,8 +223,8 @@ for run in run_list:
             for thr in thresholds: 
                 tRes = {}
                 for enBin in enBins:
-                    #h1_deltaT = inputFile.Get('h1_deltaT_energyRatioCorr_bar%02dL-R_Vov%.01f_th%02d_energyBin%02d'%(bar, vov, thr, enBin))
-                    h1_deltaT = inputFile.Get('h1_deltaT_totRatioCorr_bar%02dL-R_Vov%.01f_th%02d_energyBin%02d'%(bar, vov, thr, enBin))
+                    h1_deltaT = inputFile.Get('h1_deltaT_energyRatioCorr_bar%02dL-R_Vov%.01f_th%02d_energyBin%02d'%(bar, vov, thr, enBin))
+                    #h1_deltaT = inputFile.Get('h1_deltaT_totRatioCorr_bar%02dL-R_Vov%.01f_th%02d_energyBin%02d'%(bar, vov, thr, enBin))
                     if (h1_deltaT == None): continue
                     if (h1_deltaT.GetEntries() < 100 ): continue
                     
@@ -327,7 +335,7 @@ for bar in bars:
 
     # -- energy vs Vov
     cen2 = ROOT.TCanvas('c_energy_vs_Vov_bar%.02d'%bar)
-    hPadEn2 = ROOT.TH2F('hPadEn2','', 10, 0.,8.,50, 0.,400.)
+    hPadEn2 = ROOT.TH2F('hPadEn2','', 10, 0.,8.,50, 0.,1000.)
     hPadEn2.SetTitle(";V_{OV} [V]; energy")
     hPadEn2.Draw()
     cen2.SetGridy()
@@ -433,7 +441,7 @@ for i, vov in enumerate(Vovs):
 # -- energy vs bar
 for i, vov in enumerate(Vovs):
     cen3 = ROOT.TCanvas('c_energy_vs_bar_Vov%.01f'%vov)
-    hPadEn3 = ROOT.TH2F('hPadEn3','', 100, -0.5, 15.5, 40, 0.,400.)
+    hPadEn3 = ROOT.TH2F('hPadEn3','', 100, -0.5, 15.5, 40, 0.,1000.)
     hPadEn3.SetTitle("; bar; energy")
     hPadEn3.Draw()
     cen3.SetGridy()

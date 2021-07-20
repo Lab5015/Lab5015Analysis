@@ -144,7 +144,8 @@ int main(int argc, char** argv)
   system(Form("mkdir -p %s/energy/",plotDir.c_str()));
   system(Form("mkdir -p %s/energyRatio/",plotDir.c_str()));
   system(Form("mkdir -p %s/t1fine/",plotDir.c_str()));
-  system(Form("mkdir -p %s/CTR/",plotDir.c_str()));
+  //system(Form("mkdir -p %s/CTR/",plotDir.c_str()));
+  system(Form("mkdir -p %s/energyRatioCorr/",plotDir.c_str()));
   system(Form("mkdir -p %s/totRatioCorr/",plotDir.c_str()));
   system(Form("mkdir -p %s/phaseCorr/",plotDir.c_str()));
   system(Form("mkdir -p %s/CTR_energyRatioCorr/",plotDir.c_str()));
@@ -290,6 +291,7 @@ int main(int argc, char** argv)
 
   std::map<int,TF1*>  f_langaus; // f_langaus[index]
   std::map<int,TF1*>  f_gaus; // f_gaus[index]
+  std::map<int,TF1*>  f_landau; // f_gaus[index]
   std::map<float,int>  Vov_LandauMin; //Vov_LandauMin[Vov]
   Vov_LandauMin[1.0] = 0;
   Vov_LandauMin[1.5] = 50;
@@ -452,7 +454,7 @@ int main(int argc, char** argv)
           
           if (peaks[LRLabel][index][firstPeak].first > 0){
             //histo -> GetXaxis() -> SetRangeUser(0.,5.*peaks[LRLabel][index][firstPeak].first);
-	    histo -> GetXaxis() -> SetRangeUser(0.,500.);
+	    histo -> GetXaxis() -> SetRangeUser(0.,1000.);
           }
 	  
           if (peaks[LRLabel][index][firstPeak].first== -9999){
@@ -512,11 +514,8 @@ int main(int argc, char** argv)
 
 	// -- if MIP peak, we don't use the spectrum analyzers - just langaus fit to the energy peak.
         if(!source.compare(TB)){ 
-	  /*TF1* f_landau = new TF1("f_landau","[0]*TMath::Landau(x,[1],[2])",300.,1000.);
-	    f_landau -> SetParameters(100.,400.,10.);
-	    histo -> Fit(f_landau,"QNRS");
-	    
-	    //TF1* f_langaus = new TF1("f_langaus", langaufun, 300.,1000.,4);
+	  /*
+	  //TF1* f_langaus = new TF1("f_langaus", langaufun, 300.,1000.,4);
 	    f_langaus[index] = new TF1(Form("fit_energy_bar%02d_Vov%.1f_vth1_%02.0f",iBar,Vov,vth1),langaufun,Vov_LandauMin[Vov],1000.,4);
 	    f_langaus[index] -> SetParameters(f_landau->GetParameter(2),f_landau->GetParameter(1),histo->Integral(histo->FindBin(300.),histo->FindBin(1000.))*histo->GetBinWidth(1),10.);
 	    f_langaus[index] -> SetLineColor(kBlack);
@@ -533,15 +532,15 @@ int main(int argc, char** argv)
 	    if (LRLabel == "L-R") energy511LR = f_langaus[index]->GetParameter(1);	*/		
 	 
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    histo->GetXaxis()->SetRangeUser(85 + Vov*10,1000);
+	    histo->GetXaxis()->SetRangeUser(70 + Vov*10,700);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    histo->GetXaxis()->SetRangeUser(35 + Vov*10,1000);
+	    histo->GetXaxis()->SetRangeUser(70 + Vov*10, 700);
 	  }
 	  float max = histo->GetBinCenter(histo->GetMaximumBin());
 	  histo->GetXaxis()->SetRangeUser(0,1000);
 	  
-	  f_gaus[index] = new TF1(Form("fit_energy_bar%02d_Vov%.1f_vth1_%02.0f",iBar,Vov,vth1), "gaus", max-50, max+50);
+	  f_gaus[index] = new TF1(Form("fit_energy_bar%02d%s_Vov%.1f_vth1_%02.0f",iBar,LRLabel.c_str(),Vov,vth1), "gaus", max-50, max+50);
 	  f_gaus[index]->SetParameters(histo->GetMaximumBin(), max, 70);
 	  histo->Fit(f_gaus[index], "QRS");
 	  f_gaus[index]->SetRange(f_gaus[index]->GetParameter(1)-f_gaus[index]->GetParameter(2), f_gaus[index]->GetParameter(1)+f_gaus[index]->GetParameter(2));
@@ -550,13 +549,24 @@ int main(int argc, char** argv)
 	  f_gaus[index] -> SetLineWidth(2);
 	  f_gaus[index] -> Draw("same");
 	  
-	  ranges[LRLabel][index] -> push_back( 0.80*f_gaus[index]->GetParameter(1));
-          ranges[LRLabel][index] -> push_back( histo -> GetBinCenter(1000) );
+	  //ranges[LRLabel][index] -> push_back( 0.80*f_gaus[index]->GetParameter(1));
+	  //ranges[LRLabel][index] -> push_back( histo -> GetBinCenter(700) ); // to avoid sturation
 	  
+	  f_landau[index] = new TF1(Form("f_landau_bar%02d%s_Vov%.1f_vth1_%02.0f", iBar,LRLabel.c_str(),Vov,vth1),"[0]*TMath::Landau(x,[1],[2])", 0,1000.);
+	  f_landau[index] -> SetRange(max * 0.8, max * 1.5);
+	  f_landau[index] -> SetParameters(100.,f_gaus[index]->GetParameter(1),f_gaus[index]->GetParameter(2));
+	  histo -> Fit(f_landau[index],"QRS");
+	  f_landau[index] -> SetLineColor(kBlack);
+	  f_landau[index] -> SetLineWidth(2);
+	  f_landau[index] -> Draw("same");
+
+	  ranges[LRLabel][index] -> push_back( 0.80*f_landau[index]->GetParameter(1));
+	  ranges[LRLabel][index] -> push_back( 700. );
+
           // use energy511XX branch to save the peak value 
-          if (LRLabel == "L") energy511L = f_gaus[index]->GetParameter(1);					
-          if (LRLabel == "R") energy511R = f_gaus[index]->GetParameter(1);					
-          if (LRLabel == "L-R") energy511LR = f_gaus[index]->GetParameter(1);
+          if (LRLabel == "L") energy511L = f_landau[index]->GetParameter(1);					
+          if (LRLabel == "R") energy511R = f_landau[index]->GetParameter(1);					
+          if (LRLabel == "L-R") energy511LR = f_landau[index]->GetParameter(1);
 
 	  for(auto range: (*ranges[LRLabel][index])){
 	    TLine* line = new TLine(range,0.,range, histo->GetMaximum());
@@ -993,8 +1003,8 @@ int main(int argc, char** argv)
 	    fitFunc_energyRatioCorr[index2] -> SetLineWidth(2);
 	    fitFunc_energyRatioCorr[index2] -> Draw("same");
 	    
-	    c -> Print(Form("%s/CTR/c_deltaT_vs_energyRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	    c -> Print(Form("%s/CTR/c_deltaT_vs_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	    c -> Print(Form("%s/energyRatioCorr/c_deltaT_vs_energyRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
+	    c -> Print(Form("%s/energyRatioCorr/c_deltaT_vs_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	    delete c;
 
 

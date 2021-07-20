@@ -80,8 +80,9 @@ int main(int argc, char** argv)
     
     for(int run = runMin; run <= runMax; ++run) {
       std::string fileName;
-      if( !usePedestals ) fileName = Form("%s/%s%04d_e.root",inputDir.c_str(),fileBaseName.c_str(),run);
-      else                fileName = Form("%s/%s%04d_ped_e.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      //else                fileName = Form("%s/%s%04d_*ped_e.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      else                fileName = Form("%s/%04d/*ped_e.root",inputDir.c_str(),run);
       std::cout << ">>> Adding file " << fileName << std::endl;
       tree -> Add(fileName.c_str());
       
@@ -244,23 +245,34 @@ int main(int argc, char** argv)
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(85 + Vov*10,1000);
+	    index.second->GetXaxis()->SetRangeUser(70. + Vov*10,1000);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    index.second->GetXaxis()->SetRangeUser(35 + Vov*10,1000);
+	    index.second->GetXaxis()->SetRangeUser(70 + Vov*10,1000);
 	  }
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1000);
-	  TF1* f_gaus_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "gaus", max-50, max +50);
+	 
+	  /*TF1* f_gaus_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "gaus", max-50, max +50);
 	  f_gaus_pre -> SetLineColor(kBlack); 
 	  f_gaus_pre -> SetLineWidth(2); 
 	  f_gaus_pre->SetParameters(index.second->GetMaximumBin(), max, 70);
 	  index.second->Fit(f_gaus_pre, "QRS");
 	  f_gaus_pre->SetRange(f_gaus_pre->GetParameter(1)-f_gaus_pre->GetParameter(2), f_gaus_pre->GetParameter(1)+f_gaus_pre->GetParameter(2));
 	  index.second->Fit(f_gaus_pre, "QRS");
-	  
-	  rangesLR[index.first] -> push_back( 0.80*f_gaus_pre->GetParameter(1));
-	  rangesLR[index.first] -> push_back( index.second -> GetBinCenter(1000) );
+	  */
+
+	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
+	  f_pre -> SetRange(max*0.8, max*1.5);
+	  f_pre -> SetLineColor(kBlack);
+          f_pre -> SetLineWidth(2);
+          f_pre -> SetParameters(index.second->GetMaximumBin(), max, 20);                                                                                                      
+          index.second->Fit(f_pre, "QRS");      
+	  rangesLR[index.first] -> push_back( 0.80*f_pre->GetParameter(1));
+	  rangesLR[index.first] -> push_back( 700. );
+
+	  std::cout << "Vov = " << Vov << "  vth1 = " << vth1 << "   vth2 = " << vth2 
+		    << "    Coincidence bar - energy range:  " << rangesLR[index.first]->at(0) << " - " << rangesLR[index.first]->at(1)<< std::endl;
 	}
       }
     }
@@ -318,7 +330,7 @@ int main(int argc, char** argv)
 	continue;
       }
       
-      if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")) && avEn < rangesLR[label]-> at(0)) {
+      if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")) && ( avEn < rangesLR[label]-> at(0) || avEn > rangesLR[label]-> at(1) ) ) {
 	continue;
       }
     }
@@ -339,6 +351,7 @@ int main(int argc, char** argv)
 	timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
 	t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
 	t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
+
       }
       else {
 	
@@ -360,9 +373,12 @@ int main(int argc, char** argv)
     int maxEn=0;
     int maxBar=0;
     
+    float energySumArray = 0;
+
     for(int iBar = 0; iBar < 16; ++iBar) {
       if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin && totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<20 && totR[iBar]<20){
 	float energyMean=(energyL[iBar]+energyR[iBar])/2;
+	energySumArray+=energyMean;
 	if(energyMean>maxEn){
 	  maxEn = energyMean;
 	  maxBar = iBar;
@@ -399,6 +415,8 @@ int main(int argc, char** argv)
 	  if( totL[iBar] >= 100. ||  totR[iBar] >= 100.) continue;
 	  if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
 	  
+	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && energySumArray>700.) continue; // to remove showering events
+
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
 	  h1_energyL[index] -> Fill( energyL[iBar] );
