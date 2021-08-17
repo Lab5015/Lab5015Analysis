@@ -65,7 +65,9 @@ int main(int argc, char** argv){
   //int mystep2 = 211102;
   int myvth1  = 20;
 
+  // -- max energySum
 
+  float maxEnergySum = 800;
 
   TChain* tree = new TChain("data","data");
   tree->Add(Form("/data/TOFHIR2/MTDTB_CERN_Jul21/reco/%d/*_ped_e.root", run));
@@ -140,7 +142,7 @@ int main(int argc, char** argv){
 	h_energyMap_MIP[Vov][iMod][iBar] = new TH1F(Form("h_energyMap_MIP_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyMap_MIP_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov),16,-0.5,15.5);
 	h_energyMap_Shower[Vov][iMod][iBar] = new TH1F(Form("h_energyMap_Shower_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyMap_Shower_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov),16,-0.5,15.5);
       }
-      h_energySum[Vov][iMod] = new TH1F(Form("h_energySum_array%02d_Vov%.01f",iMod,Vov), Form("h_energySum_array%02d_Vov%.01f",iMod,Vov),1000,0,10000);
+      h_energySum[Vov][iMod] = new TH1F(Form("h_energySum_array%02d_Vov%.01f",iMod,Vov), Form("h_energySum_array%02d_Vov%.01f",iMod,Vov),5000,0,10000);
       h_nBars[Vov][iMod] = new TH1F(Form("h_nBars_array%02d_Vov%.01f",iMod,Vov), Form("h_nBars_array%02d_Vov%.01f",iMod,Vov),16,-0.5,15);
       h_energySum_vs_nBars[Vov][iMod] = new TH2F(Form("h_energySum_vs_nBars_array%02d_Vov%.01f",iMod,Vov), Form("h_energySum_vs_nBars_array%02d_Vov%.01f",iMod,Vov), 16, -0.5, 15.5, 1000, 0, 10000);	
     }
@@ -208,20 +210,20 @@ int main(int argc, char** argv){
 	  h_energyFraction_vs_energyLR[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar], aveEnergy[iMod][iBar]/energySum[iMod]);
 	  h_energyLR_vs_nBars[Vov][iMod][iBar]->Fill(n[iMod], aveEnergy[iMod][iBar]);
 	  
-	  if (energySum[iMod] < 700 ) h_energyLR_selEnergySum[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
-	  if (energySum[iMod] < 700 && n[iMod] < 6) h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
+	  if (energySum[iMod] < maxEnergySum ) h_energyLR_selEnergySum[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
+	  if (energySum[iMod] < maxEnergySum && n[iMod] < 6) h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
 	  if (aveEnergy[iMod][iBar]/energySum[iMod] > 0.9 ) h_energyLR_selEnergyFraction[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
 	  
 	  // -- showering events
-	  if (energySum[iMod] > 700 && aveEnergy[iMod][iBar] > 700) {
+	  if (energySum[iMod] > maxEnergySum && aveEnergy[iMod][iBar] > maxEnergySum) {
 	    for (int jBar = 0; jBar < 16; jBar++){
 	      h_energyMap_Shower[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
 	    }
 	  }
 
 	  // -- MIP events
-	  //if (energySum[iMod] < 700 && n[iMod] < 6 && aveEnergy[iMod][iBar] > 400 && aveEnergy[iMod][iBar] < 600) {
-	  if (energySum[iMod] < 700 && n[iMod] < 6 && aveEnergy[iMod][iBar] > 100 && aveEnergy[iMod][iBar] < 700 ) {
+	  //if (energySum[iMod] < maxEnergySum && n[iMod] < 6 && aveEnergy[iMod][iBar] > 400 && aveEnergy[iMod][iBar] < 600) {
+	  if (energySum[iMod] < maxEnergySum && n[iMod] < 6 && aveEnergy[iMod][iBar] > 50 && aveEnergy[iMod][iBar] < maxEnergySum ) {
 	    for (int jBar = 0; jBar < 16; jBar++){
 	      h_energyMap_MIP[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
 	    }
@@ -288,8 +290,8 @@ int main(int argc, char** argv){
 	h_energyLR_selEnergyFraction[Vov][iMod][iBar]->Draw("same");
 	TLegend *leg = new TLegend();
 	leg->AddEntry(h_energyLR[Vov][iMod][iBar],"all","L");
-	leg->AddEntry(h_energyLR_selEnergySum[Vov][iMod][iBar],"E_{array} < 700","L");
-	leg->AddEntry(h_energyLR_selEnergySumNbars[Vov][iMod][iBar],"E_{array} < 700 && Nbars","L");
+	leg->AddEntry(h_energyLR_selEnergySum[Vov][iMod][iBar],"E_{array} < 800","L");
+	leg->AddEntry(h_energyLR_selEnergySumNbars[Vov][iMod][iBar],"E_{array} < 800 && Nbars","L");
 	leg->AddEntry(h_energyLR_selEnergyFraction[Vov][iMod][iBar],"E_{bar}/E_{array} > 0.9","L");
 	leg->Draw("same");
 	c->Print(Form("%s/c_energy_array%02d_bar%02d_Vov%.01f.png",plotDir.c_str(),iMod,iBar,Vov));

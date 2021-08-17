@@ -532,10 +532,10 @@ int main(int argc, char** argv)
 	    if (LRLabel == "L-R") energy511LR = f_langaus[index]->GetParameter(1);	*/		
 	 
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    histo->GetXaxis()->SetRangeUser(70 + Vov*10,700);
+	    histo->GetXaxis()->SetRangeUser(30 + Vov*10,650);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    histo->GetXaxis()->SetRangeUser(70 + Vov*10, 700);
+	    histo->GetXaxis()->SetRangeUser(30 + Vov*10, 650);
 	  }
 	  float max = histo->GetBinCenter(histo->GetMaximumBin());
 	  histo->GetXaxis()->SetRangeUser(0,1000);
@@ -547,7 +547,7 @@ int main(int argc, char** argv)
 	  histo->Fit(f_gaus[index], "QRS");
 	  f_gaus[index] -> SetLineColor(kBlack);
 	  f_gaus[index] -> SetLineWidth(2);
-	  f_gaus[index] -> Draw("same");
+	  //f_gaus[index] -> Draw("same");
 	  
 	  //ranges[LRLabel][index] -> push_back( 0.80*f_gaus[index]->GetParameter(1));
 	  //ranges[LRLabel][index] -> push_back( histo -> GetBinCenter(700) ); // to avoid sturation
@@ -560,7 +560,10 @@ int main(int argc, char** argv)
 	  f_landau[index] -> SetLineWidth(2);
 	  f_landau[index] -> Draw("same");
 
-	  ranges[LRLabel][index] -> push_back( 0.80*f_landau[index]->GetParameter(1));
+	  if (f_landau[index]->GetParameter(1)>0) 
+	    ranges[LRLabel][index] -> push_back( 0.80*f_landau[index]->GetParameter(1));
+	  else
+	    ranges[LRLabel][index] -> push_back( 20 ); // 
 	  ranges[LRLabel][index] -> push_back( 700. );
 
           // use energy511XX branch to save the peak value 

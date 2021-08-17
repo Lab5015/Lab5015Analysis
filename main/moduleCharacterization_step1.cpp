@@ -245,10 +245,10 @@ int main(int argc, char** argv)
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(70. + Vov*10,1000);
+	    index.second->GetXaxis()->SetRangeUser(30. + Vov*10,1000);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    index.second->GetXaxis()->SetRangeUser(70 + Vov*10,1000);
+	    index.second->GetXaxis()->SetRangeUser(30 + Vov*10,1000);
 	  }
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1000);
@@ -268,7 +268,10 @@ int main(int argc, char** argv)
           f_pre -> SetLineWidth(2);
           f_pre -> SetParameters(index.second->GetMaximumBin(), max, 20);                                                                                                      
           index.second->Fit(f_pre, "QRS");      
-	  rangesLR[index.first] -> push_back( 0.80*f_pre->GetParameter(1));
+	  if (f_pre->GetParameter(1)>0)
+	    rangesLR[index.first] -> push_back( 0.80*f_pre->GetParameter(1));
+	  else
+	    rangesLR[index.first] -> push_back( 20 );
 	  rangesLR[index.first] -> push_back( 700. );
 
 	  std::cout << "Vov = " << Vov << "  vth1 = " << vth1 << "   vth2 = " << vth2 
@@ -374,11 +377,13 @@ int main(int argc, char** argv)
     int maxBar=0;
     
     float energySumArray = 0;
+    int   nBarsArray = 0;
 
     for(int iBar = 0; iBar < 16; ++iBar) {
       if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin && totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<20 && totR[iBar]<20){
 	float energyMean=(energyL[iBar]+energyR[iBar])/2;
 	energySumArray+=energyMean;
+	nBarsArray+=1;
 	if(energyMean>maxEn){
 	  maxEn = energyMean;
 	  maxBar = iBar;
@@ -415,8 +420,9 @@ int main(int argc, char** argv)
 	  if( totL[iBar] >= 100. ||  totR[iBar] >= 100.) continue;
 	  if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
 	  
-	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && energySumArray>700.) continue; // to remove showering events
-
+	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && energySumArray > 700.) continue; // to remove showering events
+	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 800. || nBarsArray > 5)) continue; // to remove showering events
+ 
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
 	  h1_energyL[index] -> Fill( energyL[iBar] );

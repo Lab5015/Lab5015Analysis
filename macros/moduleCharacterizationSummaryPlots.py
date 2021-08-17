@@ -9,8 +9,9 @@ import time
 import argparse
 
 parser = argparse.ArgumentParser(description='Module characterization summary plots')
-parser.add_argument("-r",  "--runs",          required=True, type=str, help="comma-separated list of runs to be processed")
-parser.add_argument("-m",  "--resMode",       required=True, type=int, help="comma-separated list of runs to be processed")
+#parser.add_argument("-r",  "--runs",          required=True, type=str, help="comma-separated list of runs to be processed")
+parser.add_argument("-i",  "--inputLabels",   required=True, type=str, help="comma-separated list of input labels")
+parser.add_argument("-m",  "--resMode",       required=True, type=int, help="resolution mode: 2 - tDiff, 1 - tAve")
 parser.add_argument("-o",  "--outFolder",     required=True, type=str, help="out folder")
 args = parser.parse_args()
 
@@ -32,18 +33,18 @@ ROOT.gStyle.SetTitleOffset(1.2,'Y')
 ROOT.gROOT.SetBatch(True)
 
 # create run list
-#run_list = (sys.argv[1]).split(',')
-run_list = (args.runs.split(','))
-print run_list
-for run in run_list:
+label_list = (args.inputLabels.split(','))
+'''
+print label_list
+for run in label_list:
     if ('-' in run ): 
         all_runs = [i for i in range(int(run.split('-')[0]), int(run.split('-')[1]))]
-        run_list.remove(run)
-        run_list=run_list+all_runs
-run_list = [int(r) for r in run_list]
-run_list.sort()
-print run_list
-
+        label_list.remove(run)
+        label_list=label_list+all_runs
+label_list = [int(r) for r in label_list]
+label_list.sort()
+'''
+print label_list
 
 # resolution mode : 0 : /1;  1: /sqrt(2) if CTR, 2: /2 if TDiff
 kscale = 2.
@@ -86,9 +87,10 @@ thRef = 10
 bars = []
 thresholds = []
 Vovs = [] 
-for run in run_list:
+for label in label_list:
     #inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/moduleCharacterization_step2_run%04d.root'%run)
-    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/MTDTB_CERN_Jul21/moduleCharacterization_step2_run%04d_array1_coinc.root'%run)
+    #inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/MTDTB_CERN_Jul21/moduleCharacterization_step2_run%04d_array1_coinc.root'%run)
+    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization/MTDTB_CERN_Jul21/moduleCharacterization_step2_%s_array1_coinc.root'%label)
     listOfKeys = [key.GetName().replace('h1_deltaT_energyRatioCorr_','') for key in ROOT.gDirectory.GetListOfKeys() if key.GetName().startswith('h1_deltaT_energyRatioCorr')]
     for k in listOfKeys:
         barNum = int (k.split('_')[0][3:5])
@@ -149,8 +151,8 @@ for vov in Vovs:
 
 
 # --- Read the histograms from moduleCharacterization_step2 file
-for run in run_list:
-    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization//MTDTB_CERN_Jul21/moduleCharacterization_step2_run%04d_array1_coinc.root'%run)
+for label in label_list:
+    inputFile = ROOT.TFile.Open('/data/Lab5015Analysis/moduleCharacterization//MTDTB_CERN_Jul21/moduleCharacterization_step2_%s_array1_coinc.root'%label)
 
     for bar in bars:
         for l in ['L','R','L-R']:
@@ -265,7 +267,7 @@ for run in run_list:
             
 
 
-tResMax = 200
+tResMax = 250
 
 # -- Draw
 for bar in bars:
@@ -276,8 +278,9 @@ for bar in bars:
     hPad1.SetTitle(";threshold [DAC];ToT [ns]")
     hPad1.Draw()
     ctot1.SetGridy()
-    leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
+    leg = ROOT.TLegend(0.70, 0.70, 0.89, 0.89)
     leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
     for i, vov in enumerate(Vovs):
         for l in ['L','R']:
             g_tot_vs_th[bar, l, vov].SetMarkerStyle(20)
@@ -297,8 +300,9 @@ for bar in bars:
     hPad2.SetTitle(";V_{OV} [V];ToT [ns]")
     hPad2.Draw()
     ctot2.SetGridy()
-    leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
+    leg = ROOT.TLegend(0.70, 0.70, 0.89, 0.89)
     leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
     for i, thr in enumerate(thresholds):
         for l in ['L','R']:
             g_tot_vs_vov[bar,l, thr].SetMarkerStyle(20)
@@ -320,6 +324,7 @@ for bar in bars:
     cen1.SetGridy()
     leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
     leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
     for i, vov in enumerate(Vovs):
         for l in ['L','R']:
             g_energy_vs_th[bar, l, vov, refPeak].SetMarkerStyle(20)
@@ -341,6 +346,7 @@ for bar in bars:
     cen2.SetGridy()
     leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
     leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
     for i, thr in enumerate(thresholds):
         for l in ['L','R']:
             g_energy_vs_vov[bar,l, thr, refPeak].SetMarkerStyle(20)
@@ -369,6 +375,7 @@ for bar in bars:
         ctres1.SetGridy()
         leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
         leg.SetBorderSize(0)
+        leg.SetFillStyle(0)
         for i, vov in enumerate(Vovs):
             #print 'Vov, entries = ', vov, g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin].GetN()
             g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin].SetMarkerStyle(20)
@@ -389,6 +396,7 @@ for bar in bars:
         ctres2.SetGridy()
         leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
         leg.SetBorderSize(0)
+        leg.SetFillStyle(0)
         for i, thr in enumerate(thresholds):
             g_deltaT_energyRatioCorr_vs_vov[bar, thr, enBin].SetMarkerStyle(20)
             g_deltaT_energyRatioCorr_vs_vov[bar, thr, enBin].SetMarkerColor(i+1)
@@ -425,6 +433,7 @@ for i, vov in enumerate(Vovs):
     ctot3.SetGridy()
     leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
     leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
     for i, vov in enumerate(Vovs):
         for l in ['L','R']:
             g_tot_vs_bar[l, vov, thRef].SetMarkerStyle(20)
@@ -447,6 +456,7 @@ for i, vov in enumerate(Vovs):
     cen3.SetGridy()
     leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
     leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
     for i, vov in enumerate(Vovs):
         for l in ['L','R']:
             g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerStyle(20)
@@ -470,6 +480,7 @@ for enBin in enBins:
         ctres3.SetGridy()
         leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
         leg.SetBorderSize(0)
+        leg.SetFillStyle(0)
         g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerStyle(20)
         g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerColor(i+1)
         g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetLineColor(i+1)
@@ -490,6 +501,7 @@ for enBin in enBins:
         ctres3.SetGridy()
         leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
         leg.SetBorderSize(0)
+        leg.SetFillStyle(0)
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(20)
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerColor(i+1)
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetLineColor(i+1)
