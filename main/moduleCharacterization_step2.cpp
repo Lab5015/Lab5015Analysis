@@ -418,6 +418,7 @@ int main(int argc, char** argv)
         
         histo = (TH1F*)( inFile->Get(Form("h1_energy_%s",label.c_str())) );      
         if( !histo ) continue;
+	histo->Rebin(2);
         histo -> SetTitle(";energy [a.u.];entries");
         histo -> SetLineColor(kRed);
         histo -> SetLineWidth(2);
@@ -532,10 +533,17 @@ int main(int argc, char** argv)
 	    if (LRLabel == "L-R") energy511LR = f_langaus[index]->GetParameter(1);	*/		
 	 
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    histo->GetXaxis()->SetRangeUser(30 + Vov*10,650);
+	    histo->GetXaxis()->SetRangeUser(25., 650.);
+	    if (Vov>3.0) histo->GetXaxis()->SetRangeUser(50., 650.);
+	    //histo->GetXaxis()->SetRangeUser(50., 650.);
+	    //histo->GetXaxis()->SetRangeUser(30 + Vov*10,650);
+	    //histo->GetXaxis()->SetRangeUser(-130. + Vov*115., 650);
+	    //if (iBar==0 || iBar==14) histo->GetXaxis()->SetRangeUser(-160. + Vov*115., 650); 
+	    //if (iBar==0) histo->GetXaxis()->SetRangeUser(-160. + Vov*115., 650); 
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    histo->GetXaxis()->SetRangeUser(30 + Vov*10, 650);
+	    histo->GetXaxis()->SetRangeUser(20., 650.);
+	    //histo->GetXaxis()->SetRangeUser(TMath::Max(-130. + Vov*115,40.), 650);
 	  }
 	  float max = histo->GetBinCenter(histo->GetMaximumBin());
 	  histo->GetXaxis()->SetRangeUser(0,1000);
@@ -545,8 +553,9 @@ int main(int argc, char** argv)
 	  histo->Fit(f_gaus[index], "QRS");
 	  f_gaus[index]->SetRange(f_gaus[index]->GetParameter(1)-f_gaus[index]->GetParameter(2), f_gaus[index]->GetParameter(1)+f_gaus[index]->GetParameter(2));
 	  histo->Fit(f_gaus[index], "QRS");
-	  f_gaus[index] -> SetLineColor(kBlack);
+	  f_gaus[index] -> SetLineColor(kBlue);
 	  f_gaus[index] -> SetLineWidth(2);
+	  f_gaus[index] -> SetLineStyle(2);
 	  //f_gaus[index] -> Draw("same");
 	  
 	  //ranges[LRLabel][index] -> push_back( 0.80*f_gaus[index]->GetParameter(1));
@@ -554,13 +563,25 @@ int main(int argc, char** argv)
 	  
 	  f_landau[index] = new TF1(Form("f_landau_bar%02d%s_Vov%.1f_vth1_%02.0f", iBar,LRLabel.c_str(),Vov,vth1),"[0]*TMath::Landau(x,[1],[2])", 0,1000.);
 	  f_landau[index] -> SetRange(max * 0.8, max * 1.5);
-	  f_landau[index] -> SetParameters(100.,f_gaus[index]->GetParameter(1),f_gaus[index]->GetParameter(2));
+	  f_landau[index] -> SetParameters(histo->Integral(histo->GetMaximumBin(), histo->GetNbinsX())/10, max, Vov*5.);
 	  histo -> Fit(f_landau[index],"QRS");
+	  //if (f_landau[index]->GetChisquare()/f_landau[index]->GetNDF()<2.){
+	  //  f_landau[index] -> SetRange(f_landau[index]->GetParameter(1)* 0.8, f_landau[index]->GetParameter(1)* 1.5);
+	  //  histo -> Fit(f_landau[index],"QRS");
+	  //}
+	  //if (f_landau[index]->GetChisquare()/f_landau[index]->GetNDF()>2.){
+	  //  histo->GetXaxis()->SetRangeUser(0,1000);  
+	  //  max = histo->GetBinCenter(histo->GetMaximumBin());
+	  //  f_landau[index] -> SetRange(max * 0.8, max * 1.5);
+	  //  //f_landau[index] -> SetParameters(100., max, Vov*5.);   
+	  //  f_landau[index] -> SetParameters(histo->Integral(histo->GetMaximumBin(), histo->GetNbinsX()), max, Vov*5.);
+	  //  histo -> Fit(f_landau[index],"QRS");  
+	  // }
 	  f_landau[index] -> SetLineColor(kBlack);
 	  f_landau[index] -> SetLineWidth(2);
 	  f_landau[index] -> Draw("same");
-
-	  if (f_landau[index]->GetParameter(1)>0) 
+	  
+	  if (f_landau[index]->GetParameter(1)> 10) 
 	    ranges[LRLabel][index] -> push_back( 0.80*f_landau[index]->GetParameter(1));
 	  else
 	    ranges[LRLabel][index] -> push_back( 20 ); // 
@@ -927,6 +948,12 @@ int main(int argc, char** argv)
 	      h1_deltaT[index2] = new TH1F(Form("h1_deltaT_%s",labelLR_energyBin.c_str()),"",1000,-10000,10000.);
 	      p1_deltaT_vs_energyRatio[index2] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",labelLR_energyBin.c_str()),"",50,energyRatioMean-3.*energyRatioSigma,energyRatioMean+3.*energyRatioSigma);
 	      p1_deltaT_vs_totRatio[index2] = new TProfile(Form("p1_deltaT_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,totRatioMean-3.*totRatioSigma, totRatioMean+3.*totRatioSigma);
+
+	      if (step1FileName.find("muon") != std::string::npos) {
+		//h1_deltaT[index2]->Rebin(2);
+		//p1_deltaT_vs_energyRatio[index2]->RebinX(2);
+		//p1_deltaT_vs_totRatio[index2]->RebinX(2);
+	      }
 	      h2_deltaT_vs_totRatio[index2] = new TH2F(Form("h2_deltaT_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,totRatioMean-3.*totRatioSigma, totRatioMean+3.*totRatioSigma, 1000, -10000., 10000.);
 	    }
 	  
@@ -1000,7 +1027,7 @@ int main(int argc, char** argv)
 	    float fitXMin = fitFunc_energyRatio[index2]->GetParameter(1) - 2.*fitFunc_energyRatio[index2]->GetParameter(2);
 	    float fitXMax = fitFunc_energyRatio[index2]->GetParameter(1) + 2.*fitFunc_energyRatio[index2]->GetParameter(2);
 	    
-	    fitFunc_energyRatioCorr[index2] = new TF1(Form("fitFunc_energyRatioCorr_%s",labelLR_energyBin.c_str()),"pol3",fitXMin,fitXMax);
+	    fitFunc_energyRatioCorr[index2] = new TF1(Form("fitFunc_energyRatioCorr_%s",labelLR_energyBin.c_str()),"pol4",fitXMin,fitXMax);
 	    prof -> Fit(fitFunc_energyRatioCorr[index2],"QRS+");
 	    fitFunc_energyRatioCorr[index2] -> SetLineColor(kRed);
 	    fitFunc_energyRatioCorr[index2] -> SetLineWidth(2);
@@ -1092,6 +1119,11 @@ int main(int argc, char** argv)
 	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.1f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	      h1_deltaT_energyRatioCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioCorr_%s",labelLR_energyBin.c_str()),"",1000,-10000.,10000.);
 	      h1_deltaT_totRatioCorr[index2]    = new TH1F(Form("h1_deltaT_totRatioCorr_%s",labelLR_energyBin.c_str()),"",1000,-10000.,10000.);
+	      if (step1FileName.find("muon") != std::string::npos)
+		{
+		  //h1_deltaT_energyRatioCorr[index2]->Rebin(2);
+		  //h1_deltaT_totRatioCorr[index2]->Rebin(2);
+		}
               p1_deltaT_totRatioCorr_vs_totRatio[index2] = new TProfile(Form("p1_deltaT_totRatioCorr_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,fitFunc_totRatio[index2]->GetParameter(1)-3.*fitFunc_totRatio[index2]->GetParameter(2), fitFunc_totRatio[index2]->GetParameter(1)+3.*fitFunc_totRatio[index2]->GetParameter(2));
               h2_deltaT_totRatioCorr_vs_totRatio[index2] = new TH2F(Form("h2_deltaT_totRatioCorr_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,fitFunc_totRatio[index2]->GetParameter(1)-3.*fitFunc_totRatio[index2]->GetParameter(2), fitFunc_totRatio[index2]->GetParameter(1)+3.*fitFunc_totRatio[index2]->GetParameter(2), 1000, -10000., 10000. );
 	      p1_deltaT_energyRatioCorr_vs_t1fineMean[index2] = new TProfile(Form("p1_deltaT_energyRatioCorr_vs_t1fineMean_%s",labelLR_energyBin.c_str()),"",100,0,1000);

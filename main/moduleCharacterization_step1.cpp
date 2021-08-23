@@ -197,8 +197,29 @@ int main(int argc, char** argv)
         float vth = 0;
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
-        
-
+       
+	// --- calculate energy sum for module - useful to remove showering events
+	if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
+	    float energySumArray = 0;
+	    int   nBarsArray = 0;
+	    for(int iBar = 0; iBar < 16; ++iBar) {                             
+	      int chL_iext = channelMapping[iBar*2+0];// array0
+	      int chR_iext = channelMapping[iBar*2+1];// array0
+	      float qfineL_iext  = (*qfine)[channelIdx[chL_iext]];   
+	      float qfineR_iext  = (*qfine)[channelIdx[chR_iext]]; 
+	      float energyL_iext = (*energy)[channelIdx[chL_iext]];              
+	      float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
+	      float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
+	      float totR_iext    = 0.001*(*tot)[channelIdx[chR_iext]]; 
+	      if (qfineL_iext>qfineMin && qfineR_iext>qfineMin && totL_iext > 0 && totL_iext < 20 && totR_iext > 0 && totR_iext < 20   ){
+		float energyMean=(energyL_iext+energyR_iext)/2;
+		energySumArray+=energyMean;
+		nBarsArray+=1;
+	      }
+	    }
+	    if (energySumArray > 800. ) continue;
+	  }
+ 
 	if (channelIdx[chL_ext] <0 || channelIdx[chR_ext] <0) continue;
 	
 	qfineL_ext = (*qfine)[channelIdx[chL_ext]];
@@ -245,30 +266,34 @@ int main(int argc, char** argv)
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(30. + Vov*10,1000);
+	    index.second->GetXaxis()->SetRangeUser(Vov*20.,700);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    index.second->GetXaxis()->SetRangeUser(30 + Vov*10,1000);
+	    TF1 *ftemp = new TF1("ftemp","gaus",0,1000);
+	    index.second->Fit(ftemp,"QRS");
+	    //index.second->GetXaxis()->SetRangeUser(Vov*20.,700);
+	    index.second->GetXaxis()->SetRangeUser(ftemp->GetParameter(1),700);
+	    
+	    // July21 TB: runs 4184 and 4212 are at fixed OV and thr!
+	    if ( (opts.GetOpt<std::string>("Input.runs")).find("4184") != std::string::npos ||
+		 (opts.GetOpt<std::string>("Input.runs")).find("4212") != std::string::npos )
+	      { index.second->GetXaxis()->SetRangeUser(200,700);}
 	  }
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1000);
-	 
-	  /*TF1* f_gaus_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "gaus", max-50, max +50);
-	  f_gaus_pre -> SetLineColor(kBlack); 
-	  f_gaus_pre -> SetLineWidth(2); 
-	  f_gaus_pre->SetParameters(index.second->GetMaximumBin(), max, 70);
-	  index.second->Fit(f_gaus_pre, "QRS");
-	  f_gaus_pre->SetRange(f_gaus_pre->GetParameter(1)-f_gaus_pre->GetParameter(2), f_gaus_pre->GetParameter(1)+f_gaus_pre->GetParameter(2));
-	  index.second->Fit(f_gaus_pre, "QRS");
-	  */
+	  
+	  std::cout << "MAX = " << max <<std::endl;
 
-	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
+	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02d",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
 	  f_pre -> SetRange(max*0.8, max*1.5);
 	  f_pre -> SetLineColor(kBlack);
           f_pre -> SetLineWidth(2);
-          f_pre -> SetParameters(index.second->GetMaximumBin(), max, 20);                                                                                                      
-          index.second->Fit(f_pre, "QRS");      
-	  if (f_pre->GetParameter(1)>0)
+          f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 5*Vov);
+	  if ( (opts.GetOpt<std::string>("Input.runs")).find("4184") != std::string::npos ||                                                                                	       (opts.GetOpt<std::string>("Input.runs")).find("4212") != std::string::npos ) 
+	    f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 25);
+	  index.second->Fit(f_pre, "QRS");      
+	  
+	  if (f_pre->GetParameter(1)>10)
 	    rangesLR[index.first] -> push_back( 0.80*f_pre->GetParameter(1));
 	  else
 	    rangesLR[index.first] -> push_back( 20 );
