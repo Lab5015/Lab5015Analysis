@@ -1,3 +1,4 @@
+#include "interface/TOFHIRThresholdZero.h"
 #include "interface/AnalysisUtils.h"
 #include "interface/FitUtils.h"
 #include "interface/SetTDRStyle.h"
@@ -60,6 +61,9 @@ int main(int argc, char** argv)
   int usePedestals = opts.GetOpt<int>("Input.usePedestals");
   std::string source = opts.GetOpt<std::string>("Input.sourceName");
 
+  std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
+  TOFHIRThresholdZero thrZero(discCalibrationFile,1);
+
   TChain* tree = new TChain("data","data");
 
   
@@ -87,7 +91,8 @@ int main(int argc, char** argv)
       tree -> Add(fileName.c_str());
       
       struct stat t_stat;
-      stat(Form("/data/TOFHIR2/raw/run%04d.rawf",run), &t_stat);
+      //stat(Form("/data/TOFHIR2/raw/run%04d.rawf",run), &t_stat);
+      stat(Form("/data/tofhir2/h8/raw/%04d/",run), &t_stat);
       struct tm * timeinfo = localtime(&t_stat.st_mtime);
       std::cout << "Time and date of raw file of run" << run << ": " << asctime(timeinfo);
     }
@@ -190,17 +195,17 @@ int main(int argc, char** argv)
 	  std::cout << "\n>>> external bar loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << std::endl;
 	  TrackProcess(cpu, mem, vsz, rss);
 	}
-        
+      
 	float Vov = step1;
         float vth1 = float(int(step2/10000)-1);
         float vth2 = int((step2-10000*(vth1+1))/100.)-1;
         float vth = 0;
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
-       
+       	
 	// --- calculate energy sum for module - useful to remove showering events
 	if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
-	    float energySumArray = 0;
+	    float energySumArray = 0.;
 	    int   nBarsArray = 0;
 	    for(int iBar = 0; iBar < 16; ++iBar) {                             
 	      int chL_iext = channelMapping[iBar*2+0];// array0
@@ -213,12 +218,15 @@ int main(int argc, char** argv)
 	      float totR_iext    = 0.001*(*tot)[channelIdx[chR_iext]]; 
 	      if (qfineL_iext>qfineMin && qfineR_iext>qfineMin && totL_iext > 0 && totL_iext < 20 && totR_iext > 0 && totR_iext < 20   ){
 		float energyMean=(energyL_iext+energyR_iext)/2;
-		energySumArray+=energyMean;
-		nBarsArray+=1;
+		if (energyMean>0){
+		  energySumArray+=energyMean;
+		  nBarsArray+=1;
+		}
 	      }
 	    }
 	    if (energySumArray > 800. ) continue;
-	  }
+	    if (nBarsArray > 5 ) continue;
+	}
  
 	if (channelIdx[chL_ext] <0 || channelIdx[chR_ext] <0) continue;
 	
@@ -234,9 +242,9 @@ int main(int argc, char** argv)
 	
 	//--- create histograms, if needed
 	if( h1_energyLR_ext[index] == NULL ){
-	  c[index] = new TCanvas(Form("c1_Vov%.1f_th%02.0f",Vov,vth), Form("c1_Vov%.1f_th%02.0f",Vov,vth));
+	  c[index] = new TCanvas(Form("c1_Vov%.02f_th%02.0f",Vov,vth), Form("c1_Vov%.02f_th%02.0f",Vov,vth));
 	  c[index] -> cd();
-	  h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.1f_th%02.0f",Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.02f_th%02.0f",Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
 	}
 
 	acceptEvent[entry] = true;
@@ -282,14 +290,12 @@ int main(int argc, char** argv)
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1000);
 	  
-	  std::cout << "MAX = " << max <<std::endl;
-
-	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02d",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
+	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.02f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
 	  f_pre -> SetRange(max*0.8, max*1.5);
 	  f_pre -> SetLineColor(kBlack);
           f_pre -> SetLineWidth(2);
           f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 5*Vov);
-	  if ( (opts.GetOpt<std::string>("Input.runs")).find("4184") != std::string::npos ||                                                                                	       (opts.GetOpt<std::string>("Input.runs")).find("4212") != std::string::npos ) 
+	  if ( (opts.GetOpt<std::string>("Input.runs")).find("4184") != std::string::npos ||  (opts.GetOpt<std::string>("Input.runs")).find("4212") != std::string::npos ) 
 	    f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 25);
 	  index.second->Fit(f_pre, "QRS");      
 	  
@@ -337,6 +343,7 @@ int main(int argc, char** argv)
     float vth1 = float(int(step2/10000)-1);
     float vth2 = int((step2-10000*(vth1+1))/100.)-1;
     float vth = 0;
+    std::string vthMode = opts.GetOpt<std::string>("Input.vth");
     if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
     if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
     // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
@@ -407,8 +414,10 @@ int main(int argc, char** argv)
     for(int iBar = 0; iBar < 16; ++iBar) {
       if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin && totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<20 && totR[iBar]<20){
 	float energyMean=(energyL[iBar]+energyR[iBar])/2;
-	energySumArray+=energyMean;
-	nBarsArray+=1;
+	if (energyMean>0){
+	  energySumArray+=energyMean;
+	  nBarsArray+=1;
+	}
 	if(energyMean>maxEn){
 	  maxEn = energyMean;
 	  maxBar = iBar;
@@ -422,19 +431,19 @@ int main(int argc, char** argv)
       if( h1_totL[index] == NULL )
 	{
 	  
-	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
-	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
+	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.02f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
+	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.02f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  
-	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",100,0.,20.);
-	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",100,0.,20.);
+	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.02f_th%02.0f",iBar,Vov,vth),"",100,0.,20.);
+	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.02f_th%02.0f",iBar,Vov,vth),"",100,0.,20.);
 	  
-	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
-	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.02f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.02f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
 	  
-	  outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth));
+	  outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.02f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.02f_th%02.0f",iBar,Vov,vth));
 	  outTrees[index] -> Branch("event",&anEvent);
 	  
-	  h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.02f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
 	}
       
       //--- fill histograms for each bar for Co60 & TB analysis
@@ -444,10 +453,11 @@ int main(int argc, char** argv)
 	  if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
 	  if( totL[iBar] >= 100. ||  totR[iBar] >= 100.) continue;
 	  if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
-	  
-	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && energySumArray > 700.) continue; // to remove showering events
-	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 800. || nBarsArray > 5)) continue; // to remove showering events
- 
+	  if( ( thrZero.GetThresholdZero(chL[iBar],vthMode) + vth) > 63. ) continue;
+          if( ( thrZero.GetThresholdZero(chR[iBar],vthMode) + vth) > 63. ) continue;
+
+	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 800 || nBarsArray > 5)) continue; // to remove showering events
+	   
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
 	  h1_energyL[index] -> Fill( energyL[iBar] );
@@ -481,7 +491,9 @@ int main(int argc, char** argv)
 	if( totL[maxBar] <= 0. || totR[maxBar] <= 0. ) continue;
 	if( totL[maxBar] >= 100. ||  totR[maxBar] >= 100.) continue;
 	if( qfineL[maxBar] < qfineMin || qfineR[maxBar] < qfineMin ) continue;
-	
+	if( ( thrZero.GetThresholdZero(chL[maxBar],vthMode) + vth) > 63. ) continue;
+        if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;
+
 	//--- fill histograms
 	h1_qfineL[index] -> Fill( qfineL[maxBar] );
 	h1_totL[index] -> Fill( totL[maxBar] );
