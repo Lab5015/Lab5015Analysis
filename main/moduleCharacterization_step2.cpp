@@ -581,10 +581,13 @@ int main(int argc, char** argv)
 	  f_landau[index] -> SetLineWidth(2);
 	  f_landau[index] -> Draw("same");
 	  
-	  if (f_landau[index]->GetParameter(1)> 10) 
-	    ranges[LRLabel][index] -> push_back( 0.80*f_landau[index]->GetParameter(1));
-	  else
-	    ranges[LRLabel][index] -> push_back( 20 ); // 
+	  if (step1FileName.find("2E14")!= std::string::npos && iBar == 14) ranges[LRLabel][index] -> push_back(5);
+	  else{
+	    if (f_landau[index]->GetParameter(1)> 10) 
+	      ranges[LRLabel][index] -> push_back( 0.80*f_landau[index]->GetParameter(1));
+	    else
+	      ranges[LRLabel][index] -> push_back( 20 ); // 
+	  }
 	  ranges[LRLabel][index] -> push_back( 700. );
 
           // use energy511XX branch to save the peak value 

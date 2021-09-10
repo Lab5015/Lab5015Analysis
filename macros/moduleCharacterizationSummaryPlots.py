@@ -35,8 +35,8 @@ ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 source = 'TB'
 tResMax = 150
-#tResMax = 250
-#tResMax = 500
+tResMax = 250
+tResMax = 500
 
 # create files list
 label_list = (args.inputLabels.split(','))
@@ -288,11 +288,12 @@ for label in label_list:
                         #    h1_deltaT.Fit('fitFunc','QRLS+')                        
 
                     if (fitFunc==None): continue
-                    if (fitFunc.GetNDF()==0): continue
+                    #if (fitFunc.GetNDF()==0): continue
                     tRes[enBin] = [ fitFunc.GetParameter(2),fitFunc.GetParError(2)]
                     #print bar, vov, thr, tRes[enBin]
                     #print 'best res, par2 , err2 : ', (bestRes[bar, vov, enBin], fitFunc.GetParameter(2), fitFunc.GetParError(2))
                     if (fitFunc.GetParameter(2) > 40 and fitFunc.GetParameter(2) < bestRes[bar, vov, enBin][0]):
+                        if ('2E14' in label and thr >=20): continue
                         bestRes[bar, vov, enBin] = [fitFunc.GetParameter(2),fitFunc.GetParError(2)]
                         bestTh[bar, vov, enBin]  = thr
                         
