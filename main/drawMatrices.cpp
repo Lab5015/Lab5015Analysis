@@ -62,14 +62,14 @@ int main(int argc, char** argv)
   time_t timesec;
   for(auto fileBaseName : fileBaseNames)
   {
-    std::string fileName = Form("%s/%s_ped_t.root",inputDir.c_str(),fileBaseName.c_str());
-    //std::string fileName = Form("%s/%s_t.root",inputDir.c_str(),fileBaseName.c_str());
+    //std::string fileName = Form("%s/%s_ped_e.root",inputDir.c_str(),fileBaseName.c_str());
+    std::string fileName = Form("%s/%s_e.root",inputDir.c_str(),fileBaseName.c_str());
     std::cout << ">>> Adding flle " << fileName << std::endl;
     tree -> Add(fileName.c_str());
     
     struct stat t_stat;
     //stat(Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_FNAL_Feb2020/TOFHIR/RawData/%s.rawf",fileBaseName.c_str()), &t_stat);
-    stat(Form("/data/TOFHIR2/raw/%s.rawf",fileBaseName.c_str()), &t_stat);
+    stat(Form("/storage/TOFHIR2/raw/%s.rawf",fileBaseName.c_str()), &t_stat);
     struct tm * timeinfo = localtime(&t_stat.st_mtime);
     timesec = mktime(timeinfo);
     std::cout << "Time and date of raw file of run " << fileBaseName << ": " << asctime(timeinfo);
@@ -77,7 +77,6 @@ int main(int argc, char** argv)
   
   std::string plotDir = opts.GetOpt<std::string>("Output.plotDir");
   system(Form("mkdir -p %s",plotDir.c_str()));
-  system(Form("cp %s/../index.php %s",plotDir.c_str(),plotDir.c_str()));  
   
   
   
@@ -122,15 +121,17 @@ int main(int argc, char** argv)
   
   //--- define branches
   float step1;
-  float energy[256];
-  float qfine[256];
-  float tot[256];
-  
+  int channelIdx[64];
+  std::vector<unsigned short> *qfine = 0;
+  std::vector<float> *tot = 0;
+  std::vector<float> *energy = 0;
+
   tree -> SetBranchStatus("*",0);
-  tree -> SetBranchStatus("step1",  1); tree -> SetBranchAddress("step1",  &step1);
-  tree -> SetBranchStatus("energy", 1); tree -> SetBranchAddress("energy", energy);
-  tree -> SetBranchStatus("qfine",  1); tree -> SetBranchAddress("qfine",   qfine);
-  tree -> SetBranchStatus("tot",    1); tree -> SetBranchAddress("tot",       tot);
+  tree -> SetBranchStatus("step1",     1); tree -> SetBranchAddress("step1",    &step1);
+  tree -> SetBranchStatus("channelIdx",1); tree -> SetBranchAddress("channelIdx",channelIdx);
+  tree -> SetBranchStatus("qfine",  1); tree -> SetBranchAddress("qfine",   &qfine);  
+  tree -> SetBranchStatus("tot",    1); tree -> SetBranchAddress("tot",       &tot);
+  tree -> SetBranchStatus("energy", 1); tree -> SetBranchAddress("energy", &energy);
   
   
   
@@ -163,8 +164,10 @@ int main(int argc, char** argv)
     int barIDMax = -1;
     for(int barIt = 0; barIt < 16; ++barIt)
     {
-      float energyL = qfine[channelMapping[barIt*2+0]] > qfineMin ? energy[channelMapping[barIt*2+0]] : 0.;
-      float energyR = qfine[channelMapping[barIt*2+1]] > qfineMin ? energy[channelMapping[barIt*2+1]] : 0.;
+      if (channelIdx[channelMapping[barIt*2+0]] < 0 || channelIdx[channelMapping[barIt*2+1]] < 0 ) continue;
+
+      float energyL = (*qfine)[channelIdx[channelMapping[barIt*2+0]]] > qfineMin ? (*energy)[channelIdx[channelMapping[barIt*2+0]]] : 0.;
+      float energyR = (*qfine)[channelIdx[channelMapping[barIt*2+1]]] > qfineMin ? (*energy)[channelIdx[channelMapping[barIt*2+1]]] : 0.;
       float energyLR = 0.5*(energyL+energyR);
       
       if( energyLR > energyLRMax )
@@ -174,8 +177,9 @@ int main(int argc, char** argv)
       }
     }
     
-    
-    if( qfine[channelMapping[barIDMax*2+0]] > qfineMin || qfine[channelMapping[barIDMax*2+1]] > qfineMin )
+    if (channelIdx[channelMapping[barIDMax*2+0]] < 0 || channelIdx[channelMapping[barIDMax*2+1]] < 0 ) continue;
+
+    if( (*qfine)[channelIdx[channelMapping[barIDMax*2+0]]] > qfineMin || (*qfine)[channelIdx[channelMapping[barIDMax*2+1]]] > qfineMin )
     {
       if( h1_energy_L[step1][barIDMax] == NULL )
       {
@@ -191,9 +195,9 @@ int main(int argc, char** argv)
         // h2_energy_LRCorr[barID] = new TH2F(label_LR.c_str(),"",150,0.,150.,150,0.,150.);
       }
       
-      if( qfine[channelMapping[barIDMax*2+0]] > qfineMin ) h1_energy_L[step1][barIDMax] -> Fill( energy[channelMapping[barIDMax*2+0]] );
-      if( qfine[channelMapping[barIDMax*2+1]] > qfineMin ) h1_energy_R[step1][barIDMax] -> Fill( energy[channelMapping[barIDMax*2+1]] );
-      if( qfine[channelMapping[barIDMax*2+1]] > qfineMin ) h1_energy_LR[step1][barIDMax] -> Fill( 0.5 * (energy[channelMapping[barIDMax*2+0]] + energy[channelMapping[barIDMax*2+1]] ) );
+      if( (*qfine)[channelIdx[channelMapping[barIDMax*2+0]]] > qfineMin ) h1_energy_L[step1][barIDMax] -> Fill( (*energy)[channelIdx[channelMapping[barIDMax*2+0]]] );
+      if( (*qfine)[channelIdx[channelMapping[barIDMax*2+1]]] > qfineMin ) h1_energy_R[step1][barIDMax] -> Fill( (*energy)[channelIdx[channelMapping[barIDMax*2+1]]] );
+      if( (*qfine)[channelIdx[channelMapping[barIDMax*2+1]]] > qfineMin ) h1_energy_LR[step1][barIDMax] -> Fill( 0.5 * ((*energy)[channelIdx[channelMapping[barIDMax*2+0]]] + (*energy)[channelIdx[channelMapping[barIDMax*2+1]]] ) );
     }
     
     
@@ -306,9 +310,9 @@ int main(int argc, char** argv)
           TSpectrum* spectrum = new TSpectrum(nPeaks);
           int bin = histo_L->FindLastBinAbove(0);
           float emin = histo_L->GetBinCenter(bin)*0.25;
-          histo_L-> GetXaxis()->SetRangeUser(emin,200);
+          histo_L-> GetXaxis()->SetRangeUser(emin,energyMax);
           int nFound = spectrum -> Search(histo_L, 5.0, "nodraw", 0.01);
-          histo_L-> GetXaxis()->SetRangeUser(0,200);
+          histo_L-> GetXaxis()->SetRangeUser(0,energyMax);
           double* peaks = spectrum -> GetPositionX();
           
           // -- fit 511 keV peak only
@@ -316,7 +320,7 @@ int main(int argc, char** argv)
           float xMax = 0.;
           for(int jj = 0; jj < nFound; ++jj)
             if( peaks[jj] > xMax) xMax = peaks[jj];
-          
+	  
           TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.12*xMax,xMax+0.12*xMax);
           histo_L -> Fit(f_gaus,"QNRS+");
           f_gaus -> SetLineColor(kRed);
@@ -342,9 +346,9 @@ int main(int argc, char** argv)
           TSpectrum* spectrum = new TSpectrum(nPeaks);
           int bin = histo_R->FindLastBinAbove(0);
           float emin = histo_R->GetBinCenter(bin)*0.25;
-          histo_R-> GetXaxis()->SetRangeUser(emin,200);
+          histo_R-> GetXaxis()->SetRangeUser(emin,energyMax);
           int nFound = spectrum -> Search(histo_R, 5., "nodraw", 0.01);
-          histo_R-> GetXaxis()->SetRangeUser(0,200);
+          histo_R-> GetXaxis()->SetRangeUser(0,energyMax);
           double* peaks = spectrum -> GetPositionX();
           
 
@@ -377,9 +381,13 @@ int main(int argc, char** argv)
           
           int nPeaks = 5;
           TSpectrum* spectrum = new TSpectrum(nPeaks);
+          int bin = histo_LR->FindLastBinAbove(0);
+          float emin = histo_LR->GetBinCenter(bin)*0.25;
+          histo_LR-> GetXaxis()->SetRangeUser(emin,energyMax);
           int nFound = spectrum -> Search(histo_LR, 5., "nodraw", 0.01);
           double* peaks = spectrum -> GetPositionX();
-          
+	  histo_LR-> GetXaxis()->SetRangeUser(energyMin,energyMax);
+		    
           // -- fit 511 keV peak only
           // float xMax = FindXMaximum(histo_R,5.,20.);
           float xMax = 0.;

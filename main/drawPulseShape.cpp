@@ -46,74 +46,30 @@ int main(int argc, char** argv)
   int debugMode = 0;
   if( argc > 2 ) debugMode = atoi(argv[2]);
   
-  //  int run = opts.GetOpt<int>("Input.run");
-  std::string runs = opts.GetOpt<std::string>("Input.runs");
-  std::string tofhirVersion = opts.GetOpt<std::string>("Input.tofhirVersion");
-  std::cout << tofhirVersion <<std::endl;
+  int run = opts.GetOpt<int>("Input.run");
   std::string ithMode = opts.GetOpt<std::string>("Input.ithMode");
   float frequency = opts.GetOpt<float>("Input.frequency");
-
+  float energyMin = opts.GetOpt<float>("Cuts.energyMin");
+  float energyMax = opts.GetOpt<float>("Cuts.energyMax");
+  
   std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
   TOFHIRThresholdZero thrZero(discCalibrationFile,0);
-
-  int ch1   = opts.GetOpt<float>("Input.ch1");
-  int ch2   = opts.GetOpt<float>("Input.ch2");
-  int chRef = opts.GetOpt<float>("Input.chRef");
   
+  int ch1 = 5;
+  int ch2 = 24;
   std::vector<int> channels;
   channels.push_back(ch1);
   channels.push_back(ch2);
-
-
-  float energyMin = opts.GetOpt<float>("Cuts.energyMin");
-  float energyMax = opts.GetOpt<float>("Cuts.energyMax");
-  float energyMinRef = opts.GetOpt<float>("Cuts.energyMinRef");
-  float energyMaxRef = opts.GetOpt<float>("Cuts.energyMaxRef");
-
-  std::string coincidence = opts.GetOpt<std::string>("Cuts.coincidence");
-  int ch1Ext   = opts.GetOpt<float>("Cuts.ch1Ext");
-  int ch2Ext   = opts.GetOpt<float>("Cuts.ch2Ext");           
-  float energyMinExt = opts.GetOpt<float>("Cuts.energyMinExt");
-  float energyMaxExt = opts.GetOpt<float>("Cuts.energyMaxExt");
+  
     
-
   //------------------------------
   // open file and define branches
   //std::string inFileName(Form("/data/TOFHIR2/reco/run%04d_ped_e.root",run));
-  //std::string inFileName(Form("/data/TOFHIR2/reco/run%04d_e.root",run));
-  //std::cout << "Opening file " << inFileName << std::endl;
-  //TFile* inFile = TFile::Open(inFileName.c_str(),"READ");
-  //TTree* data = (TTree*)( inFile->Get("data") );
-
-  TChain* data = new TChain("data","data");
-  //std::string inFileName = Form("/data/tofhir2/h8/reco/%04d/*ped_e.root",run);
-  //data -> Add(inFileName.c_str());
-
-  std::stringstream ss(runs); 
-  std::string token;
-  while( std::getline(ss,token,',') )
-    {
-      std::stringstream ss2(token);
-      std::string token2;
-      int runMin = -1;
-      int runMax = -1;
-      while( std::getline(ss2,token2,'-') )
-	{
-	  if( runMin != -1 && runMax == -1 ) runMax = atoi(token2.c_str());
-	  if( runMin == -1 ) runMin = atoi(token2.c_str());
-	}
-      if( runMax == -1 ) runMax = runMin;
-    
-      for(int run = runMin; run <= runMax; ++run) {
-	std::string inFileName = Form("/data/tofhir2/h8/reco/%04d/*ped_e.root",run); 
-	std::cout << ">>> Adding file " << inFileName << std::endl;
-	data -> Add(inFileName.c_str());
-      }
-    }
+  std::string inFileName(Form("/data/TOFHIR2/reco/run%04d_e.root",run));
+  std::cout << "Opening file " << inFileName << std::endl;
+  TFile* inFile = TFile::Open(inFileName.c_str(),"READ");
+  TTree* data = (TTree*)( inFile->Get("data") );
   
-
-
-
   float step1, step2;
   int channelIdx[128];
   std::vector<float>* tot = 0;
@@ -130,9 +86,7 @@ int main(int argc, char** argv)
   
   //---------------
   // define outfile
-  //TFile* outFile = new TFile(Form("./plots/pulseShape_run%04d.root",run),"RECREATE");
-  TFile* outFile = new TFile(Form("./plots/pulseShape_run%s.root",runs.c_str()),"RECREATE");
-  //  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
+  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
   
   
   //------------------
@@ -175,20 +129,7 @@ int main(int argc, char** argv)
     int ith = -1;
     if( ithMode.find("ith1") != std::string::npos ) ith = ith1;
     if( ithMode.find("ith2") != std::string::npos ) ith = ith2;
-    if( ithMode.find("vth1") != std::string::npos ) ith = ith1;
-    if( ithMode.find("vth2") != std::string::npos ) ith = ith2;
     
-    // -- coincidence with external bar
-    if (coincidence.find("yes") != std::string::npos){
-      if( channelIdx[ch1Ext] < 0 ) continue; 
-      if( channelIdx[ch2Ext] < 0 ) continue; 
-      if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 100. ) continue;
-      if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 100. ) continue;
-      float energyExt = 0.5 * (  (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
-      if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
-    }
-
-
     for(int ch :  channels)
     {
       if( channelIdx[ch] < 0 ) continue;
@@ -196,52 +137,32 @@ int main(int argc, char** argv)
 
       if( ch == ch1 && !h1_time1_wide_ch1[Vov][ith] )
 	{
-	  h1_time1_wide_ch1[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch1_Vov%.1f_ith%02d",Vov,ith),"",10000,-10000.,10000.);
+	  h1_time1_wide_ch1[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,0.,10000.);
 	}
       if( ch == ch2 && !h1_time1_wide_ch2[Vov][ith] )
       {
-        h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.1f_ith%02d",Vov,ith),"",10000,-10000.,10000.);
+        h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,0.,10000.);
       }
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
       
       if( (*tot)[channelIdx[ch]]/1000. < 0. || (*tot)[channelIdx[ch]]/1000. > 100. ) continue;
-
-
-      // --  laser
-      if (frequency > -1){
       
-	long int scale = 1000000000/(frequency);
-	
-	if( ch == ch1 )
-	  {
-	    h1_time1_wide_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. );
-	  }
-	if( ch == ch2 )
-	  {
-	    h1_time1_wide_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. );
-	  }
+      long int scale = 1000000000/(frequency);
+      
+      if( ch == ch1 )
+      {
+        h1_time1_wide_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. );
       }
-
-
-      // -- ref channel
-      else {
-
-	if( channelIdx[chRef] < 0 ) continue; 
-	if( (*energy)[channelIdx[chRef]] < energyMinRef || (*energy)[channelIdx[chRef]] > energyMaxRef ) continue;     
-
-	if( ch == ch1 ) {
-	  h1_time1_wide_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[chRef]])/1000.  );
-	}
-        if( ch == ch2 ) {
-	  h1_time1_wide_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]-(*time)[channelIdx[chRef]])/1000. );
-	}
+      if( ch == ch2 )
+      {
+        h1_time1_wide_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. );
       }
-
     }
   }
+
   
-    
+  
   
   std::cout << std::endl;
   
@@ -264,7 +185,6 @@ int main(int argc, char** argv)
 	      std::cout << "=========>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 
 	      timeOffset[Vov][ch1] = histo->GetBinCenter(histo->GetMaximumBin());
-	      std::cout << "timeOffset = " << timeOffset[Vov][ch1] <<std::endl;
 	      //timeOffset[Vov][ch1] = 230;
 	      lowestThr[Vov][ch1] = ith;
 	    }
@@ -308,22 +228,6 @@ int main(int argc, char** argv)
     int ith = -1;
     if( ithMode.find("ith1") != std::string::npos ) ith = ith1;
     if( ithMode.find("ith2") != std::string::npos ) ith = ith2;
-    
-    if( ithMode.find("vth1") != std::string::npos ) ith = ith1;
-    if( ithMode.find("vth2") != std::string::npos ) ith = ith2;
-    
-
- 
-    // -- coincidence with external bar
-    if (coincidence.find("yes") != std::string::npos){
-      if( channelIdx[ch1Ext] < 0 ) continue;
-      if( channelIdx[ch2Ext] < 0 ) continue;
-      if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 100. ) continue;
-      if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 100. ) continue;
-      float energyExt = 0.5 * (  (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
-      if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
-    }
-
     
     for(int ch :  channels)
     {
@@ -370,50 +274,23 @@ int main(int argc, char** argv)
       
       if( (*tot)[channelIdx[ch]]/1000. < 0. || (*tot)[channelIdx[ch]]/1000. > 100. ) continue;
       
-
-      // -- laser 
-      if (frequency > -1) {
-
-	long int scale = 1000000000/(frequency);
+      long int scale = 1000000000/(frequency);
       
-	if( ch == ch1 )
-	  {
-	    h1_tot_totSel_ch1[Vov][ith] -> Fill( (*tot)[channelIdx[ch1]]/1000. );
-	    h1_energy_totSel_ch1[Vov][ith] -> Fill( (*energy)[channelIdx[ch1]] );
-	    h1_time1_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. );
-	    h1_time2_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. + (*tot)[channelIdx[ch1]]/1000. );
-	  }
-	if( ch == ch2 )
-	  {
-	    h1_tot_totSel_ch2[Vov][ith] -> Fill( (*tot)[channelIdx[ch2]]/1000. );
-	    h1_energy_totSel_ch2[Vov][ith] -> Fill( (*energy)[channelIdx[ch2]] );
-	    h1_time1_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. );
-	    h1_time2_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. + (*tot)[channelIdx[ch2]]/1000. );
-	  }
+      if( ch == ch1 )
+      {
+        h1_tot_totSel_ch1[Vov][ith] -> Fill( (*tot)[channelIdx[ch1]]/1000. );
+        h1_energy_totSel_ch1[Vov][ith] -> Fill( (*energy)[channelIdx[ch1]] );
+        h1_time1_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. );
+        h1_time2_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. + (*tot)[channelIdx[ch1]]/1000. );
+      }
+      if( ch == ch2 )
+      {
+        h1_tot_totSel_ch2[Vov][ith] -> Fill( (*tot)[channelIdx[ch2]]/1000. );
+        h1_energy_totSel_ch2[Vov][ith] -> Fill( (*energy)[channelIdx[ch2]] );
+        h1_time1_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. );
+        h1_time2_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. + (*tot)[channelIdx[ch2]]/1000. );
       }
       
-      // -- ch ref
-      else {
-       if( channelIdx[chRef] < 0 ) continue;
-       if( (*energy)[channelIdx[chRef]] < energyMinRef || (*energy)[channelIdx[chRef]] > energyMaxRef ) continue;     
-
-       if( ch == ch1 )
-	 {
-	   h1_tot_totSel_ch1[Vov][ith] -> Fill( (*tot)[channelIdx[ch1]]/1000. );
-	   h1_energy_totSel_ch1[Vov][ith] -> Fill( (*energy)[channelIdx[ch1]] );
-	   h1_time1_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[chRef]])/1000. );
-	   h1_time2_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[chRef]])/1000. + (*tot)[channelIdx[ch1]]/1000. );
-	 }
-
-       if( ch == ch2 )
-	 {
-	   h1_tot_totSel_ch2[Vov][ith] -> Fill( (*tot)[channelIdx[ch2]]/1000. );
-	   h1_energy_totSel_ch2[Vov][ith] -> Fill( (*energy)[channelIdx[ch2]] );
-	   h1_time1_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]-(*time)[channelIdx[chRef]])/1000. );
-	   h1_time2_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]-(*time)[channelIdx[chRef]])/1000. + (*tot)[channelIdx[ch2]]/1000. );
-	 }
-
-     }
       //std::cout << time[ch1] << " - " << time[ch2] << " - " << scale << " - " << time[ch1] << " - " << (time[ch1]%scale)/1000. << " - " << time[ch2] << " - " << (time[ch2]%scale)/1000. << std::endl;
       
       // h1_deltaT1_totSel[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[ch2]])/1000. );
@@ -436,16 +313,6 @@ int main(int argc, char** argv)
   if( ithMode == "ith1_1" ) dac_to_uA = 0.313;
   if( ithMode == "ith1_0" ) dac_to_uA = 0.156;
   
-  if (tofhirVersion.find("2A")!= std::string::npos ){
-    if( ithMode == "vth2" ) dac_to_uA = 8.;
-    if( ithMode == "vth1_4" ) dac_to_uA = 4.;
-    if( ithMode == "vth1_3" ) dac_to_uA = 2.;
-    if( ithMode == "vth1_1" ) dac_to_uA = 1.;
-    if( ithMode == "vth1_0" ) dac_to_uA = 0.5;
-  }
-
-  std::cout << " vth mode " << ithMode << "   dac_to_mV = " << dac_to_uA <<std::endl;
-
   
   std::map<float, TGraphErrors*> g_N_ch1;
   std::map<float, TGraphErrors*> g_tot_ch1;
@@ -611,8 +478,7 @@ int main(int argc, char** argv)
       histo -> Write();
 
       std::cout << "+++++>>>> " << ith << " " << histo->Integral() << std::endl;
-      //if( histo->Integral() <= 0.8*h1_time1_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
-      if( histo->Integral() < 10) continue;
+      if( histo->Integral() <= 0.9*h1_time1_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
 
       if( !g_ps_totSel_ch1[Vov] ) g_ps_totSel_ch1[Vov] = new TGraphErrors();
       g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch1],ith*dac_to_uA);
@@ -625,9 +491,8 @@ int main(int argc, char** argv)
       TH1F* histo = h1_time2_totSel_ch1[Vov][ith];
 
       std::cout << "+++++++++++>>>> " << ith << " " << histo->Integral() << std::endl;
-      //if( histo->Integral() <= 0.8*h1_time2_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
-      if( histo->Integral() < 10) continue;  
-
+      if( histo->Integral() <= 0.9*h1_time2_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
+      
       g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch1],ith*dac_to_uA);
       g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
       
@@ -642,9 +507,8 @@ int main(int argc, char** argv)
       int ith = mapIt2.first;
       TH1F* histo = mapIt2.second;
       histo -> Write();
-      //if( histo->Integral() <= 0.9*h1_time1_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
-      if( histo->Integral() < 10 ) continue;
-
+      if( histo->Integral() <= 0.9*h1_time1_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
+      
       if( !g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] = new TGraphErrors();
       g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch2],ith*dac_to_uA);
       g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
@@ -653,9 +517,8 @@ int main(int argc, char** argv)
     {
       int ith = mapIt2.first;
       TH1F* histo = h1_time2_totSel_ch2[Vov][ith];
-      //if( histo->Integral() <= 0.9*h1_time2_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
-      if( histo->Integral() < 10 ) continue; 
-
+      if( histo->Integral() <= 0.9*h1_time2_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
+      
       g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch2],ith*dac_to_uA);
       g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
       
@@ -666,9 +529,7 @@ int main(int argc, char** argv)
   
   //-----------
   // draw plots
-  //std::string plotDir(Form("/var/www/html/TOFHIR2X/pulseShapes/run%04d/",run));
-  //std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%04d/",run));
-  std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%s/",runs.c_str()));
+  std::string plotDir(Form("/var/www/html/TOFHIR2X/pulseShapes/run%04d/",run));
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
@@ -683,8 +544,7 @@ int main(int argc, char** argv)
       float Vov = mapIt.first;
       
       c = new TCanvas("c","c");
-      //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[0]*1.5) );
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
       hPad -> SetTitle(Form(";%s [DAC]; number of hits",ithMode.c_str()));
       hPad -> Draw();
       g_N_totSel_ch1[Vov] -> SetMarkerColor(kRed);
@@ -826,9 +686,8 @@ int main(int argc, char** argv)
     c = new TCanvas("c","c");
     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,40.) );
     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,100.) );
-    hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,65*dac_to_uA) );
+    hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,10.,65*dac_to_uA) );
     hPad -> SetTitle(Form(";time [ns]; pulse shape [#muA]"));
-    if (tofhirVersion.find("2A")!= std::string::npos ){ hPad -> SetTitle(Form(";time [ns]; pulse shape [mV]"));  }
     hPad -> Draw();
     g_ps_totSel_ch1[Vov] -> SetLineColor(kRed-4);
     g_ps_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
@@ -840,8 +699,7 @@ int main(int argc, char** argv)
     if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> Draw("P,same");
 
     float slewRate = 0.;
-    TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",-5.,10.);
-    //-- slew rate max 
+    TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",-10.,10.);
     for(int point1 = 0; point1 < g_ps_totSel_ch1[Vov]->GetN()-4; ++point1)
     {
       TGraph* g_temp = new TGraph();
@@ -860,20 +718,7 @@ int main(int argc, char** argv)
       }
     }
 
-    TF1* fitFuncLow_ch1 = new TF1("fitFuncLow_ch1","pol1",-5.,10.);
-    //-- slew rate at low threshold
-    TGraph* g_temp = new TGraph();
-    for(int point1 = 0; point1 < 4; ++point1){
-      g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch1[Vov]->GetPointX(point1),g_ps_totSel_ch1[Vov]->GetPointY(point1)); 
-    }
-    TF1* f_temp = new TF1("f_temp","pol1", g_temp ->GetPointX(0), g_temp ->GetPointX(3));
-    f_temp->SetParameter(1,10.);
-    g_temp -> Fit(f_temp,"QNRS"); 
-    fitFuncLow_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
-    fitFuncLow_ch1 -> SetLineColor(kRed+1);
-    fitFuncLow_ch1 -> Draw("same"); 
-    float slewRate_low = fitFuncLow_ch1->GetParameter(1); 
-    std::cout << "Slew rate at low threshold = " << slewRate_low << std::endl;
+
     // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
     //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 30. )
     //   {
@@ -892,27 +737,13 @@ int main(int argc, char** argv)
     // g_ps_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QNS+","",fitXMin,fitXMax);
     fitFunc_ch1 -> SetLineColor(kRed-4);
     fitFunc_ch1 -> Draw("same");
-    TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("slew rate max = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1 = new TLatex(0.40,0.80,Form("slew rate max = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));     
-    }
+    TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("slew rate = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
     latex_ch1 -> SetNDC();
     latex_ch1 -> SetTextFont(82);
     latex_ch1 -> SetTextSize(0.04);
     latex_ch1 -> SetTextAlign(11);
     latex_ch1 -> SetTextColor(kRed-4);
     latex_ch1 -> Draw("same");
-
-    TLatex* latex_ch1_low = new TLatex(0.40,0.70,Form("slew rate = %.1f #muA/ns",fitFuncLow_ch1->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1_low = new TLatex(0.40,0.70,Form("slew rate = %.1f mV/ns",fitFuncLow_ch1->GetParameter(1)));     
-    }
-    latex_ch1_low -> SetNDC();
-    latex_ch1_low -> SetTextFont(82);
-    latex_ch1_low -> SetTextSize(0.04);
-    latex_ch1_low -> SetTextAlign(11);
-    latex_ch1_low -> SetTextColor(kRed+1);
-    latex_ch1_low -> Draw("same");
     
     slewRate = 0.;
     TF1* fitFunc_ch2 = new TF1("fitFunc_ch","pol1",-10.,100.);
@@ -955,9 +786,6 @@ int main(int argc, char** argv)
     fitFunc_ch2 -> SetLineColor(kBlue-4);
     fitFunc_ch2 -> Draw("same");
     TLatex* latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f mV/ns",fitFunc_ch2->GetParameter(1)));     
-    }
     latex_ch2 -> SetNDC();
     latex_ch2 -> SetTextFont(82);
     latex_ch2 -> SetTextSize(0.04);

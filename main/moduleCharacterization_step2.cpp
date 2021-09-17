@@ -320,6 +320,7 @@ int main(int argc, char** argv)
   std::string Co60SumPeak = "Co60SumPeak";	
   std::string Laser = "Laser";	
   std::string TB = "TB";
+  std::string keepAll = "keepAll";
   std::vector<int> barList = opts.GetOpt<std::vector<int> >("Plots.barList");// list of bars to be analyzed read from cfg
   
 
@@ -332,7 +333,6 @@ int main(int argc, char** argv)
       
     
     //--------------------------------------------------------
-    
     // --- loop over bars
     for(int iBar = 0; iBar < 16; ++iBar) {
 
@@ -426,10 +426,11 @@ int main(int argc, char** argv)
 	
 
         // --- look for peaks and define energy ranges
-        if( source.compare(Na22) && source.compare(Na22SingleBar) && source.compare(Co60) && source.compare(Co60SumPeak) && source.compare(Laser) && source.compare(TB)){
-          std::cout << " Source not found !!! " << std::endl;
-          return(0);
-        }
+        if( source.compare(Na22) && source.compare(Na22SingleBar) && source.compare(Co60) && source.compare(Co60SumPeak) && source.compare(Laser) && source.compare(TB) && source.compare(keepAll) )
+	  {
+	    std::cout << " Source not found !!! " << std::endl;
+	    return(0);
+	  }
 	
         ranges[LRLabel][index] = new std::vector<float>;
 
@@ -511,6 +512,24 @@ int main(int argc, char** argv)
 	  
 	  GetEnergyBins(histo, ranges[LRLabel][index], energyBin[LRLabel][index]);
 	}// end Co60SumPeak or laser	
+	
+        // -- keep all events within energyMin and energyMax
+        if( !source.compare(keepAll) )
+        { 
+	  ranges[LRLabel][index] -> push_back( energyMin );
+          ranges[LRLabel][index] -> push_back( energyMax );
+	  
+          for(auto range: (*ranges[LRLabel][index]))
+	    {
+	      float yval = std::max(10., histo->GetBinContent(histo->FindBin(range)));
+	      TLine* line = new TLine(range,3.,range, yval);
+	      line -> SetLineWidth(1);
+	      line -> SetLineStyle(7);
+	      line -> Draw("same");
+	    }
+	  
+	  GetEnergyBins(histo, ranges[LRLabel][index], energyBin[LRLabel][index]);
+	}// end keepAll
 	
 
 	// -- if MIP peak, we don't use the spectrum analyzers - just langaus fit to the energy peak.
@@ -713,10 +732,10 @@ int main(int argc, char** argv)
 	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	      
 	      //h1_energyRatio[index2] = new TH1F(Form("h1_energyRatio_%s",labelLR_energyBin.c_str()),"",300,0.,5.);
-              h1_energyRatio[index2] = new TH1F(Form("h1_energyRatio_%s",labelLR_energyBin.c_str()),"",250,0.,5.);
-	      h1_totRatio[index2] = new TH1F(Form("h1_totRatio_%s",labelLR_energyBin.c_str()),"",500,0.,5.);
+              h1_energyRatio[index2] = new TH1F(Form("h1_energyRatio_%s",labelLR_energyBin.c_str()),"",1000,0.,5.);
+	      h1_totRatio[index2] = new TH1F(Form("h1_totRatio_%s",labelLR_energyBin.c_str()),"",2000,0.,5.);
 	      h1_t1fineMean[index2] = new TH1F(Form("h1_t1fineMean_%s",labelLR_energyBin.c_str()),"",1000,0.,1000.);
-	      h1_deltaT_raw[index2] = new TH1F(Form("h1_deltaT_raw_%s",labelLR_energyBin.c_str()),"",1000,-10000.,10000.);
+	      h1_deltaT_raw[index2] = new TH1F(Form("h1_deltaT_raw_%s",labelLR_energyBin.c_str()),"",2000,-24000.,24000.);
 	    }
 	  
 	  if (fabs(anEvent->timeR-anEvent->timeL)<10000) {
@@ -948,16 +967,13 @@ int main(int argc, char** argv)
 	    {
 	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	      
-	      h1_deltaT[index2] = new TH1F(Form("h1_deltaT_%s",labelLR_energyBin.c_str()),"",1000,-10000,10000.);
+	      h1_deltaT[index2] = new TH1F(Form("h1_deltaT_%s",labelLR_energyBin.c_str()),"",2000,-12000,12000.);
 	      p1_deltaT_vs_energyRatio[index2] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",labelLR_energyBin.c_str()),"",50,energyRatioMean-3.*energyRatioSigma,energyRatioMean+3.*energyRatioSigma);
 	      p1_deltaT_vs_totRatio[index2] = new TProfile(Form("p1_deltaT_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,totRatioMean-3.*totRatioSigma, totRatioMean+3.*totRatioSigma);
-
-	      if (step1FileName.find("muon") != std::string::npos) {
-		//h1_deltaT[index2]->Rebin(2);
-		//p1_deltaT_vs_energyRatio[index2]->RebinX(2);
-		//p1_deltaT_vs_totRatio[index2]->RebinX(2);
-	      }
-	      h2_deltaT_vs_totRatio[index2] = new TH2F(Form("h2_deltaT_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,totRatioMean-3.*totRatioSigma, totRatioMean+3.*totRatioSigma, 1000, -10000., 10000.);
+	      h2_deltaT_vs_totRatio[index2] = new TH2F(Form("h2_deltaT_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,totRatioMean-3.*totRatioSigma, totRatioMean+3.*totRatioSigma, 2000, -12000., 12000.);
+	      // p1_deltaT_vs_energyRatio[index2] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",labelLR_energyBin.c_str()),"",10,energyRatioMean-3.*energyRatioSigma,energyRatioMean+3.*energyRatioSigma);
+	      // p1_deltaT_vs_totRatio[index2] = new TProfile(Form("p1_deltaT_vs_totRatio_%s",labelLR_energyBin.c_str()),"",10,totRatioMean-3.*totRatioSigma, totRatioMean+3.*totRatioSigma);
+	      // h2_deltaT_vs_totRatio[index2] = new TH2F(Form("h2_deltaT_vs_totRatio_%s",labelLR_energyBin.c_str()),"",10,totRatioMean-3.*totRatioSigma, totRatioMean+3.*totRatioSigma, 1000, -10000., 10000.);
 	    }
 	  
 	  if(fabs(deltaT)>10000) continue;
@@ -1120,10 +1136,10 @@ int main(int argc, char** argv)
 	  if( h1_deltaT_energyRatioCorr[index2] == NULL )
 	    {
 	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
-	      h1_deltaT_energyRatioCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioCorr_%s",labelLR_energyBin.c_str()),"",1000,-10000.,10000.);
-	      h1_deltaT_totRatioCorr[index2]    = new TH1F(Form("h1_deltaT_totRatioCorr_%s",labelLR_energyBin.c_str()),"",1000,-10000.,10000.);
+	      h1_deltaT_energyRatioCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
+	      h1_deltaT_totRatioCorr[index2]    = new TH1F(Form("h1_deltaT_totRatioCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
               p1_deltaT_totRatioCorr_vs_totRatio[index2] = new TProfile(Form("p1_deltaT_totRatioCorr_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,fitFunc_totRatio[index2]->GetParameter(1)-3.*fitFunc_totRatio[index2]->GetParameter(2), fitFunc_totRatio[index2]->GetParameter(1)+3.*fitFunc_totRatio[index2]->GetParameter(2));
-              h2_deltaT_totRatioCorr_vs_totRatio[index2] = new TH2F(Form("h2_deltaT_totRatioCorr_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,fitFunc_totRatio[index2]->GetParameter(1)-3.*fitFunc_totRatio[index2]->GetParameter(2), fitFunc_totRatio[index2]->GetParameter(1)+3.*fitFunc_totRatio[index2]->GetParameter(2), 1000, -10000., 10000. );
+              h2_deltaT_totRatioCorr_vs_totRatio[index2] = new TH2F(Form("h2_deltaT_totRatioCorr_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,fitFunc_totRatio[index2]->GetParameter(1)-3.*fitFunc_totRatio[index2]->GetParameter(2), fitFunc_totRatio[index2]->GetParameter(1)+3.*fitFunc_totRatio[index2]->GetParameter(2), 2000, -12000., 12000. );
 	      p1_deltaT_energyRatioCorr_vs_t1fineMean[index2] = new TProfile(Form("p1_deltaT_energyRatioCorr_vs_t1fineMean_%s",labelLR_energyBin.c_str()),"",50,0,1000);
 	      p1_deltaT_totRatioCorr_vs_t1fineMean[index2] = new TProfile(Form("p1_deltaT_totRatioCorr_vs_t1fineMean_%s",labelLR_energyBin.c_str()),"",50,0,1000);
 	    }
@@ -1465,7 +1481,7 @@ int main(int argc, char** argv)
 	 if( h1_deltaT_energyRatioPhaseCorr[index2] == NULL )
 	   {
 	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
-	     h1_deltaT_energyRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",1000,-10000.,10000.);
+	     h1_deltaT_energyRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
            }
 	 
 	 if (fabs(deltaT - energyRatioCorr)>10000 ) continue;
@@ -1486,7 +1502,7 @@ int main(int argc, char** argv)
 	 if( h1_deltaT_totRatioPhaseCorr[index2] == NULL )
 	   {
 	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
-	     h1_deltaT_totRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_totRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",1000,-10000.,10000.);
+	     h1_deltaT_totRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_totRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
            }
 	 
 	 if (fabs(deltaT - totRatioCorr)>10000 ) continue;

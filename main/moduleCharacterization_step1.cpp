@@ -60,12 +60,12 @@ int main(int argc, char** argv)
   int maxEntries = opts.GetOpt<int>("Input.maxEntries");
   int usePedestals = opts.GetOpt<int>("Input.usePedestals");
   std::string source = opts.GetOpt<std::string>("Input.sourceName");
-
+  
   std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
   TOFHIRThresholdZero thrZero(discCalibrationFile,1);
 
   TChain* tree = new TChain("data","data");
-
+  
   
   std::stringstream ss(runs); 
   std::string token;
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
   int chL[16];
   int chR[16];
   
-  for(int iBar = 0; iBar < 16; ++iBar){
+  for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){
     if(opts.GetOpt<int>("Channels.array")==0){
       chL[iBar] = channelMapping[iBar*2+0];
       chR[iBar] = channelMapping[iBar*2+1];
@@ -186,7 +186,11 @@ int main(int argc, char** argv)
   std::map<int,bool> acceptEvent;
 
   // -- Coincidence pre loop
-  if(!opts.GetOpt<std::string>("Coincidence.status").compare("yes") && (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") || !opts.GetOpt<std::string>("Input.sourceName").compare("TB")))
+  if( !opts.GetOpt<std::string>("Coincidence.status").compare("yes") &&
+      ( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") ||
+	!opts.GetOpt<std::string>("Input.sourceName").compare("Na22") ||
+	!opts.GetOpt<std::string>("Input.sourceName").compare("TB") ||
+	!opts.GetOpt<std::string>("Input.sourceName").compare("keepAll") ) )
     {
       float qfineL_ext;
       float qfineR_ext;    
@@ -299,6 +303,7 @@ int main(int argc, char** argv)
 		 (opts.GetOpt<std::string>("Input.runs")).find("4212") != std::string::npos )
 	      { index.second->GetXaxis()->SetRangeUser(200,700);}
 	  }
+
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1000);
 	  
@@ -340,7 +345,7 @@ int main(int argc, char** argv)
   unsigned short t1fineR[16]; 
   float energyL[16];
   float energyR[16];
-    
+  
   int nEntries = tree->GetEntries();
   if( maxEntries > 0 ) nEntries = maxEntries;
   for(int entry = 0; entry < nEntries; ++entry) {
@@ -360,71 +365,68 @@ int main(int argc, char** argv)
     if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
     // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
     
+    
     // --- check coincidence with another channel 
-    if(!opts.GetOpt<std::string>("Coincidence.status").compare("yes")){
-
-      if(!acceptEvent[entry] ) continue;
-      
-      int chL_ext = opts.GetOpt<int>("Coincidence.chL");
-      int chR_ext = opts.GetOpt<int>("Coincidence.chR");
-      float energyL_ext = (*energy)[channelIdx[chL_ext]];
-      float energyR_ext = (*energy)[channelIdx[chR_ext]];
-      
-      int label = (10000*int(Vov*100.)) + (100*vth) + 99;
-      int eBin = opts.GetOpt<int>("Coincidence.peak511eBin");
-      float avEn = 0.5 * ( energyL_ext + energyR_ext);
-      if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22")) &&  avEn > rangesLR[label]-> at(eBin)) {
-	continue;
-      }
-      
-      if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")) && ( avEn < rangesLR[label]-> at(0) || avEn > rangesLR[label]-> at(1) ) ) {
-	continue;
-      }
-    }
-    
-    
-    
-    for(int iBar = 0; iBar < 16; ++iBar) {
-      
-      if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0){
+    if(!opts.GetOpt<std::string>("Coincidence.status").compare("yes"))
+      {
+	if(!acceptEvent[entry] ) continue;
 	
-	qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
-	qfineR[iBar]=(*qfine)[channelIdx[chR[iBar]]];
-	totL[iBar]=0.001*(*tot)[channelIdx[chL[iBar]]];
-	totR[iBar]=0.001*(*tot)[channelIdx[chR[iBar]]];
-	energyL[iBar]=(*energy)[channelIdx[chL[iBar]]];
-	energyR[iBar]=(*energy)[channelIdx[chR[iBar]]];
-	timeL[iBar]=(*time)[channelIdx[chL[iBar]]];
-	timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
-	t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
-	t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
-
+	int chL_ext = opts.GetOpt<int>("Coincidence.chL");
+	int chR_ext = opts.GetOpt<int>("Coincidence.chR");
+	float energyL_ext = (*energy)[channelIdx[chL_ext]];
+	float energyR_ext = (*energy)[channelIdx[chR_ext]];
+	
+	int label = (10000*int(Vov*100.)) + (100*vth) + 99;
+	int eBin = opts.GetOpt<int>("Coincidence.peak511eBin");
+	float avEn = 0.5 * ( energyL_ext + energyR_ext);
+	if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22")) &&  avEn > rangesLR[label]-> at(eBin)) {
+	  continue;
+	}
+	
+	if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")) && ( avEn < rangesLR[label]-> at(0) || avEn > rangesLR[label]-> at(1) ) ) {
+	  continue;
+	}
       }
-      else {
-	
-	qfineL[iBar]=-10;
-	qfineR[iBar]=-10;
-	totL[iBar]=-10;
-	totR[iBar]=-10;
-	energyL[iBar]=-10;
-	energyR[iBar]=-10;
-	timeL[iBar]=-10;
-	timeR[iBar]=-10;
-	t1fineL[iBar]=-10;
-	t1fineR[iBar]=-10;
-	
-      }     
-    }
     
+    
+    for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)
+      {
+	if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0){
+	  
+	  qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
+	  qfineR[iBar]=(*qfine)[channelIdx[chR[iBar]]];
+	  totL[iBar]=0.001*(*tot)[channelIdx[chL[iBar]]];
+	  totR[iBar]=0.001*(*tot)[channelIdx[chR[iBar]]];
+	  energyL[iBar]=(*energy)[channelIdx[chL[iBar]]];
+	  energyR[iBar]=(*energy)[channelIdx[chR[iBar]]];
+	  timeL[iBar]=(*time)[channelIdx[chL[iBar]]];
+	  timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
+	  t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
+	  t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
+	}
+	else
+	  {
+	    qfineL[iBar]=-10;
+	    qfineR[iBar]=-10;
+	    totL[iBar]=-10;
+	    totR[iBar]=-10;
+	    energyL[iBar]=-10;
+	    energyR[iBar]=-10;
+	    timeL[iBar]=-10;
+	    timeR[iBar]=-10;
+	    t1fineL[iBar]=-10;
+	    t1fineR[iBar]=-10;
+	  }     
+      }
     
     int maxEn=0;
     int maxBar=0;
     
     float energySumArray = 0;
     int   nBarsArray = 0;
-
-    for(int iBar = 0; iBar < 16; ++iBar) {
-      if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin && totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<20 && totR[iBar]<20){
+    
+    for(int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {
+      if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin && totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100){
 	float energyMean=(energyL[iBar]+energyR[iBar])/2;
 	if (energyMean>0){
 	  energySumArray+=energyMean;
@@ -435,14 +437,12 @@ int main(int argc, char** argv)
 	  maxBar = iBar;
 	}
       }
-      
-      int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
-      
-      
-      //--- create histograms, if needed
-      if( h1_totL[index] == NULL )
+	int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
+	
+	
+	//--- create histograms, if needed
+	if( h1_totL[index] == NULL )
 	{
-	  
 	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.02f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.02f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  
@@ -458,18 +458,23 @@ int main(int argc, char** argv)
 	  h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.02f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
 	}
       
-      //--- fill histograms for each bar for Co60 & TB analysis
-      if (!opts.GetOpt<std::string>("Input.sourceName").compare("Co60") || !opts.GetOpt<std::string>("Input.sourceName").compare("Co60SumPeak") || !opts.GetOpt<std::string>("Input.sourceName").compare("TB")) 
+	
+	//--- fill histograms for each bar for Co60 & TB analysis
+	if( !opts.GetOpt<std::string>("Input.sourceName").compare("Co60") ||
+	    !opts.GetOpt<std::string>("Input.sourceName").compare("Co60SumPeak") ||
+	    !opts.GetOpt<std::string>("Input.sourceName").compare("TB")
+	    )
 	{
 	  
 	  if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
-	  if( totL[iBar] >= 100. ||  totR[iBar] >= 100.) continue;
+	  if( totL[iBar] >= 50. ||  totR[iBar] >= 50.) continue;
 	  if( qfineL[iBar] < qfineMin || qfineR[iBar] < qfineMin ) continue;
 	  if( ( thrZero.GetThresholdZero(chL[iBar],vthMode) + vth) > 63. ) continue;
           if( ( thrZero.GetThresholdZero(chR[iBar],vthMode) + vth) > 63. ) continue;
 
 	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 800 || nBarsArray > 5)) continue; // to remove showering events
-	   
+
+
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
 	  h1_energyL[index] -> Fill( energyL[iBar] );
@@ -493,16 +498,18 @@ int main(int argc, char** argv)
 	  anEvent.t1fineR = t1fineR[iBar];
 	  outTrees[index] -> Fill();
 	}
-    }// -- end loop over bars
+      }// -- end loop over bars
     
     // --- for Na22 or Laser analysis use only the bar with max energy to remove cross-talk between adjacent bars
-    if (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Laser"))
+    if( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") |
+	!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") ||
+	!opts.GetOpt<std::string>("Input.sourceName").compare("Laser") ||
+	!opts.GetOpt<std::string>("Input.sourceName").compare("keepAll") )
       {
 	int index( (10000*int(Vov*100.)) + (100*vth) + maxBar );
 	
 	if( totL[maxBar] <= 0. || totR[maxBar] <= 0. ) continue;
-	if( totL[maxBar] >= 100. ||  totR[maxBar] >= 100.) continue;
-	if( qfineL[maxBar] < qfineMin || qfineR[maxBar] < qfineMin ) continue;
+	if( totL[maxBar] >= 50. ||  totR[maxBar] >= 50.) continue;
 	if( ( thrZero.GetThresholdZero(chL[maxBar],vthMode) + vth) > 63. ) continue;
         if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;
 

@@ -41,3 +41,6 @@
 # Misc
 *.pdf
 *.png
+
+# Python libraries
+*.pyc
