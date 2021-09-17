@@ -99,7 +99,7 @@ $(OBJ)%$(OBJSuf): $(SRC)%$(SRCSuf)
 
 $(LIB)mydict.cc: $(DICTHDRS)
 	@echo "Generating dictionary..."
-	rootcling -f $(LIB)mydict.cc -c -p ${CXXFLAGS} $(DICTHDRS)
+	rootcling -f $(LIB)mydict.cc -c -p $(DICTHDRS)
 
 $(LIB)mydict.o: $(LIB)mydict.cc 
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
