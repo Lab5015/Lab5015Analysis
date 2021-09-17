@@ -428,7 +428,6 @@ int main(int argc, char** argv)
         
         histo = (TH1F*)( inFile->Get(Form("h1_energy_%s",label.c_str())) );      
         if( !histo ) continue;
-	histo->Rebin(2);
         histo -> SetTitle(";energy [a.u.];entries");
         histo -> SetLineColor(kRed);
         histo -> SetLineWidth(2);
