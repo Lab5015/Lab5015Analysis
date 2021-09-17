@@ -55,8 +55,8 @@ int main(int argc, char** argv)
   std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
   TOFHIRThresholdZero thrZero(discCalibrationFile,0);
   
-  int ch1 = 5;
-  int ch2 = 24;
+  int ch1 = 8;
+  int ch2 = 23;
   std::vector<int> channels;
   channels.push_back(ch1);
   channels.push_back(ch2);
@@ -125,10 +125,12 @@ int main(int argc, char** argv)
     float Vov = step1;
     int ith1 = int(step2/10000.)-1;
     int ith2 = int((step2-10000*(ith1+1))/100.)-1;
-    
+    int ithE = int((step2-10000*(ith1+1)-100*(ith2+1))/1.)-1; 
     int ith = -1;
+    
     if( ithMode.find("ith1") != std::string::npos ) ith = ith1;
     if( ithMode.find("ith2") != std::string::npos ) ith = ith2;
+    if( ithMode.find("ithE") != std::string::npos ) ith = ithE;
     
     for(int ch :  channels)
     {
@@ -137,11 +139,11 @@ int main(int argc, char** argv)
 
       if( ch == ch1 && !h1_time1_wide_ch1[Vov][ith] )
 	{
-	  h1_time1_wide_ch1[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,0.,10000.);
+	  h1_time1_wide_ch1[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch1_Vov%.2f_ith%02d",Vov,ith),"",5000,0.,10000.);
 	}
       if( ch == ch2 && !h1_time1_wide_ch2[Vov][ith] )
       {
-        h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,0.,10000.);
+        h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.2f_ith%02d",Vov,ith),"",5000,0.,10000.);
       }
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
@@ -224,10 +226,12 @@ int main(int argc, char** argv)
     float Vov = step1;
     int ith1 = int(step2/10000.)-1;
     int ith2 = int((step2-10000*(ith1+1))/100.)-1;
+    int ithE = int((step2-10000*(ith1+1)-100*(ith2+1))/1.)-1; 
     
     int ith = -1;
     if( ithMode.find("ith1") != std::string::npos ) ith = ith1;
     if( ithMode.find("ith2") != std::string::npos ) ith = ith2;
+    if( ithMode.find("ithE") != std::string::npos ) ith = ithE;
     
     for(int ch :  channels)
     {
@@ -237,26 +241,26 @@ int main(int argc, char** argv)
 
       if( ch == ch1 && !h1_tot_ch1[Vov][ith] )
 	{
-        h1_tot_ch1[Vov][ith]    = new TH1F(Form("h1_tot_ch1_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
+        h1_tot_ch1[Vov][ith]    = new TH1F(Form("h1_tot_ch1_Vov%.2f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
+        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.2f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
         
-        h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
-        h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
-        h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
+        h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.2f_ith%02d",Vov,ith),"",1000,0.,100.);
+        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.2f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
+        h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.2f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
+        h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.2f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
         
-        h1_deltaT1_totSel[Vov][ith] = new TH1F(Form("h1_deltaT1_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
-        h1_deltaT2_totSel[Vov][ith] = new TH1F(Form("h1_deltaT2_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
+        h1_deltaT1_totSel[Vov][ith] = new TH1F(Form("h1_deltaT1_totSel_Vov%.2f_ith%02d",Vov,ith),"",10000,-100.,100.);
+        h1_deltaT2_totSel[Vov][ith] = new TH1F(Form("h1_deltaT2_totSel_Vov%.2f_ith%02d",Vov,ith),"",10000,-100.,100.);
       }
       if( ch == ch2 && !h1_tot_ch2[Vov][ith] )
       {
-        h1_tot_ch2[Vov][ith]    = new TH1F(Form("h1_tot_ch2_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
+        h1_tot_ch2[Vov][ith]    = new TH1F(Form("h1_tot_ch2_Vov%.2f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
+        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.2f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
         
-        h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
-        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
-        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+        h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.2f_ith%02d",Vov,ith),"",1000,0.,100.);
+        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.2f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
+        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.2f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.2f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
       }
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
@@ -312,6 +316,7 @@ int main(int argc, char** argv)
   if( ithMode == "ith1_2" ) dac_to_uA = 0.470;
   if( ithMode == "ith1_1" ) dac_to_uA = 0.313;
   if( ithMode == "ith1_0" ) dac_to_uA = 0.156;
+  if( ithMode == "ithE" ) dac_to_uA = 0.630;
   
   
   std::map<float, TGraphErrors*> g_N_ch1;
@@ -602,7 +607,7 @@ int main(int argc, char** argv)
       latex_ch2 -> SetTextColor(kBlue);
       latex_ch2 -> Draw("same");
       
-      c -> Print(Form("%s/g_N_Vov%.1f.png",plotDir.c_str(),Vov));
+      c -> Print(Form("%s/g_N_Vov%.2f.png",plotDir.c_str(),Vov));
       
       delete c;
     }
@@ -627,7 +632,7 @@ int main(int argc, char** argv)
     if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
     if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> SetMarkerStyle(32);
     if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> Draw("PL,same");
-    c -> Print(Form("%s/g_tot_Vov%.1f.png",plotDir.c_str(),Vov));
+    c -> Print(Form("%s/g_tot_Vov%.2f.png",plotDir.c_str(),Vov));
     delete c;
   }
   
@@ -639,19 +644,39 @@ int main(int argc, char** argv)
     hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,1023.5) );
     hPad -> SetTitle(Form(";%s [DAC]; energy [ADC]",ithMode.c_str()));
     hPad -> Draw();
-    g_energy_ch1[Vov] -> SetMarkerColor(kRed);
-    g_energy_ch1[Vov] -> SetMarkerStyle(22);
-    g_energy_ch1[Vov] -> Draw("PL,same");
-    if( g_energy_ch2[Vov] ) g_energy_ch2[Vov] -> SetMarkerColor(kBlue);
-    if( g_energy_ch2[Vov] )g_energy_ch2[Vov] -> SetMarkerStyle(23);
-    if( g_energy_ch2[Vov] )g_energy_ch2[Vov] -> Draw("PL,same");
-    g_energy_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
-    g_energy_totSel_ch1[Vov] -> SetMarkerStyle(26);
+    g_energy_totSel_ch1[Vov] -> SetMarkerColor(kRed);
+    g_energy_totSel_ch1[Vov] -> SetMarkerStyle(22);
     g_energy_totSel_ch1[Vov] -> Draw("PL,same");
-    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> SetMarkerStyle(32);
-    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> Draw("PL,same");
-    c -> Print(Form("%s/g_energy_Vov%.1f.png",plotDir.c_str(),Vov));
+    TF1* fitFunc_ch1 = new TF1("fitFunc_ch1_energy_ch1","pol0",0.,f_sigmoid_ch1->GetParameter(1)-2.*f_sigmoid_ch1->GetParameter(2));
+    g_energy_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QRS+");
+    fitFunc_ch1 -> SetLineColor(kRed);
+    fitFunc_ch1 -> SetLineWidth(2);
+    fitFunc_ch1 -> Draw("same");
+    TLatex* latex_ch1 = new TLatex(0.40,0.90,Form("energy = %.0f ADC",fitFunc_ch1->GetParameter(0)));
+    latex_ch1 -> SetNDC();
+    latex_ch1 -> SetTextFont(82);
+    latex_ch1 -> SetTextSize(0.04);
+    latex_ch1 -> SetTextAlign(11);
+    latex_ch1 -> SetTextColor(kRed);
+    latex_ch1 -> Draw("same");
+    
+    g_energy_totSel_ch2[Vov] -> SetMarkerColor(kBlue);
+    g_energy_totSel_ch2[Vov] -> SetMarkerStyle(23);
+    g_energy_totSel_ch2[Vov] -> Draw("PL,same");
+    TF1* fitFunc_ch2 = new TF1("fitFunc_ch2_energy_ch2","pol0",0.,f_sigmoid_ch2->GetParameter(1)-2.*f_sigmoid_ch2->GetParameter(2));
+    g_energy_totSel_ch2[Vov] -> Fit(fitFunc_ch2,"QRS+");
+    fitFunc_ch2 -> SetLineColor(kBlue);
+    fitFunc_ch2 -> SetLineWidth(2);
+    fitFunc_ch2 -> Draw("same");
+    TLatex* latex_ch2 = new TLatex(0.40,0.85,Form("energy = %.0f ADC",fitFunc_ch2->GetParameter(0)));
+    latex_ch2 -> SetNDC();
+    latex_ch2 -> SetTextFont(82);
+    latex_ch2 -> SetTextSize(0.04);
+    latex_ch2 -> SetTextAlign(11);
+    latex_ch2 -> SetTextColor(kBlue);
+    latex_ch2 -> Draw("same");
+    
+    c -> Print(Form("%s/g_energy_Vov%.2f.png",plotDir.c_str(),Vov));
     delete c;
   }
   
@@ -670,7 +695,7 @@ int main(int argc, char** argv)
   //     g_ps_totSel_deltaT[Vov] -> SetLineColor(kGray+2);
   //     g_ps_totSel_deltaT[Vov] -> SetMarkerStyle(22);
   //     g_ps_totSel_deltaT[Vov] -> Draw("P,same");
-  //     c -> Print(Form("%s/g_ps_deltaT_Vov%.1f.png",plotDir.c_str(),Vov));
+  //     c -> Print(Form("%s/g_ps_deltaT_Vov%.2f.png",plotDir.c_str(),Vov));
   //     delete c;
   //   }
   
@@ -686,7 +711,7 @@ int main(int argc, char** argv)
     c = new TCanvas("c","c");
     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,40.) );
     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,100.) );
-    hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,10.,65*dac_to_uA) );
+    hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,40.,65*dac_to_uA) );
     hPad -> SetTitle(Form(";time [ns]; pulse shape [#muA]"));
     hPad -> Draw();
     g_ps_totSel_ch1[Vov] -> SetLineColor(kRed-4);
@@ -793,7 +818,7 @@ int main(int argc, char** argv)
     latex_ch2 -> SetTextColor(kBlue-4);
     latex_ch2 -> Draw("same");
     
-    c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.1f.png",plotDir.c_str(),Vov));
+    c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.2f.png",plotDir.c_str(),Vov));
     delete c;
   }
   
@@ -803,21 +828,21 @@ int main(int argc, char** argv)
   
   for(auto mapIt : g_ps_totSel_ch1)
   {
-    mapIt.second -> Write(Form("g_ps_totSel_ch1_Vov%.1f",mapIt.first));
+    mapIt.second -> Write(Form("g_ps_totSel_ch1_Vov%.2f",mapIt.first));
   }
   for(auto mapIt : g_ps_totSel_ch2)
   {
-    mapIt.second -> Write(Form("g_ps_totSel_ch2_Vov%.1f",mapIt.first));
+    mapIt.second -> Write(Form("g_ps_totSel_ch2_Vov%.2f",mapIt.first));
   }
 
   for (auto mapIt:  g_N_ch1)
   {
-    mapIt.second -> Write(Form("g_N_ch1_Vov%.1f",mapIt.first));
+    mapIt.second -> Write(Form("g_N_ch1_Vov%.2f",mapIt.first));
   } 
 
   for (auto mapIt:  g_N_ch2)
   {
-    mapIt.second -> Write(Form("g_N_ch2_Vov%.1f",mapIt.first));
+    mapIt.second -> Write(Form("g_N_ch2_Vov%.2f",mapIt.first));
   } 
   
   

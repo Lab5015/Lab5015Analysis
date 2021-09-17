@@ -142,17 +142,20 @@ int main(int argc, char** argv)
   tree -> SetBranchStatus("t1fine",    1); tree -> SetBranchAddress("t1fine",   &t1fine);
   
   //--- get plot settings
-  std::vector<int> Vov = opts.GetOpt<std::vector<int> >("Plots.Vov");
+  std::vector<float> Vov = opts.GetOpt<std::vector<float> >("Plots.Vov");
   std::vector<int> energyBins = opts.GetOpt<std::vector<int> >("Plots.energyBins");
+  std::vector<int> energyMins = opts.GetOpt<std::vector<int> >("Plots.energyMins");
+  std::vector<int> energyMaxs = opts.GetOpt<std::vector<int> >("Plots.energyMaxs");
   
-  std::map<int,int> map_energyBins;
+  std::map<float,int> map_energyBins;
+  std::map<float,int> map_energyMins;
+  std::map<float,int> map_energyMaxs;
   for(unsigned int ii = 0; ii < Vov.size(); ++ii)
-    map_energyBins[Vov[ii]] = energyBins[ii];
-  
-  float energyMin = opts.GetOpt<float>("Plots.energyMin");
-  float energyMax = opts.GetOpt<float>("Plots.energyMax");;
-  float qfineMin = opts.GetOpt<float>("Plots.qfineMin");
-  
+    {
+      map_energyBins[Vov[ii]] = energyBins[ii];
+      map_energyMins[Vov[ii]] = energyMins[ii];
+      map_energyMaxs[Vov[ii]] = energyMaxs[ii];
+    }
   
   
   //--- define histograms
@@ -206,7 +209,7 @@ int main(int argc, char** argv)
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
         
-
+	
 	if (channelIdx[chL_ext] <0 || channelIdx[chR_ext] <0) continue;
 	
 	qfineL_ext = (*qfine)[channelIdx[chL_ext]];
@@ -214,16 +217,13 @@ int main(int argc, char** argv)
 	energyL_ext = (*energy)[channelIdx[chL_ext]];
 	energyR_ext = (*energy)[channelIdx[chR_ext]];
 	
-	if (qfineL_ext < qfineMin) continue;
-	if (qfineR_ext < qfineMin) continue;      
-	
 	int index( (10000*int(Vov*100.)) + (100*vth) + 99 );
 	
 	//--- create histograms, if needed
 	if( h1_energyLR_ext[index] == NULL ){
-	  c[index] = new TCanvas(Form("c1_Vov%.1f_th%02.0f",Vov,vth), Form("c1_Vov%.1f_th%02.0f",Vov,vth));
+	  c[index] = new TCanvas(Form("c1_Vov%.2f_th%02.0f",Vov,vth), Form("c1_Vov%.2f_th%02.0f",Vov,vth));
 	  c[index] -> cd();
-	  h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.1f_th%02.0f",Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.2f_th%02.0f",Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	}
 
 	acceptEvent[entry] = true;
@@ -251,7 +251,7 @@ int main(int argc, char** argv)
           float vth = 0;
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
-
+	  
 	  if( opts.GetOpt<int>("Channels.array") == 0){
 	    //index.second->GetXaxis()->SetRangeUser(30. + Vov*10,1000);
 	    index.second->GetXaxis()->SetRangeUser(200,1000);
@@ -262,8 +262,8 @@ int main(int argc, char** argv)
 	  }
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1000);
-	 
-	  /*TF1* f_gaus_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "gaus", max-50, max +50);
+	  
+	  /*TF1* f_gaus_pre = new TF1(Form("fit_energy_coincBar_Vov%.2f_vth1_%02.0f",Vov,vth), "gaus", max-50, max +50);
 	  f_gaus_pre -> SetLineColor(kBlack); 
 	  f_gaus_pre -> SetLineWidth(2); 
 	  f_gaus_pre->SetParameters(index.second->GetMaximumBin(), max, 70);
@@ -271,8 +271,8 @@ int main(int argc, char** argv)
 	  f_gaus_pre->SetRange(f_gaus_pre->GetParameter(1)-f_gaus_pre->GetParameter(2), f_gaus_pre->GetParameter(1)+f_gaus_pre->GetParameter(2));
 	  index.second->Fit(f_gaus_pre, "QRS");
 	  */
-
-	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.1f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
+	  
+	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.2f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
 	  f_pre -> SetRange(max*0.8, max*1.5);
 	  f_pre -> SetLineColor(kBlack);
           f_pre -> SetLineWidth(2);
@@ -389,7 +389,7 @@ int main(int argc, char** argv)
     
     for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)
       {
-	if (qfineL[iBar]>qfineMin && qfineR[iBar]>qfineMin && totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100){
+	if (totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100){
 	  float energyMean=(energyL[iBar]+energyR[iBar])/2;
 	  energySumArray+=energyMean;
 	  nBarsArray+=1;
@@ -406,19 +406,19 @@ int main(int argc, char** argv)
 	//--- create histograms, if needed
 	if( h1_totL[index] == NULL )
 	{
-	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
-	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
+	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
+	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  
-	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
-	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
+	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
+	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
 	  
-	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
-	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	  
-	  outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth));
+	  outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth));
 	  outTrees[index] -> Branch("event",&anEvent);
 	  
-	  h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],energyMin,energyMax);
+	  h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	}
       
 	
@@ -440,7 +440,7 @@ int main(int argc, char** argv)
 	  h1_totL[index] -> Fill( totL[iBar]  );
 	  h1_energyL[index] -> Fill( energyL[iBar] );
 	  
-	  h1_qfineR[index] -> Fill( qfineR[iBar] );        
+	  h1_qfineR[index] -> Fill( qfineR[iBar] );
 	  h1_totR[index] -> Fill( totR[iBar] );
 	  h1_energyR[index] -> Fill( energyR[iBar] );
 	  

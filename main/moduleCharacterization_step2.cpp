@@ -194,8 +194,18 @@ int main(int argc, char** argv)
   // std::map<std::string,float> cut_energyMax;
   
 
-  float energyMin = opts.GetOpt<float>("Plots.energyMin");
-  float energyMax = opts.GetOpt<float>("Plots.energyMax");
+  std::vector<float> Vov = opts.GetOpt<std::vector<float> >("Plots.Vov");
+  std::vector<int> energyMins = opts.GetOpt<std::vector<int> >("Plots.energyMins");
+  std::vector<int> energyMaxs = opts.GetOpt<std::vector<int> >("Plots.energyMaxs");
+  
+  std::map<float,int> map_energyMins;
+  std::map<float,int> map_energyMaxs;
+  for(unsigned int ii = 0; ii < Vov.size(); ++ii)
+    {
+      map_energyMins[Vov[ii]] = energyMins[ii];
+      map_energyMaxs[Vov[ii]] = energyMaxs[ii];
+    }
+  
   
   //--- open files
   std::string step1FileName= opts.GetOpt<std::string>("Input.step1FileName");
@@ -328,7 +338,7 @@ int main(int argc, char** argv)
       
     float Vov = map_Vovs[stepLabel];
     float vth1 = map_ths[stepLabel];
-    std::string VovLabel(Form("Vov%.1f",Vov));
+    std::string VovLabel(Form("Vov%.2f",Vov));
     std::string thLabel(Form("th%02.0f",vth1));
       
     
@@ -341,7 +351,7 @@ int main(int argc, char** argv)
 
       int index( (10000*int(Vov*100.)) + (100*vth1) + iBar );
       
-      outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.1f_th%02.0f",iBar,Vov,vth1));
+      outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth1),Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth1));
       outTrees[index] -> Branch("energyPeak511LR",&energy511LR);
       outTrees[index] -> Branch("energyPeak1275LR",&energy1275LR);
       outTrees[index] -> Branch("energyPeak1786LR",&energy1786LR);
@@ -361,9 +371,9 @@ int main(int argc, char** argv)
 	//label histo
         std::string label(Form("bar%02d%s_%s",iBar,LRLabel.c_str(),stepLabel.c_str()));
 
-        latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d%s}{V_{OV} = %.1f V, th. = %d DAC}",iBar,LRLabel.c_str(),Vov,int(vth1)));
+        latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d%s}{V_{OV} = %.2f V, th. = %d DAC}",iBar,LRLabel.c_str(),Vov,int(vth1)));
         if (LRLabel == "L-R") { 
-          latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+          latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	}
         latex -> SetNDC();
         latex -> SetTextFont(42);
@@ -459,7 +469,7 @@ int main(int argc, char** argv)
           }
 	  
           if (peaks[LRLabel][index][firstPeak].first== -9999){
-            histo -> GetXaxis() -> SetRangeUser(0., energyMax); 
+            histo -> GetXaxis() -> SetRangeUser(0., map_energyMaxs[Vov]); 
             peaks[LRLabel].erase(index);
             ranges[LRLabel].erase(index);
             if (!source.compare(Na22) || !source.compare(Na22SingleBar) ) peaks[LRLabel][index]["0.511 MeV"].first = -10;
@@ -479,8 +489,8 @@ int main(int argc, char** argv)
         // -- if Co60 sum peak or laser, we don't use the spectrum analyzers - just gaussian fit to the energy peak.
         if( !source.compare(Co60SumPeak) || !source.compare(Laser) )
         { 
-          histo -> GetXaxis() -> SetRangeUser(energyMin,energyMax);
-          float max = FindXMaximum(histo,energyMin,energyMax);
+          histo -> GetXaxis() -> SetRangeUser(map_energyMins[Vov],map_energyMaxs[Vov]);
+          float max = FindXMaximum(histo,map_energyMins[Vov],map_energyMaxs[Vov]);
           
           TF1* fitFunc = new TF1 ( Form("func_%d",index), "gaus(0)", max-2*histo->GetRMS(), max+2*histo->GetRMS() );
           fitFunc -> SetLineColor(kBlack);
@@ -515,8 +525,8 @@ int main(int argc, char** argv)
         // -- keep all events within energyMin and energyMax
         if( !source.compare(keepAll) )
         { 
-	  ranges[LRLabel][index] -> push_back( energyMin );
-          ranges[LRLabel][index] -> push_back( energyMax );
+	  ranges[LRLabel][index] -> push_back( map_energyMins[Vov] );
+          ranges[LRLabel][index] -> push_back( map_energyMins[Vov] );
 	  
           for(auto range: (*ranges[LRLabel][index]))
 	    {
@@ -535,7 +545,7 @@ int main(int argc, char** argv)
         if(!source.compare(TB)){ 
 	  /*
 	  //TF1* f_langaus = new TF1("f_langaus", langaufun, 300.,1000.,4);
-	    f_langaus[index] = new TF1(Form("fit_energy_bar%02d_Vov%.1f_vth1_%02.0f",iBar,Vov,vth1),langaufun,Vov_LandauMin[Vov],1000.,4);
+	    f_langaus[index] = new TF1(Form("fit_energy_bar%02d_Vov%.2f_vth1_%02.0f",iBar,Vov,vth1),langaufun,Vov_LandauMin[Vov],1000.,4);
 	    f_langaus[index] -> SetParameters(f_landau->GetParameter(2),f_landau->GetParameter(1),histo->Integral(histo->FindBin(300.),histo->FindBin(1000.))*histo->GetBinWidth(1),10.);
 	    f_langaus[index] -> SetLineColor(kBlack);
 	    f_langaus[index] -> SetLineWidth(2);
@@ -559,7 +569,7 @@ int main(int argc, char** argv)
 	  float max = histo->GetBinCenter(histo->GetMaximumBin());
 	  histo->GetXaxis()->SetRangeUser(0,1000);
 	  
-	  f_gaus[index] = new TF1(Form("fit_energy_bar%02d%s_Vov%.1f_vth1_%02.0f",iBar,LRLabel.c_str(),Vov,vth1), "gaus", max-50, max+50);
+	  f_gaus[index] = new TF1(Form("fit_energy_bar%02d%s_Vov%.2f_vth1_%02.0f",iBar,LRLabel.c_str(),Vov,vth1), "gaus", max-50, max+50);
 	  f_gaus[index]->SetParameters(histo->GetMaximumBin(), max, 70);
 	  histo->Fit(f_gaus[index], "QRS");
 	  f_gaus[index]->SetRange(f_gaus[index]->GetParameter(1)-f_gaus[index]->GetParameter(2), f_gaus[index]->GetParameter(1)+f_gaus[index]->GetParameter(2));
@@ -571,7 +581,7 @@ int main(int argc, char** argv)
 	  //ranges[LRLabel][index] -> push_back( 0.80*f_gaus[index]->GetParameter(1));
 	  //ranges[LRLabel][index] -> push_back( histo -> GetBinCenter(700) ); // to avoid sturation
 	  
-	  f_landau[index] = new TF1(Form("f_landau_bar%02d%s_Vov%.1f_vth1_%02.0f", iBar,LRLabel.c_str(),Vov,vth1),"[0]*TMath::Landau(x,[1],[2])", 0,1000.);
+	  f_landau[index] = new TF1(Form("f_landau_bar%02d%s_Vov%.2f_vth1_%02.0f", iBar,LRLabel.c_str(),Vov,vth1),"[0]*TMath::Landau(x,[1],[2])", 0,1000.);
 	  f_landau[index] -> SetRange(max * 0.8, max * 1.5);
 	  f_landau[index] -> SetParameters(100.,f_gaus[index]->GetParameter(1),f_gaus[index]->GetParameter(2));
 	  histo -> Fit(f_landau[index],"QRS");
@@ -705,7 +715,7 @@ int main(int argc, char** argv)
 	  
 	  if( h1_energyRatio[index2] == NULL )
 	    {
-	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.1f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
+	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	      
 	      //h1_energyRatio[index2] = new TH1F(Form("h1_energyRatio_%s",labelLR_energyBin.c_str()),"",300,0.,5.);
               h1_energyRatio[index2] = new TH1F(Form("h1_energyRatio_%s",labelLR_energyBin.c_str()),"",1000,0.,5.);
@@ -805,7 +815,7 @@ int main(int argc, char** argv)
 	      fitFunc_energyRatio[index2] -> SetLineWidth(2);
 	      fitFunc_energyRatio[index2] -> Draw("same");
 	      
-	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	      latex -> SetNDC();
 	      latex -> SetTextFont(42);
 	      latex -> SetTextSize(0.04);
@@ -837,7 +847,7 @@ int main(int argc, char** argv)
 	      fitFunc_totRatio[index2] -> SetLineWidth(2);
 	      fitFunc_totRatio[index2] -> Draw("same");
 	      
-	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	      latex -> SetNDC();
 	      latex -> SetTextFont(42);
 	      latex -> SetTextSize(0.04);
@@ -860,7 +870,7 @@ int main(int argc, char** argv)
 	      histo -> Draw();
 	      histo -> Write();
 	      	      
-	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	      latex -> SetNDC();
 	      latex -> SetTextFont(42);
 	      latex -> SetTextSize(0.04);
@@ -941,7 +951,7 @@ int main(int argc, char** argv)
 	  
 	  if( h1_deltaT[index2] == NULL )
 	    {
-	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.1f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
+	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	      
 	      h1_deltaT[index2] = new TH1F(Form("h1_deltaT_%s",labelLR_energyBin.c_str()),"",2000,-12000,12000.);
 	      p1_deltaT_vs_energyRatio[index2] = new TProfile(Form("p1_deltaT_vs_energyRatio_%s",labelLR_energyBin.c_str()),"",50,energyRatioMean-3.*energyRatioSigma,energyRatioMean+3.*energyRatioSigma);
@@ -1012,7 +1022,7 @@ int main(int argc, char** argv)
 	    prof -> GetYaxis() -> SetRangeUser(CTRMeans[index2]-3.*CTRSigmas[index2],CTRMeans[index2]+3.*CTRSigmas[index2]);
 	    prof -> Draw("");
 	    
-	    latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+	    latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	    latex -> SetNDC();
 	    latex -> SetTextFont(42);
 	    latex -> SetTextSize(0.04);
@@ -1043,7 +1053,7 @@ int main(int argc, char** argv)
 	    prof -> GetYaxis() -> SetRangeUser(CTRMeans[index2]-3.*CTRSigmas[index2],CTRMeans[index2]+3.*CTRSigmas[index2]);
 	    prof -> Draw("");
 	    
-	    latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+	    latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	    latex -> SetNDC();
 	    latex -> SetTextFont(42);
 	    latex -> SetTextSize(0.04);
@@ -1111,7 +1121,7 @@ int main(int argc, char** argv)
 	  
 	  if( h1_deltaT_energyRatioCorr[index2] == NULL )
 	    {
-	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.1f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
+	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	      h1_deltaT_energyRatioCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
 	      h1_deltaT_totRatioCorr[index2]    = new TH1F(Form("h1_deltaT_totRatioCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
               p1_deltaT_totRatioCorr_vs_totRatio[index2] = new TProfile(Form("p1_deltaT_totRatioCorr_vs_totRatio_%s",labelLR_energyBin.c_str()),"",50,fitFunc_totRatio[index2]->GetParameter(1)-3.*fitFunc_totRatio[index2]->GetParameter(2), fitFunc_totRatio[index2]->GetParameter(1)+3.*fitFunc_totRatio[index2]->GetParameter(2));
@@ -1168,7 +1178,7 @@ int main(int argc, char** argv)
 	    {
 	      double  index2( 10000000*iEnergyBin + index1 );
 	      
-	      outTrees2[index2] = new TTree(Form("dataRes_bar%02dL-R_Vov%.1f_th%02.0f_enBin%02d",iBar,Vov,vth1,iEnergyBin),Form("dataRes_bar%02dL-R_Vov%.1f_th%02.0f_enBin%02d",iBar,Vov,vth1,iEnergyBin));
+	      outTrees2[index2] = new TTree(Form("dataRes_bar%02dL-R_Vov%.2f_th%02.0f_enBin%02d",iBar,Vov,vth1,iEnergyBin),Form("dataRes_bar%02dL-R_Vov%.2f_th%02.0f_enBin%02d",iBar,Vov,vth1,iEnergyBin));
 	      outTrees2[index2] -> Branch("energyBin", &enBin);
 	      outTrees2[index2] -> Branch("timeResolution",&timeRes);
 	      outTrees2[index2] -> Branch("timeResolutionToT",&timeResToT);
@@ -1212,11 +1222,11 @@ int main(int argc, char** argv)
 	      fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
 	      // non mi prende il range di fit se non faccio SetRange a mano...
 	      fitFunc -> SetRange(fitXMin, fitXMax);
-	      histo -> Fit(fitFunc,"QNRSL+","", fitXMin, fitXMax);
+	      histo -> Fit(fitFunc,"QNRSL","", fitXMin, fitXMax);
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QNRSL","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
 	      
 	      fitFunc -> SetLineColor(kBlue+1);
 	      fitFunc -> SetLineWidth(3);
@@ -1279,11 +1289,11 @@ int main(int argc, char** argv)
 	      fitFunc = new TF1(Form("fitFunc_totCorr_%s",labelLR_energyBin.c_str()),"gaus",-10000, 10000);
 	      fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
 	      fitFunc -> SetRange(fitXMin, fitXMax);
-	      histo -> Fit(fitFunc,"QNRSL+");
+	      histo -> Fit(fitFunc,"QNRSL");
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.0*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.0*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+");
+	      histo -> Fit(fitFunc,"QNRSL");
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+");
+	      histo -> Fit(fitFunc,"QRSL+");
 	      
 	      fitFunc -> SetLineColor(kBlue+1);
 	      fitFunc -> SetLineWidth(3);
@@ -1340,11 +1350,11 @@ int main(int argc, char** argv)
 	      fitFunc = new TF1(Form("fitFunc_%s",labelLR_energyBin.c_str()),"gaus",-10000,10000);
 	      fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
 	      fitFunc -> SetRange(fitXMin, fitXMax);
-	      histo -> Fit(fitFunc,"QNRSL+","", fitXMin, fitXMax);
+	      histo -> Fit(fitFunc,"QNRSL","", fitXMin, fitXMax);
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QNRSL","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
 	      
 	      fitFunc -> SetLineColor(kRed+1);
 	      fitFunc -> SetLineWidth(3);
@@ -1380,7 +1390,7 @@ int main(int argc, char** argv)
 	      prof -> SetTitle(Form(";t1fineMean [ps];#Deltat [ps]"));
 	      prof -> Draw("pl");
 	      
-	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	      latex -> SetNDC();
 	      latex -> SetTextFont(42);
 	      latex -> SetTextSize(0.04);
@@ -1399,7 +1409,7 @@ int main(int argc, char** argv)
 	      prof -> SetTitle(Form(";t1fineMean [ps];#Deltat [ps]"));
 	      prof -> Draw("pl");
 	      
-	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.1f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	      latex -> SetNDC();
 	      latex -> SetTextFont(42);
 	      latex -> SetTextSize(0.04);
@@ -1452,7 +1462,7 @@ int main(int argc, char** argv)
 	 	 
 	 if( h1_deltaT_energyRatioPhaseCorr[index2] == NULL )
 	   {
-	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.1f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
+	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	     h1_deltaT_energyRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
            }
 	 
@@ -1473,7 +1483,7 @@ int main(int argc, char** argv)
 	 	 
 	 if( h1_deltaT_totRatioPhaseCorr[index2] == NULL )
 	   {
-	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.1f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
+	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	     h1_deltaT_totRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_totRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
            }
 	 
@@ -1539,11 +1549,11 @@ int main(int argc, char** argv)
 	      TF1* fitFunc = new TF1(Form("fitFunc_phaseCorr_%s",labelLR_energyBin.c_str()),"gaus",-10000, 10000);
 	      fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
 	      fitFunc -> SetRange(fitXMin, fitXMax);
-	      histo -> Fit(fitFunc,"QNRSL+","", fitXMin, fitXMax);
+	      histo -> Fit(fitFunc,"QNRSL","", fitXMin, fitXMax);
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QNRSL","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
 	      
 	      fitFunc -> SetLineColor(kGreen+2);
 	      fitFunc -> SetLineWidth(3);
@@ -1604,11 +1614,11 @@ int main(int argc, char** argv)
 	      fitFunc = new TF1(Form("fitFunc_energyCorr_%s",labelLR_energyBin.c_str()),"gaus",-10000, 10000);
 	      fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
 	      fitFunc -> SetRange(fitXMin, fitXMax);
-	      histo -> Fit(fitFunc,"QNRSL+","", fitXMin, fitXMax);
+	      histo -> Fit(fitFunc,"QNRSL","", fitXMin, fitXMax);
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QNRSL","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
 	      
 	      fitFunc -> SetLineColor(kBlue+1);
 	      fitFunc -> SetLineWidth(3);
@@ -1666,11 +1676,11 @@ int main(int argc, char** argv)
 	      fitFunc = new TF1(Form("fitFunc_phaseCorr_%s",labelLR_energyBin.c_str()),"gaus",-10000, 10000);
 	      fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
 	      fitFunc -> SetRange(fitXMin, fitXMax);
-	      histo -> Fit(fitFunc,"QNRSL+","", fitXMin, fitXMax);
+	      histo -> Fit(fitFunc,"QNRSL","", fitXMin, fitXMax);
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QNRSL","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
 	      
 	      fitFunc -> SetLineColor(kGreen+2);
 	      fitFunc -> SetLineWidth(3);
@@ -1719,11 +1729,11 @@ int main(int argc, char** argv)
 	      fitFunc = new TF1(Form("fitFunc_totCorr_%s",labelLR_energyBin.c_str()),"gaus",-10000, 10000);
 	      fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
 	      fitFunc -> SetRange(fitXMin, fitXMax);
-	      histo -> Fit(fitFunc,"QNRSL+","", fitXMin, fitXMax);
+	      histo -> Fit(fitFunc,"QNRSL","", fitXMin, fitXMax);
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QNRSL","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
 	      fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
-	      histo -> Fit(fitFunc,"QNRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+	      histo -> Fit(fitFunc,"QRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
 	      
 	      fitFunc -> SetLineColor(kBlue+1);
 	      fitFunc -> SetLineWidth(3);
