@@ -488,9 +488,16 @@ int main(int argc, char** argv)
 	  anEvent.timeR = timeR[iBar];
 	  anEvent.t1fineL = t1fineL[iBar];
 	  anEvent.t1fineR = t1fineR[iBar];
-	  anEvent.nhits = nhits;
-	  anEvent.x = x;
-	  anEvent.y = y;
+	  if(useTrackInfo){
+	    anEvent.nhits = nhits;
+	    anEvent.x = x;
+	    anEvent.y = y;
+	  }
+	  else{
+	    anEvent.nhits = -1;
+	    anEvent.x = -999.;
+	    anEvent.y = -999.;
+	  }
 	  outTrees[index] -> Fill();
 	}
       }// -- end loop over bars
@@ -530,9 +537,16 @@ int main(int argc, char** argv)
 	anEvent.timeR = timeR[maxBar];
 	anEvent.t1fineL = t1fineL[maxBar];
 	anEvent.t1fineR = t1fineR[maxBar];
-	anEvent.nhits = nhits;
-	anEvent.x = x;
-	anEvent.y = y;
+	if(useTrackInfo){
+	  anEvent.nhits = nhits;
+	  anEvent.x = x;
+	  anEvent.y = y;
+	}
+	else{
+	  anEvent.nhits = -1;
+	  anEvent.x = -999.;
+	  anEvent.y = -999.;
+	}
 	outTrees[index] -> Fill();
       }
   } // --- end loop over events
