@@ -221,8 +221,6 @@ int main(int argc, char** argv)
 	// --- calculate energy sum for module - useful to remove showering events
 	if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
 
-	  if (useTrackInfo) std::cout <<  "nhits, x, y = " << nhits << ", " << x << ", " << y << std::endl; 
-	 
 	    float energySumArray = 0.;
 	    int   nBarsArray = 0;
 	    for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {                             
@@ -490,6 +488,9 @@ int main(int argc, char** argv)
 	  anEvent.timeR = timeR[iBar];
 	  anEvent.t1fineL = t1fineL[iBar];
 	  anEvent.t1fineR = t1fineR[iBar];
+	  anEvent.nhits = nhits;
+	  anEvent.x = x;
+	  anEvent.y = y;
 	  outTrees[index] -> Fill();
 	}
       }// -- end loop over bars
@@ -529,6 +530,9 @@ int main(int argc, char** argv)
 	anEvent.timeR = timeR[maxBar];
 	anEvent.t1fineL = t1fineL[maxBar];
 	anEvent.t1fineR = t1fineR[maxBar];
+	anEvent.nhits = nhits;
+	anEvent.x = x;
+	anEvent.y = y;
 	outTrees[index] -> Fill();
       }
   } // --- end loop over events
