@@ -127,6 +127,8 @@ int main(int argc, char** argv)
   std::vector<float>* qT1 = 0;
   std::vector<unsigned short>* t1fine = 0;
   
+  int nhits;
+  float x, y;
   
   tree -> SetBranchStatus("*",0);
   tree -> SetBranchStatus("step1",  1); tree -> SetBranchAddress("step1",  &step1);
@@ -142,6 +144,13 @@ int main(int argc, char** argv)
   tree -> SetBranchStatus("qT1",       1); tree -> SetBranchAddress("qT1",      &qT1);
   tree -> SetBranchStatus("t1fine",    1); tree -> SetBranchAddress("t1fine",   &t1fine);
   
+  if ( !opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
+    tree -> SetBranchStatus("nhits_WC", 1); tree -> SetBranchAddress("nhits_WC",  &nhits);
+    tree -> SetBranchStatus("x_WC", 1);     tree -> SetBranchAddress("x_WC",          &x);
+    tree -> SetBranchStatus("y_WC", 1);     tree -> SetBranchAddress("y_WC",          &y);
+  }
+  
+
   //--- get plot settings
   std::vector<int> Vov = opts.GetOpt<std::vector<int> >("Plots.Vov");
   std::vector<int> energyBins = opts.GetOpt<std::vector<int> >("Plots.energyBins");
@@ -205,6 +214,9 @@ int main(int argc, char** argv)
        	
 	// --- calculate energy sum for module - useful to remove showering events
 	if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
+
+	  std::cout <<  "nhits, x, y = " << nhits << ", " << x << ", " << y << std::endl; 
+	 
 	    float energySumArray = 0.;
 	    int   nBarsArray = 0;
 	    for(int iBar = 0; iBar < 16; ++iBar) {                             
