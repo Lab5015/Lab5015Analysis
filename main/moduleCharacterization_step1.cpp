@@ -349,6 +349,8 @@ int main(int argc, char** argv)
 	TrackProcess(cpu, mem, vsz, rss);
       }
     
+    if (useTrackInfo && nhits > 0 &&  (x < -100 || y < -100 ) ) continue;
+
     float Vov = step1;
     float vth1 = float(int(step2/10000)-1);
     float vth2 = int((step2-10000*(vth1+1))/100.)-1;
@@ -498,7 +500,10 @@ int main(int argc, char** argv)
 	    anEvent.x = -999.;
 	    anEvent.y = -999.;
 	  }
+	  
+	  
 	  outTrees[index] -> Fill();
+	  
 	}
       }// -- end loop over bars
     
