@@ -79,7 +79,9 @@ public:
   long long timeR;
   unsigned short t1fineL;
   unsigned short t1fineR;
-  
+  int nhits;
+  float x;
+  float y;
   ClassDef(ModuleEventClass,1);
 };
 

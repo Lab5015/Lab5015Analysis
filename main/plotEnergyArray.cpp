@@ -39,6 +39,8 @@ using namespace std;
 
 int main(int argc, char** argv){
 
+  gStyle->SetPalette(kRainBow);
+
 
   //--- parse the config file
   CfgManager opts;
@@ -66,11 +68,12 @@ int main(int argc, char** argv){
   int myvth1  = 20;
 
   // -- max energySum
-
   float maxEnergySum = 800;
+  int maxNbars = 3;
 
   TChain* tree = new TChain("data","data");
-  tree->Add(Form("/data/TOFHIR2/MTDTB_CERN_Jul21/reco/%d/*_ped_e.root", run));
+  //tree->Add(Form("/data/TOFHIR2/MTDTB_CERN_Jul21/reco/%d/*_ped_e.root", run));
+  tree->Add(Form("/data/tofhir2/h8/reco/%d/*_ped_e.root", run));
 
   //--- define branches
   float step1, step2;
@@ -117,6 +120,7 @@ int main(int argc, char** argv){
   map<float, map<int, map<int,TH1F*> > > h_energyLR_selEnergySum;
   map<float, map<int, map<int,TH1F*> > > h_energyLR_selEnergyFraction;
   map<float, map<int, map<int,TH1F*> > > h_energyLR_selEnergySumNbars;
+  map<float, map<int, map<int,TH1F*> > > h_energyLR_selNbars;
   map<float, map<int, TH1F*> >  h_energySum;
   map<float, map<int, TH1F*> >  h_nBars;
   map<float, map<int, map<int,TH2F*> > > h_energyLR_vs_energySum;
@@ -134,17 +138,18 @@ int main(int argc, char** argv){
 	h_energyLR[Vov][iMod][iBar] = new TH1F(Form("h_energyLR_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 1000);	
 	h_energyLR_selEnergySum[Vov][iMod][iBar] = new TH1F(Form("h_energyLR_selEnergySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_selEnergySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 1000);	
 	h_energyLR_selEnergySumNbars[Vov][iMod][iBar] = new TH1F(Form("h_energyLR_selEnergySumNbars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_selEnergySumNbars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 1000);	
+	h_energyLR_selNbars[Vov][iMod][iBar] = new TH1F(Form("h_energyLR_selNbars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_selNbars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 1000);	
 	h_energyLR_selEnergyFraction[Vov][iMod][iBar] = new TH1F(Form("h_energyLR_selEnergyFraction_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_selEnergyFraction_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 1000);	
-	h_energyLR_vs_energySum[Vov][iMod][iBar] = new TH2F(Form("h_energyLR_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 1000, 0, 10000, 500, 0, 1000);	
-	h_energyFraction_vs_energySum[Vov][iMod][iBar] = new TH2F(Form("h_energyFraction_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyFraction_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 1000, 0, 10000, 110, 0, 1.1);	
+	h_energyLR_vs_energySum[Vov][iMod][iBar] = new TH2F(Form("h_energyLR_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 10000, 500, 0, 1000);	
+	h_energyFraction_vs_energySum[Vov][iMod][iBar] = new TH2F(Form("h_energyFraction_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyFraction_vs_energySum_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 10000, 110, 0, 1.1);	
 	h_energyFraction_vs_energyLR[Vov][iMod][iBar] = new TH2F(Form("h_energyFraction_vs_energyLR_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyFraction_vs_energyLR_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 500, 0, 1000, 110, 0, 1.1);	
-	h_energyLR_vs_nBars[Vov][iMod][iBar] = new TH2F(Form("h_energyLR_vs_nBars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_vs_nBars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 16, -0.5, 15.5, 500, 0, 1000);	
-	h_energyMap_MIP[Vov][iMod][iBar] = new TH1F(Form("h_energyMap_MIP_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyMap_MIP_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov),16,-0.5,15.5);
-	h_energyMap_Shower[Vov][iMod][iBar] = new TH1F(Form("h_energyMap_Shower_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyMap_Shower_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov),16,-0.5,15.5);
+	h_energyLR_vs_nBars[Vov][iMod][iBar] = new TH2F(Form("h_energyLR_vs_nBars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyLR_vs_nBars_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), 17, -0.5, 16.5, 500, 0, 1000);	
+	h_energyMap_MIP[Vov][iMod][iBar] = new TH1F(Form("h_energyMap_MIP_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyMap_MIP_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov),17,-0.5,16.5);
+	h_energyMap_Shower[Vov][iMod][iBar] = new TH1F(Form("h_energyMap_Shower_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov), Form("h_energyMap_Shower_array%02d_bar%02d_Vov%.01f",iMod,iBar,Vov),17,-0.5,16.5);
       }
       h_energySum[Vov][iMod] = new TH1F(Form("h_energySum_array%02d_Vov%.01f",iMod,Vov), Form("h_energySum_array%02d_Vov%.01f",iMod,Vov),5000,0,10000);
-      h_nBars[Vov][iMod] = new TH1F(Form("h_nBars_array%02d_Vov%.01f",iMod,Vov), Form("h_nBars_array%02d_Vov%.01f",iMod,Vov),16,-0.5,15);
-      h_energySum_vs_nBars[Vov][iMod] = new TH2F(Form("h_energySum_vs_nBars_array%02d_Vov%.01f",iMod,Vov), Form("h_energySum_vs_nBars_array%02d_Vov%.01f",iMod,Vov), 16, -0.5, 15.5, 1000, 0, 10000);	
+      h_nBars[Vov][iMod] = new TH1F(Form("h_nBars_array%02d_Vov%.01f",iMod,Vov), Form("h_nBars_array%02d_Vov%.01f",iMod,Vov),17,-0.5,16.5);
+      h_energySum_vs_nBars[Vov][iMod] = new TH2F(Form("h_energySum_vs_nBars_array%02d_Vov%.01f",iMod,Vov), Form("h_energySum_vs_nBars_array%02d_Vov%.01f",iMod,Vov), 17, -0.5, 16.5, 500, 0, 10000);	
     }
   }
 
@@ -205,17 +210,20 @@ int main(int argc, char** argv){
 	if ( aveEnergy[iMod][iBar] > 0) {
 	  
 	  h_energyLR_vs_energySum[Vov][iMod][iBar]->Fill(energySum[iMod], aveEnergy[iMod][iBar]);
+	  //if (n[iMod] <= maxNbars) h_energyLR_vs_energySum[Vov][iMod][iBar]->Fill(energySum[iMod], aveEnergy[iMod][iBar]);
 	  h_energyFraction_vs_energySum[Vov][iMod][iBar]->Fill(energySum[iMod], aveEnergy[iMod][iBar]/energySum[iMod]);
 	  
 	  h_energyFraction_vs_energyLR[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar], aveEnergy[iMod][iBar]/energySum[iMod]);
 	  h_energyLR_vs_nBars[Vov][iMod][iBar]->Fill(n[iMod], aveEnergy[iMod][iBar]);
-	  
+	  //if (energySum[iMod] < maxEnergySum ) h_energyLR_vs_nBars[Vov][iMod][iBar]->Fill(n[iMod], aveEnergy[iMod][iBar]);
+ 
 	  if (energySum[iMod] < maxEnergySum ) h_energyLR_selEnergySum[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
-	  if (energySum[iMod] < maxEnergySum && n[iMod] < 6) h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
+	  if (energySum[iMod] < maxEnergySum && n[iMod] <= maxNbars) h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
+	  if (n[iMod] <= maxNbars) h_energyLR_selNbars[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
 	  if (aveEnergy[iMod][iBar]/energySum[iMod] > 0.9 ) h_energyLR_selEnergyFraction[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
 	  
 	  // -- showering events
-	  if (energySum[iMod] > maxEnergySum && aveEnergy[iMod][iBar] > maxEnergySum) {
+	  if (energySum[iMod] > maxEnergySum && n[iMod] > maxNbars) {
 	    for (int jBar = 0; jBar < 16; jBar++){
 	      h_energyMap_Shower[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
 	    }
@@ -223,12 +231,14 @@ int main(int argc, char** argv){
 
 	  // -- MIP events
 	  //if (energySum[iMod] < maxEnergySum && n[iMod] < 6 && aveEnergy[iMod][iBar] > 400 && aveEnergy[iMod][iBar] < 600) {
-	  if (energySum[iMod] < maxEnergySum && n[iMod] < 6 && aveEnergy[iMod][iBar] > 50 && aveEnergy[iMod][iBar] < maxEnergySum ) {
+	  if (energySum[iMod] < maxEnergySum && n[iMod] <= maxNbars) {
 	    for (int jBar = 0; jBar < 16; jBar++){
-	      h_energyMap_MIP[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
+	      if ( Vov == 5 && aveEnergy[iMod][iBar]> 400 && aveEnergy[iMod][iBar] < maxEnergySum) 
+		h_energyMap_MIP[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
+	      if ( Vov == 1.5 && aveEnergy[iMod][iBar]> 50 && aveEnergy[iMod][iBar] < maxEnergySum) 
+		h_energyMap_MIP[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
 	    }
 	  }
-
 	}
       }
 
@@ -246,9 +256,11 @@ int main(int argc, char** argv){
     float Vov = Vovs[ivov];
     for (int iMod = 0; iMod < 2; iMod++){
       for (int iBar=0; iBar < 16; iBar++){
+	if (h_energyLR[Vov][iMod][iBar]->GetEntries()==0) continue;
 	h_energyLR[Vov][iMod][iBar]->Write();
 	h_energyLR_selEnergySum[Vov][iMod][iBar]->Write();
 	h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->Write();
+	h_energyLR_selNbars[Vov][iMod][iBar]->Write();
 	h_energyLR_selEnergyFraction[Vov][iMod][iBar]->Write();
 	h_energyFraction_vs_energySum[Vov][iMod][iBar]->Write();
 	h_energyFraction_vs_energyLR[Vov][iMod][iBar]->Write();
@@ -275,23 +287,30 @@ int main(int argc, char** argv){
     for (int iMod = 0; iMod < 2; iMod++){
       for (int iBar=0; iBar < 16; iBar++){
 
+	if (h_energyLR[Vov][iMod][iBar]->GetEntries()==0) continue;
+
 	TCanvas *c = new TCanvas("c","c", 700, 600);
 
 	c->cd();
+	c->SetLogy();
 	h_energyLR[Vov][iMod][iBar]->GetXaxis()->SetTitle("energy [ADC]");
 	h_energyLR_selEnergySum[Vov][iMod][iBar]->SetLineColor(kRed);
 	h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->SetLineColor(kMagenta);
 	h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->SetLineStyle(3);
+	h_energyLR_selNbars[Vov][iMod][iBar]->SetLineColor(kGreen+1);
+	h_energyLR_selNbars[Vov][iMod][iBar]->SetLineStyle(1);
 	h_energyLR_selEnergyFraction[Vov][iMod][iBar]->SetLineColor(kOrange);
 	h_energyLR_selEnergyFraction[Vov][iMod][iBar]->SetLineStyle(2);
 	h_energyLR[Vov][iMod][iBar]->Draw();
 	h_energyLR_selEnergySum[Vov][iMod][iBar]->Draw("same");
 	h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->Draw("same");
+	h_energyLR_selNbars[Vov][iMod][iBar]->Draw("same");
 	h_energyLR_selEnergyFraction[Vov][iMod][iBar]->Draw("same");
 	TLegend *leg = new TLegend();
 	leg->AddEntry(h_energyLR[Vov][iMod][iBar],"all","L");
 	leg->AddEntry(h_energyLR_selEnergySum[Vov][iMod][iBar],"E_{array} < 800","L");
-	leg->AddEntry(h_energyLR_selEnergySumNbars[Vov][iMod][iBar],"E_{array} < 800 && Nbars","L");
+	leg->AddEntry(h_energyLR_selEnergySumNbars[Vov][iMod][iBar],"E_{array} < 800 && Nbars < 5","L");
+	leg->AddEntry(h_energyLR_selNbars[Vov][iMod][iBar],"Nbars < 5","L");
 	leg->AddEntry(h_energyLR_selEnergyFraction[Vov][iMod][iBar],"E_{bar}/E_{array} > 0.9","L");
 	leg->Draw("same");
 	c->Print(Form("%s/c_energy_array%02d_bar%02d_Vov%.01f.png",plotDir.c_str(),iMod,iBar,Vov));
@@ -299,8 +318,9 @@ int main(int argc, char** argv){
 
 
 	c->cd();
+	c->SetLogy(0);
 	c->SetLogz();
-	h_energyLR_vs_energySum[Vov][iMod][iBar]->GetXaxis()->SetRangeUser(0, 6000);
+	h_energyLR_vs_energySum[Vov][iMod][iBar]->GetXaxis()->SetRangeUser(0, 5000);
 	h_energyLR_vs_energySum[Vov][iMod][iBar]->GetXaxis()->SetTitle("energy sum [ADC]");
 	h_energyLR_vs_energySum[Vov][iMod][iBar]->GetYaxis()->SetTitle("energy [ADC]");
 	h_energyLR_vs_energySum[Vov][iMod][iBar]->Draw("colz");
@@ -309,7 +329,7 @@ int main(int argc, char** argv){
 
 	c->cd();
 	c->SetLogz();
-	h_energyFraction_vs_energySum[Vov][iMod][iBar]->GetXaxis()->SetRangeUser(0, 6000);
+	h_energyFraction_vs_energySum[Vov][iMod][iBar]->GetXaxis()->SetRangeUser(0, 5000);
 	h_energyFraction_vs_energySum[Vov][iMod][iBar]->GetXaxis()->SetTitle("energy sum [ADC]");
 	h_energyFraction_vs_energySum[Vov][iMod][iBar]->GetYaxis()->SetTitle("energy fraction");
 	h_energyFraction_vs_energySum[Vov][iMod][iBar]->Draw("colz");
