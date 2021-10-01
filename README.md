@@ -63,13 +63,15 @@ The analysis of the collected data is structured in three steps
 1. `moduleCharacterizationSummaryPlots.py`:
    This step takes the output of step2 as an input and displays summary plots in a website. Loop over the events doesn't belong here.
    example:
-   ```python moduleCharacterizationSummaryPlots.py -m 2 -i run2071 -o /var/www/html/TOFHIR2X/ModuleCharacterization/run2071
+   ```sh
+   python moduleCharacterizationSummaryPlots.py -m 2 -i run2071 -o /var/www/html/TOFHIR2X/ModuleCharacterization/run2071
    ```
 
 
 1. An additional code which is useful to plot the pulse shape for a given channel is `drawPulseShape.exe`. The pulse shape is computed with respect to the trigger.
    example:
-   ```./bin/drawPulseShape.exe cfg/drawPulseShape_HPK_2E14_52deg_T-40C_Vov1.50.cfg`
+   ```sh
+   ./bin/drawPulseShape.exe cfg/drawPulseShape_HPK_2E14_52deg_T-40C_Vov1.50.cfg`
    ```
 
 
