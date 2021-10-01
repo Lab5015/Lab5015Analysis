@@ -60,10 +60,14 @@ The analysis of the collected data is structured in three steps
     
    The output of this step are histograms.
 
-1. `moduleCharacterization_step3.cpp`:
-   This step is still missing. The idea here is to run over the histograms filled in step2 and produce summary plots. Loops over the events don't belong to here.
-
-
+1. `moduleCharacterizationSummaryPlots.py`:                                                                                                                                                               
+   This step takes the output of step2 as an input and displays summary plots in a website. Loop over the events doesn't belong here.                                                                     
+   example: `python moduleCharacterizationSummaryPlots.py -m 2 -i run2071 -o /var/www/html/TOFHIR2X/ModuleCharacterization/run2071`                                                                       
+                                                                                                                                                                                                          
+                                                                                                                                                                                                          
+1. An additional code which is useful to plot the pulse shape for a given channel is `drawPulseShape.exe`. The pulse shape is computed with respect to the trigger.                                       
+   example: `./bin/drawPulseShape.exe cfg/drawPulseShape_HPK_2E14_52deg_T-40C_Vov1.50.cfg`                   
+   
 
 ### Submit the analysis in parallel on pcfatis
 A script under the `scripts` folder allows the submission of multiple jobs (e.g. a set of runs corresponding to an overvoltage/threshold scan) in parallel on `pcfatis`. one job per run. The script is used as follows:
