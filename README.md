@@ -68,11 +68,11 @@ The analysis of the collected data is structured in three steps
    ```
 
 
-1. An additional code which is useful to plot the pulse shape for a given channel is `drawPulseShape.exe`. The pulse shape is computed with respect to the trigger.
-   example:
-   ```sh
-   ./bin/drawPulseShape.exe cfg/drawPulseShape_HPK_2E14_52deg_T-40C_Vov1.50.cfg`
-   ```
+An additional code which is useful to plot the pulse shape for a given channel is `drawPulseShape.exe`. The pulse shape is computed with respect to the trigger.
+example:
+```sh
+./bin/drawPulseShape.exe cfg/drawPulseShape_HPK_2E14_52deg_T-40C_Vov1.50.cfg`
+```
 
 
 ### Submit the analysis in parallel on pcfatis
