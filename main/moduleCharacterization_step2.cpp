@@ -533,7 +533,7 @@ int main(int argc, char** argv)
         if( !source.compare(keepAll) )
         { 
 	  ranges[LRLabel][index] -> push_back( map_energyMins[Vov] );
-          ranges[LRLabel][index] -> push_back( map_energyMins[Vov] );
+          ranges[LRLabel][index] -> push_back( map_energyMaxs[Vov] );
 	  
           for(auto range: (*ranges[LRLabel][index]))
 	    {
@@ -1398,8 +1398,8 @@ int main(int argc, char** argv)
 	      c -> Print(Form("%s/CTR_energyRatioCorr/c_deltaT_energyRatioCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
-	      c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_energyRatioCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
-	      c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_energyRatioCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_totRatioCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_totRatioCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c2;
 
 

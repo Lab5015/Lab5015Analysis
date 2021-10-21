@@ -85,7 +85,7 @@ int main(int argc, char** argv)
     
     for(int run = runMin; run <= runMax; ++run) {
       std::string fileName;
-      if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      if( !usePedestals ) fileName = Form("%s/%s%04d_*e*.root",inputDir.c_str(),fileBaseName.c_str(),run);
       //else                fileName = Form("%s/%s%04d_*ped_e.root",inputDir.c_str(),fileBaseName.c_str(),run);
       else                fileName = Form("%s/%04d/*ped_e.root",inputDir.c_str(),run);
       std::cout << ">>> Adding file " << fileName << std::endl;
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
   
   //--- define branches
   float step1, step2;
-  int channelIdx[128];
+  int channelIdx[256];
   std::vector<unsigned short> *qfine = 0;
   std::vector<float> *tot = 0;
   std::vector<float> *energy = 0;
@@ -386,18 +386,18 @@ int main(int argc, char** argv)
     
     for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)
       {
-	if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0){
-	  
-	  qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
-	  qfineR[iBar]=(*qfine)[channelIdx[chR[iBar]]];
-	  totL[iBar]=0.001*(*tot)[channelIdx[chL[iBar]]];
-	  totR[iBar]=0.001*(*tot)[channelIdx[chR[iBar]]];
-	  energyL[iBar]=(*energy)[channelIdx[chL[iBar]]];
-	  energyR[iBar]=(*energy)[channelIdx[chR[iBar]]];
-	  timeL[iBar]=(*time)[channelIdx[chL[iBar]]];
-	  timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
-	  t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
-	  t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
+	if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0)
+	  {
+	    qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
+	    qfineR[iBar]=(*qfine)[channelIdx[chR[iBar]]];
+	    totL[iBar]=0.001*(*tot)[channelIdx[chL[iBar]]];
+	    totR[iBar]=0.001*(*tot)[channelIdx[chR[iBar]]];
+	    energyL[iBar]=(*energy)[channelIdx[chL[iBar]]];
+	    energyR[iBar]=(*energy)[channelIdx[chR[iBar]]];
+	    timeL[iBar]=(*time)[channelIdx[chL[iBar]]];
+	    timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
+	    t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
+	    t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
 	}
 	else
 	  {
@@ -432,7 +432,7 @@ int main(int argc, char** argv)
 	  }
 	}
     
-    int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
+	int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
 	
 	
 	//--- create histograms, if needed
