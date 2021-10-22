@@ -23,6 +23,8 @@ ROOT.gROOT.SetBatch(True)
 
 
 plotDir = '/var/www/html/TOFHIR2X/MTDST_CERN_Oct21/'
+outFile = ROOT.TFile("/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots_fede/drawLaserCTR_vs_SR.root","RECREATE");
+
 
 dac_to_uA = { 
     'ith2_3': 1.250,
@@ -35,11 +37,17 @@ dac_to_uA = {
     'ith1_0': 0.156
 }
 
-Vovs = [1.5, 2.5, 3.5]
+VovList = [1.5, 2.5, 3.5]
 
 runs_dict = { 
 
-    98 : [ 'ith2_3', 0.80, [1.5, 2.5, 3.5]],
+    84 : [ 'ith2_0', 0.60, [2.5, 3.5]],
+    87 : [ 'ith2_0', 0.50, [2.5, 3.5]],
+    89 : [ 'ith2_0', 0.40, [2.5, 3.5]],
+    91 : [ 'ith2_0', 0.30, [2.5, 3.5]],
+    93 : [ 'ith2_0', 0.20, [2.5, 3.5]],
+
+    98 : [ 'ith2_3', 0.80, [2.5, 3.5]],
     99 : [ 'ith2_3', 0.70, [1.5, 2.5, 3.5]],
     100 : [ 'ith2_3', 0.60, [1.5, 2.5, 3.5]],
     101 : [ 'ith2_3', 0.50, [1.5, 2.5, 3.5]],
@@ -52,7 +60,7 @@ runs_dict = {
 
 g_tRes_vs_SR = {}
 g_tRes_vs_SR_all = ROOT.TGraphErrors()
-for Vov in Vovs:
+for Vov in VovList:
     g_tRes_vs_SR[Vov] = ROOT.TGraphErrors()
 
 
@@ -60,13 +68,15 @@ for Vov in Vovs:
 # -- compute SR vs threshold
 npoints = 7
 
-for run in runs_dict:
+for run in sorted(runs_dict):
+    print("===>>> Processing run: ", run)
+
     ithMode = runs_dict[run][0]
     laserTune = runs_dict[run][1]
     Vovs  = runs_dict[run][2]
 
     for Vov in Vovs:
-        inFile = ROOT.TFile.Open('/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots//pulseShape_run%04d.root'%run)
+        inFile = ROOT.TFile.Open('/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots_fede/pulseShape_run%04d.root'%run)
     
         SR = 0.
         thresh = 0.
@@ -87,8 +97,10 @@ for run in runs_dict:
             fitSR.SetRange( graph.GetPointX(index_min)-0.001, graph.GetPointX(index_max)+0.001 )
             fitSR.SetParameters(0,20)
             graph.Fit(fitSR,'QRS')
+            outFile.cd()
+            graph.Write('Run%s_g_ps_totSel_%s_Vov%.01f'%(run,ch,Vov))
         
-            print index_cen, index_min, index_max, graph.GetY()[index_cen], fitSR.GetParameter(1)
+            #print index_cen, index_min, index_max, graph.GetY()[index_cen], fitSR.GetParameter(1)
             SR += fitSR.GetParameter(1)
             thresh += int(round(graph.GetPointY(index_cen)/dac_to_uA[ithMode]))
         
@@ -97,14 +109,10 @@ for run in runs_dict:
     
         print(SR,thresh)
     
-        inFile = ROOT.TFile.Open('/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots/moduleCharacterization_step2_run%.04d.root'%run)
+        inFile = ROOT.TFile.Open('/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots_fede/moduleCharacterization_step2_run%.04d.root'%run)
         
-        #best th    
-        bestRes = [9999, 9999]
-        bestTh = 4
-
-        print('NAME: h1_deltaT_totRatioCorr_bar00L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
-        histo = inFile.Get('h1_deltaT_totRatioCorr_bar00L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
+        print('NAME: h1_deltaT_totRatioCorr_bar02L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
+        histo = inFile.Get('h1_deltaT_totRatioCorr_bar02L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
         if histo == None:
             continue
         if histo.GetEntries() < 100:
@@ -112,8 +120,6 @@ for run in runs_dict:
         if histo.GetRMS() <= 0.:
             continue
 
-
-        print("Vov: ", Vov)
 
         fitFunc = ROOT.TF1('fitFunc','gaus',-10000, 10000)
         fitFunc.SetRange(histo.GetMean()-2.0*histo.GetRMS(),histo.GetMean()+2.0*histo.GetRMS())
@@ -128,11 +134,12 @@ for run in runs_dict:
         
         g_tRes_vs_SR_all.SetPoint(g_tRes_vs_SR_all.GetN(), SR, res[0]/math.sqrt(2))
         g_tRes_vs_SR_all.SetPointError(g_tRes_vs_SR_all.GetN()-1, 0., math.sqrt(pow(res[1]/math.sqrt(2),2) + 2.*2.))
+        print("   ")
         
 
 
 c = ROOT.TCanvas('c_tRes_vs_SR','c_tRes_vs_SR',1200,700)
-hPad = ROOT.gPad.DrawFrame(0.,0.,300.,100.)
+hPad = ROOT.gPad.DrawFrame(0.,0.,300.,150.)
 hPad.SetTitle(";slew rate [#muA/ns];#sigma_{t}^{single} [ps]");
 hPad.Draw();
 ROOT.gPad.SetGridx();
@@ -144,7 +151,7 @@ legend.SetBorderSize(0)
 
 fit = {}
 it = 1
-for Vov in Vovs:
+for Vov in VovList:
     g_tRes_vs_SR[Vov].SetLineColor(51+8*it)
     g_tRes_vs_SR[Vov].SetMarkerColor(51+8*it)
     g_tRes_vs_SR[Vov].SetMarkerSize(1)
@@ -153,7 +160,7 @@ for Vov in Vovs:
     fit[Vov] = ROOT.TF1('fit%d'%laserTune,'sqrt([0]*[0] + [1]*[1]/x/x )', 0, 300)
     fit[Vov].SetLineColor(51+8*it)
     fit[Vov].SetLineWidth(1)
-    fit[Vov].SetParameters(12, 600)
+    fit[Vov].SetParameters(12, 500)
     g_tRes_vs_SR[Vov].Fit(fit[Vov],'QRNS')
     fit[Vov].Draw('same')
     it += 1
@@ -164,7 +171,7 @@ legend.Draw('same')
 fitAll = ROOT.TF1('fitAll','sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
 fitAll.SetLineColor(ROOT.kBlack)
 fitAll.SetLineStyle(2)
-fitAll.SetParameters(12, 600)
+fitAll.SetParameters(12, 500)
 g_tRes_vs_SR_all.Fit(fitAll,'SR')
 fitAll.Draw('same')
 

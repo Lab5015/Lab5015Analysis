@@ -132,7 +132,7 @@ int main(int argc, char** argv)
   //---------------
   // define outfile
   //TFile* outFile = new TFile(Form("./plots/pulseShape_run%04d.root",run),"RECREATE");
-  TFile* outFile = new TFile(Form("./plots/pulseShape_run%s.root",runs.c_str()),"RECREATE");
+  TFile* outFile = new TFile(Form("./plots_fede/pulseShape_run%s.root",runs.c_str()),"RECREATE");
   //  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
   
   

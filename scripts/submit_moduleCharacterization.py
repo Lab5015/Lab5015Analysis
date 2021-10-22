@@ -68,11 +68,11 @@ for intrun in runs:
          fo.write(contents)
       command = 'sed -i \"s%^runs .*$%runs '+str(run)+'%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^step1FileName .*$%step1FileName '+args.baseFolder+'/plots/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
+      command = 'sed -i \"s%^step1FileName .*$%step1FileName '+args.baseFolder+'/plots_fede/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^outFileNameStep1 .*$%outFileNameStep1 '+args.baseFolder+'/plots/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
+      command = 'sed -i \"s%^outFileNameStep1 .*$%outFileNameStep1 '+args.baseFolder+'/plots_fede/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^outFileNameStep2 .*$%outFileNameStep2 '+args.baseFolder+'/plots/moduleCharacterization_step2_run'+str(run)+'.root%\" '+configFileName
+      command = 'sed -i \"s%^outFileNameStep2 .*$%outFileNameStep2 '+args.baseFolder+'/plots_fede/moduleCharacterization_step2_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
       command = 'sed -i \"s%^plotDir .*$%plotDir /var/www/html/TOFHIR2X/MTDST_CERN_Oct21/ModuleCharacterization/run'+str(run)+'/%\" '+configFileName
       os.system(command)
