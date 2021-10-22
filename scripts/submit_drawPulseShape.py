@@ -6,7 +6,7 @@ import sys
 import argparse
 import subprocess
 
-parser = argparse.ArgumentParser(description='This script splits moduleCharacterization_step* tasks in multiple parallel jobs')
+parser = argparse.ArgumentParser(description='This script splits drawPulseShape tasks in multiple parallel jobs')
 
 parser.add_argument("-l",  "--label",          required=True, type=str, help="job label")
 parser.add_argument("-b",  "--baseFolder",     required=True, type=str, help="base folder")
@@ -68,13 +68,13 @@ for intrun in runs:
          fo.write(contents)
       command = 'sed -i \"s%^runs .*$%runs '+str(run)+'%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^step1FileName .*$%step1FileName '+args.baseFolder+'/plots/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
+      command = 'sed -i \"s%^step1FileName .*$%step1FileName '+args.baseFolder+'/plots/pulseShape_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^outFileNameStep1 .*$%outFileNameStep1 '+args.baseFolder+'/plots/moduleCharacterization_step1_run'+str(run)+'.root%\" '+configFileName
+      command = 'sed -i \"s%^outFileNameStep1 .*$%outFileNameStep1 '+args.baseFolder+'/plots/pulseShape_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^outFileNameStep2 .*$%outFileNameStep2 '+args.baseFolder+'/plots/moduleCharacterization_step2_run'+str(run)+'.root%\" '+configFileName
+      command = 'sed -i \"s%^outFileNameStep2 .*$%outFileNameStep2 '+args.baseFolder+'/plots/pulseShape_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^plotDir .*$%plotDir /var/www/html/TOFHIR2X/MTDST_CERN_Oct21/ModuleCharacterization/run'+str(run)+'/%\" '+configFileName
+      command = 'sed -i \"s%^plotDir .*$%plotDir /var/www/html/TOFHIR2X/MTDST_CERN_Oct21/pulseShapes/run'+str(run)+'/%\" '+configFileName
       os.system(command)
       
    parallelCommand += configFileName + " "
@@ -93,7 +93,7 @@ with open(jobDir+'/jobs.sh', 'w') as fout:
    fout.write("echo 'STOP---------------'\n")
    fout.write("echo\n")
    fout.write("echo\n")
-   os.system("chmod 755 job.sh")
+os.system("chmod 755 "+jobDir+"/jobs.sh")
    
 if args.submit:
    os.system("source "+jobDir+"/jobs.sh")
