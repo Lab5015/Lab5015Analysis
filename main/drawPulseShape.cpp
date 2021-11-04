@@ -105,7 +105,7 @@ int main(int argc, char** argv)
       if( runMax == -1 ) runMax = runMin;
     
       for(int run = runMin; run <= runMax; ++run) {
-	std::string inFileName = Form("/data/tofhir2/reco/run%04d*_e.root",run); 
+	std::string inFileName = Form("/data/tofhir2/h8/reco/%04d/*_e.root",run); 
 	std::cout << ">>> Adding file " << inFileName << std::endl;
 	data -> Add(inFileName.c_str());
       }
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
   //---------------
   // define outfile
   //TFile* outFile = new TFile(Form("./plots/pulseShape_run%04d.root",run),"RECREATE");
-  TFile* outFile = new TFile(Form("./plots/pulseShape_run%s.root",runs.c_str()),"RECREATE");
+  TFile* outFile = new TFile(Form("./plots/pulseShape_run%s_%d_%d.root",runs.c_str(), ch1, ch2),"RECREATE");
   //  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
   
   
@@ -178,6 +178,10 @@ int main(int argc, char** argv)
     if( ithMode.find("vth1") != std::string::npos ) ith = ith1;
     if( ithMode.find("vth2") != std::string::npos ) ith = ith2;
     
+    /// --- remove ith = 2 
+    if (ith == 2) continue;
+
+
     // -- coincidence with external bar
     if (coincidence.find("yes") != std::string::npos){
       if( channelIdx[ch1Ext] < 0 ) continue; 
@@ -188,10 +192,15 @@ int main(int argc, char** argv)
       if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
     }
 
-
+    
+    // -- energy selections
+    if( channelIdx[ch1] < 0 ) continue;
+    if( channelIdx[ch2] < 0 ) continue;
+    if( 0.5*( (*energy)[channelIdx[ch1]] +  (*energy)[channelIdx[ch2]] ) < energyMin || 
+	0.5*( (*energy)[channelIdx[ch2]] +  (*energy)[channelIdx[ch2]] ) > energyMax ) continue;
+    
     for(int ch :  channels)
     {
-      if( channelIdx[ch] < 0 ) continue;
       if( ( thrZero.GetThresholdZero(ch,ithMode) + ith + 1) > 63. ) continue;
 
       if( ch == ch1 && !h1_time1_wide_ch1[Vov][ith] )
@@ -203,9 +212,9 @@ int main(int argc, char** argv)
         h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.1f_ith%02d",Vov,ith),"",10000,-10000.,10000.);
       }
       
-      if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
-      
       if( (*tot)[channelIdx[ch]]/1000. < 0. || (*tot)[channelIdx[ch]]/1000. > 100. ) continue;
+
+      //if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
 
 
       // --  laser
@@ -257,6 +266,7 @@ int main(int argc, char** argv)
 	  int ith = mapIt2.first;
 	  TH1F* histo = mapIt2.second;
 	  histo->Write();
+	  if ( histo ->GetEntries() == 0 ) continue;
 
 	  std::cout << "===>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 	  if( (lowestThr[Vov][ch1] != 0 && ith < lowestThr[Vov][ch1]) || (lowestThr[Vov][ch1] == 0) )
@@ -264,8 +274,7 @@ int main(int argc, char** argv)
 	      std::cout << "=========>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 
 	      timeOffset[Vov][ch1] = histo->GetBinCenter(histo->GetMaximumBin());
-	      std::cout << "timeOffset = " << timeOffset[Vov][ch1] <<std::endl;
-	      //timeOffset[Vov][ch1] = 230;
+	      std::cout << "ch1 timeOffset = " << timeOffset[Vov][ch1] <<std::endl;
 	      lowestThr[Vov][ch1] = ith;
 	    }
 	}
@@ -280,11 +289,13 @@ int main(int argc, char** argv)
 	  int ith = mapIt2.first;
 	  TH1F* histo = mapIt2.second;
 	  histo->Write();
-	  
+	  if ( histo ->GetEntries() == 0 ) continue;
+
+	  std::cout << "===>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 	  if( (lowestThr[Vov][ch2] != 0 && ith < lowestThr[Vov][ch2]) || (lowestThr[Vov][ch2] == 0) )
 	    {
 	      timeOffset[Vov][ch2] = histo->GetBinCenter(histo->GetMaximumBin());
-	      //timeOffset[Vov][ch2] = 230;
+	      std::cout << "ch2 timeOffset = " << timeOffset[Vov][ch2] <<std::endl;
 	      lowestThr[Vov][ch2] = ith;
 	    }
 	}
@@ -324,6 +335,12 @@ int main(int argc, char** argv)
       if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
     }
 
+
+    // -- selection energy
+    if( channelIdx[ch1] < 0 ) continue;
+    if( channelIdx[ch2] < 0 ) continue;
+    if( 0.5*( (*energy)[channelIdx[ch1]] +  (*energy)[channelIdx[ch2]] ) < energyMin ||
+        0.5*( (*energy)[channelIdx[ch2]] +  (*energy)[channelIdx[ch2]] ) > energyMax ) continue;  
     
     for(int ch :  channels)
     {
@@ -355,7 +372,7 @@ int main(int argc, char** argv)
         h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
       }
       
-      if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
+      //      if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
       
       if( ch == ch1 )
       {
@@ -608,15 +625,23 @@ int main(int argc, char** argv)
     {
       int ith = mapIt2.first;
       TH1F* histo = mapIt2.second;
-      histo -> Write();
 
       std::cout << "+++++>>>> " << ith << " " << histo->Integral() << std::endl;
       //if( histo->Integral() <= 0.8*h1_time1_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
       if( histo->Integral() < 10) continue;
 
+      //TF1 *fitFunc = new TF1("fitFunc","gaus",-10000, 10000);
+      //fitFunc->SetRange(histo->GetBinCenter(histo->GetMaximumBin())-histo->GetRMS(), histo->GetBinCenter(histo->GetMaximumBin())+histo->GetRMS() );
+      //histo->Fit(fitFunc,"QRS+");
+
       if( !g_ps_totSel_ch1[Vov] ) g_ps_totSel_ch1[Vov] = new TGraphErrors();
+      histo->GetXaxis()->SetRangeUser(-10,10);
       g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch1],ith*dac_to_uA);
       g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
+      //g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),fitFunc->GetParameter(1)-timeOffset[Vov][ch1],ith*dac_to_uA);
+      //g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,fitFunc->GetParError(1),0.);
+
+      histo -> Write();
       
     }
     for(auto mapIt2 : mapIt.second)
@@ -628,8 +653,15 @@ int main(int argc, char** argv)
       //if( histo->Integral() <= 0.8*h1_time2_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
       if( histo->Integral() < 10) continue;  
 
+      //TF1 *fitFunc = new TF1("fitFunc","gaus",-10000, 10000);
+      //fitFunc->SetRange(histo->GetBinCenter(histo->GetMaximumBin())-histo->GetRMS(), histo->GetBinCenter(histo->GetMaximumBin())+histo->GetRMS() );
+      //histo->Fit(fitFunc,"QRS+");
+
+      histo->GetXaxis()->SetRangeUser(10,30);
       g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch1],ith*dac_to_uA);
       g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
+      //g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),fitFunc->GetParameter(1)-timeOffset[Vov][ch1],ith*dac_to_uA);
+      //g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,fitFunc->GetParError(1),0.);
       
       histo -> Write();
     }
@@ -641,13 +673,23 @@ int main(int argc, char** argv)
     {
       int ith = mapIt2.first;
       TH1F* histo = mapIt2.second;
-      histo -> Write();
+
       //if( histo->Integral() <= 0.9*h1_time1_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
       if( histo->Integral() < 10 ) continue;
 
+      //TF1 *fitFunc = new TF1("fitFunc","gaus",-10000, 10000);
+      //fitFunc->SetRange(histo->GetBinCenter(histo->GetMaximumBin())-histo->GetRMS(), histo->GetBinCenter(histo->GetMaximumBin())+histo->GetRMS() );
+      //histo->Fit(fitFunc,"QRS+");
+
       if( !g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] = new TGraphErrors();
+      histo->GetXaxis()->SetRangeUser(-10,10);
       g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch2],ith*dac_to_uA);
       g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
+      //      g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),fitFunc->GetParameter(1)-timeOffset[Vov][ch2],ith*dac_to_uA);
+      //g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,fitFunc->GetParError(1),0.);
+
+      histo -> Write();
+
     }
     for(auto mapIt2 : mapIt.second)
     {
@@ -656,9 +698,16 @@ int main(int argc, char** argv)
       //if( histo->Integral() <= 0.9*h1_time2_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
       if( histo->Integral() < 10 ) continue; 
 
+      TF1 *fitFunc = new TF1("fitFunc","gaus",-10000, 10000);
+      fitFunc->SetRange(histo->GetBinCenter(histo->GetMaximumBin())-histo->GetRMS(), histo->GetBinCenter(histo->GetMaximumBin())+histo->GetRMS() );
+      histo->Fit(fitFunc,"QRS+");
+
+      histo->GetXaxis()->SetRangeUser(10,30);
       g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch2],ith*dac_to_uA);
       g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
-      
+      //g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),fitFunc->GetParameter(1)-timeOffset[Vov][ch2],ith*dac_to_uA);
+      //g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,fitFunc->GetParError(1),0.);
+
       histo -> Write();
     }
   }
@@ -668,7 +717,8 @@ int main(int argc, char** argv)
   // draw plots
   //std::string plotDir(Form("/var/www/html/TOFHIR2X/pulseShapes/run%04d/",run));
   //std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%04d/",run));
-  std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%s/",runs.c_str()));
+  //std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%s/",runs.c_str()));
+  std::string plotDir(Form("/var/www/html/TOFHIR2X/MTDTB_CERN_Oct21/pulseShapes/run%s_%d_%d/",runs.c_str(), ch1,ch2));
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
@@ -857,42 +907,33 @@ int main(int argc, char** argv)
       {
         slewRate = f_temp->GetParameter(1);
         fitFunc_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+	fitFunc_ch1 -> SetRange(g_temp->GetPointX(0), g_temp->GetPointX(g_temp->GetN()-1));
       }
+      delete g_temp;
     }
 
     TF1* fitFuncLow_ch1 = new TF1("fitFuncLow_ch1","pol1",-5.,10.);
     //-- slew rate at low threshold
     TGraph* g_temp = new TGraph();
-    for(int point1 = 0; point1 < 4; ++point1){
+    for(int point1 = 0; point1 < 5; ++point1){
       g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch1[Vov]->GetPointX(point1),g_ps_totSel_ch1[Vov]->GetPointY(point1)); 
     }
     TF1* f_temp = new TF1("f_temp","pol1", g_temp ->GetPointX(0), g_temp ->GetPointX(3));
     f_temp->SetParameter(1,10.);
     g_temp -> Fit(f_temp,"QNRS"); 
     fitFuncLow_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+    fitFuncLow_ch1 -> SetRange(g_temp ->GetPointX(0), g_temp ->GetPointX(3));
     float slewRate_low = fitFuncLow_ch1->GetParameter(1); 
-    std::cout << "Slew rate at low threshold = " << slewRate_low << std::endl;
-    // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-    //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 30. )
-    //   {
-    //     fitXMin = g_ps_totSel_ch1[Vov]->GetPointX(point);
-    //     break;
-    //   }
-    // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-    //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 100. )
-    //   {
-    //     fitXMax = g_ps_totSel_ch1[Vov]->GetPointX(point);
-    //     std::cout << fitXMax << std::endl;
-    //     break;
-    //   }
-    // TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,7.);
-    // fitFunc_ch1 -> SetParameters(0.,250.);
-    // g_ps_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QNS+","",fitXMin,fitXMax);
+    std::cout << "ch1 - Slew rate max              = " << slewRate << std::endl;
+    std::cout << "ch1 - Slew rate at low threshold = " << slewRate_low << std::endl;
+    delete g_temp;
+
+    // -- draw
     fitFunc_ch1 -> SetLineColor(kRed-4);
     fitFunc_ch1 -> Draw("same");
-    TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("slew rate max = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
+    TLatex* latex_ch1 = new TLatex(0.30,0.80,Form("slew rate max = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
     if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1 = new TLatex(0.40,0.80,Form("slew rate max = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));     
+      latex_ch1 = new TLatex(0.30,0.80,Form("slew rate max = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));     
     }
     latex_ch1 -> SetNDC();
     latex_ch1 -> SetTextFont(82);
@@ -901,17 +942,21 @@ int main(int argc, char** argv)
     latex_ch1 -> SetTextColor(kRed-4);
     latex_ch1 -> Draw("same");
 
-    TLatex* latex_ch1_low = new TLatex(0.40,0.70,Form("slew rate = %.1f #muA/ns",fitFuncLow_ch1->GetParameter(1)));
+    fitFuncLow_ch1 -> SetLineColor(kRed+2);
+    fitFuncLow_ch1 -> Draw("same");
+    TLatex* latex_ch1_low = new TLatex(0.30,0.70,Form("slew rate timing th. = %.1f #muA/ns",fitFuncLow_ch1->GetParameter(1)));
     if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1_low = new TLatex(0.40,0.70,Form("slew rate = %.1f mV/ns",fitFuncLow_ch1->GetParameter(1)));     
+      latex_ch1_low = new TLatex(0.30,0.70,Form("slew rate timing th. = %.1f mV/ns",fitFuncLow_ch1->GetParameter(1)));     
     }
     latex_ch1_low -> SetNDC();
     latex_ch1_low -> SetTextFont(82);
     latex_ch1_low -> SetTextSize(0.04);
     latex_ch1_low -> SetTextAlign(11);
-    latex_ch1_low -> SetTextColor(kRed-4);
+    latex_ch1_low -> SetTextColor(kRed+2);
     latex_ch1_low -> Draw("same");
     
+
+    // --- channel 2
     slewRate = 0.;
     TF1* fitFunc_ch2 = new TF1("fitFunc_ch","pol1",-10.,100.);
     for(int point1 = 0; point1 < g_ps_totSel_ch2[Vov]->GetN()-4; ++point1)
@@ -929,32 +974,34 @@ int main(int argc, char** argv)
       {
         slewRate = f_temp->GetParameter(1);
         fitFunc_ch2 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+	fitFunc_ch2 -> SetRange(g_temp->GetPointX(0), g_temp->GetPointX(g_temp->GetN()-1));
       }
+      delete g_temp;
     }
-    // if( g_ps_totSel_ch2[Vov] )
-    // {
-    //   fitXMin = 0.;
-    //   fitXMax = 999.;
-    //   for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
-    //     if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 30. )
-    //     {
-    //       fitXMin = g_ps_totSel_ch2[Vov]->GetPointX(point);
-    //       break;
-    //     }
-    //   for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
-    //     if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 100. )
-    //     {
-    //       fitXMax = g_ps_totSel_ch2[Vov]->GetPointX(point);
-    //       break;
-    //     }
-    // TF1* fitFunc_ch2 = new TF1("fitFunc_ch2","pol1",0.,7.);
-    // fitFunc_ch2 -> SetParameters(0.,250.);
-    // g_ps_totSel_ch2[Vov] -> Fit(fitFunc_ch2,"QNS+","",fitXMin,fitXMax);
+    
+    TF1* fitFuncLow_ch2 = new TF1("fitFuncLow_ch2","pol1",-5.,10.);
+    //-- slew rate at low threshold
+    g_temp = new TGraph();
+    for(int point1 = 0; point1 < 5; ++point1){
+      g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch2[Vov]->GetPointX(point1),g_ps_totSel_ch2[Vov]->GetPointY(point1)); 
+    }
+    f_temp = new TF1("f_temp","pol1", g_temp ->GetPointX(0), g_temp ->GetPointX(3));
+    f_temp->SetParameter(1,10.);
+    g_temp -> Fit(f_temp,"QNRS"); 
+    fitFuncLow_ch2 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+    fitFuncLow_ch2 -> SetRange(g_temp ->GetPointX(0), g_temp ->GetPointX(3));
+    slewRate_low = fitFuncLow_ch2->GetParameter(1); 
+    std::cout << "ch2 - Slew rate max              = " << slewRate << std::endl;
+    std::cout << "ch2 - Slew rate at low threshold = " << slewRate_low << std::endl;
+    delete g_temp;
+
+
+
     fitFunc_ch2 -> SetLineColor(kBlue-4);
     fitFunc_ch2 -> Draw("same");
-    TLatex* latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
+    TLatex* latex_ch2 = new TLatex(0.30,0.76,Form("slew rate max = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
     if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f mV/ns",fitFunc_ch2->GetParameter(1)));     
+      latex_ch2 = new TLatex(0.30,0.76,Form("slew rate max = %.1f mV/ns",fitFunc_ch2->GetParameter(1)));     
     }
     latex_ch2 -> SetNDC();
     latex_ch2 -> SetTextFont(82);
@@ -962,6 +1009,20 @@ int main(int argc, char** argv)
     latex_ch2 -> SetTextAlign(11);
     latex_ch2 -> SetTextColor(kBlue-4);
     latex_ch2 -> Draw("same");
+
+
+    fitFuncLow_ch2 -> SetLineColor(kBlue+2);
+    fitFuncLow_ch2 -> Draw("same");
+    TLatex* latex_ch2_low = new TLatex(0.30,0.66,Form("slew rate timing th. = %.1f #muA/ns",fitFuncLow_ch2->GetParameter(1)));
+    if (tofhirVersion.find("2A")!= std::string::npos ){
+      latex_ch2_low = new TLatex(0.30,0.66,Form("slew rate timing th. = %.1f mV/ns",fitFuncLow_ch2->GetParameter(1)));     
+    }
+    latex_ch2_low -> SetNDC();
+    latex_ch2_low -> SetTextFont(82);
+    latex_ch2_low -> SetTextSize(0.04);
+    latex_ch2_low -> SetTextAlign(11);
+    latex_ch2_low -> SetTextColor(kBlue+2);
+    latex_ch2_low -> Draw("same");
     
     c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.1f.png",plotDir.c_str(),Vov));
     delete c;
