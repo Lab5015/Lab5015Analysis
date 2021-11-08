@@ -464,6 +464,7 @@ int main(int argc, char** argv)
 	  
     for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)
       {
+	nBarsVeto[iBar] = 0;
 	
 	if (totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100)
 	  {
@@ -475,9 +476,8 @@ int main(int argc, char** argv)
 	    }
 	    
 	    // check energy in adjacent bars
-	    nBarsVeto[iBar] = 0;
 	    for (unsigned int jBar = iBar - 2; jBar < iBar + 3; ++jBar){
-	      //for (unsigned int jBar = iBar - 1; jBar < iBar + 2; ++jBar){
+	      //for (unsigned int jBar = 0; jBar < channelMapping.size()/2; ++jBar){
 	      if (jBar == iBar) continue;
 	      if (jBar < 0 || jBar > 15 ) continue;
 	      if (totL[jBar]<0 || totL[jBar]>100) continue;

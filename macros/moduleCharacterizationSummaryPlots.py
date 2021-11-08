@@ -34,7 +34,7 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 source = 'TB'
-tResMax = 150
+tResMax = 200
 
 # create files list
 label_list = (args.inputLabels.split(','))
@@ -100,6 +100,7 @@ cols = { 1.00 : 49,
          3.83  : 4}
 
 
+
 # --- prepare output dir
 if (os.path.isdir(outdir) == False): 
     os.system('mkdir %s'%outdir)
@@ -136,6 +137,19 @@ thresholds.sort()
 
 bars.remove(14)
 bars.remove(15)
+
+
+VovsEff = {}
+if ('HPK_1E13_52deg_T0C' in args.outFolder):
+    VovsEff = { 1.50 : 1.21 ,
+                1.65 : 1.30 ,
+                2.30 : 1.72 ,
+                2.00 : 1.53 ,
+                3.20 : 2.19 }
+else:
+    VovsEff = Vovs
+
+
 
 print 'bars:', bars
 print 'Vovs:',Vovs
@@ -363,7 +377,7 @@ for bar in bars:
             g_tot_vs_th[bar, l, vov].SetMarkerColor(i+1)
             g_tot_vs_th[bar, l, vov].SetLineColor(i+1)
             g_tot_vs_th[bar, l, vov].Draw('plsame')
-        leg.AddEntry(g_tot_vs_th[bar,'L', vov], 'V_{OV} = %.02f'%vov, 'PL')
+        leg.AddEntry(g_tot_vs_th[bar,'L', vov], 'V_{OV}^{eff} = %.02f'%VovsEff[vov], 'PL')
     leg.Draw()    
     ctot1.SaveAs(outdir+'/summaryPlots/tot/'+ctot1.GetName()+'.png')
     ctot1.SaveAs(outdir+'/summaryPlots/tot/'+ctot1.GetName()+'.pdf')
@@ -407,7 +421,7 @@ for bar in bars:
             g_energy_vs_th[bar, l, vov, refPeak].SetMarkerColor(i+1)
             g_energy_vs_th[bar, l, vov, refPeak].SetLineColor(i+1)
             g_energy_vs_th[bar, l, vov, refPeak].Draw('plsame')
-        leg.AddEntry(g_energy_vs_th[bar,'L', vov, refPeak], 'V_{OV} = %.02f'%vov, 'PL')
+        leg.AddEntry(g_energy_vs_th[bar,'L', vov, refPeak], 'V_{OV}^{eff} = %.02f'%VovsEff[vov], 'PL')
     leg.Draw()
     cen1.SaveAs(outdir+'/summaryPlots/energy/'+cen1.GetName()+'.png')
     cen1.SaveAs(outdir+'/summaryPlots/energy/'+cen1.GetName()+'.pdf')
@@ -457,7 +471,7 @@ for bar in bars:
             g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin].SetMarkerColor(cols[vov])
             g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin].SetLineColor(cols[vov])
             g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin].Draw('plsame')
-            leg.AddEntry(g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin], 'V_{OV} = %.02f'%vov, 'PL')
+            leg.AddEntry(g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin], 'V_{OV}^{eff} = %.02f'%VovsEff[vov], 'PL')
             outfile.cd()
             g_deltaT_energyRatioCorr_vs_th[bar, vov, enBin].Write('g_deltaT_energyRatioCorr_vs_th_bar%02d_Vov%.02f_enBin%02d'%(bar, vov, enBin))
         leg.Draw()
@@ -520,7 +534,7 @@ for i, vov in enumerate(Vovs):
             g_tot_vs_bar[l, vov, thRef].SetMarkerColor(cols[vov])
             g_tot_vs_bar[l, vov, thRef].SetLineColor(cols[vov])
             g_tot_vs_bar[l, vov, thRef].Draw('plsame')
-        leg.AddEntry(g_tot_vs_bar['L', vov, thRef], 'V_{OV} = %.02f'%vov, 'PL')
+        leg.AddEntry(g_tot_vs_bar['L', vov, thRef], 'V_{OV}^{eff} = %.02f'%VovsEff[vov], 'PL')
     leg.Draw()
     ctot3.SaveAs(outdir+'/summaryPlots/tot/'+ctot3.GetName()+'.png')
     ctot3.SaveAs(outdir+'/summaryPlots/tot/'+ctot3.GetName()+'.pdf')    
@@ -547,7 +561,7 @@ for i, vov in enumerate(Vovs):
             print 'Vov = %.02f, average  energy %s = %.02f'%(vov, l, g_energy_vs_bar[l, vov, thRef, refPeak].GetMean(2))
             outfile.cd()  
             g_energy_vs_bar[l, vov, thRef, refPeak].Write('g_energy%s_vs_bar_Vov%.02f_th%02d'%(l,vov,thRef))
-        leg.AddEntry(g_energy_vs_bar['L', vov, thRef, refPeak], 'V_{OV} = %.02f'%vov, 'PL')
+        leg.AddEntry(g_energy_vs_bar['L', vov, thRef, refPeak], 'V_{OV}^{eff} = %.02f'%VovsEff[vov], 'PL')
     leg.Draw()
     cen3.SaveAs(outdir+'/summaryPlots/energy/'+cen3.GetName()+'.png')
     cen3.SaveAs(outdir+'/summaryPlots/energy/'+cen3.GetName()+'.pdf')    
@@ -570,7 +584,7 @@ for enBin in enBins:
         g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Draw('plsame')
         outfile.cd() 
         g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Write('g_deltaT_energyRatioCorr_vs_bar__Vov%.02f_th%02d'%(vov,thRef))
-        leg.AddEntry(g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin], 'V_{OV} = %.02f'%vov, 'PL')
+        leg.AddEntry(g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin], 'V_{OV}^{eff} = %.02f'%VovsEff[vov], 'PL')
     leg.Draw()
     ctres3.SaveAs(outdir+'/summaryPlots/timeResolution/'+ctres3.GetName()+'.png')
     ctres3.SaveAs(outdir+'/summaryPlots/timeResolution/'+ctres3.GetName()+'.pdf')    
@@ -595,7 +609,7 @@ for enBin in enBins:
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetLineColor(cols[vov])
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('plsame')
         print 'Vov = %0.02f --> Spread of tRes = %.03f'%(vov, g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2))
-        leg.AddEntry(g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin], 'V_{OV} = %.02f'%vov, 'PL')
+        leg.AddEntry(g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin], 'V_{OV}^{eff} = %.02f'%VovsEff[vov], 'PL')
         outfile.cd()
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Write('g_deltaT_energyRatioCorr_bestTh_vs_bar_Vov%.02f_enBin%02d'%(vov, enBin))
     leg.Draw()

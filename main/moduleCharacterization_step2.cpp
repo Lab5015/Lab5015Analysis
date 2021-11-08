@@ -603,6 +603,9 @@ int main(int argc, char** argv)
 	  f_landau[index] -> SetRange(max * 0.60, max * 2.5);
 	  f_landau[index] -> SetParameters(histo->Integral(histo->GetMaximumBin(), histo->GetNbinsX())/10, max, 0.1*max);
 	  histo -> Fit(f_landau[index],"QRS");
+	  f_landau[index] -> SetRange(f_landau[index]->GetParameter(1) * 0.60, f_landau[index]->GetParameter(1) * 2.5);
+	  f_landau[index] -> SetParameters(histo->Integral(histo->GetMaximumBin(), histo->GetNbinsX())/10, f_landau[index]->GetParameter(1), 0.1*f_landau[index]->GetParameter(1));
+	  histo -> Fit(f_landau[index],"QRS");
 
 	  f_landau[index] -> SetLineColor(kBlack);
 	  f_landau[index] -> SetLineWidth(2);
@@ -610,7 +613,8 @@ int main(int argc, char** argv)
 	  
 	  
 	  if (f_landau[index]->GetParameter(1) > minE[std::make_pair(iBar, Vov)]) 
-	    ranges[LRLabel][index] -> push_back( 0.75*f_landau[index]->GetParameter(1));
+	    //ranges[LRLabel][index] -> push_back( 0.75*f_landau[index]->GetParameter(1));
+	    ranges[LRLabel][index] -> push_back( 0.60*f_landau[index]->GetParameter(1));
 	  else
 	    ranges[LRLabel][index] -> push_back( minE[std::make_pair(iBar, Vov)] ); // 
 	  
