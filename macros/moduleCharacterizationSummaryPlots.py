@@ -88,7 +88,7 @@ bars = []
 thresholds = []
 Vovs = [] 
 for label in label_list:
-    inputFile = ROOT.TFile.Open('/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots_fede/moduleCharacterization_step2_%s.root'%label)
+    inputFile = ROOT.TFile.Open('/home/data/mtd/RUptoro2/Lab5015Analysis_MTDST_CERN_Oct21/plots_fede//moduleCharacterization_step2_%s.root'%label)
     listOfKeys = [key.GetName().replace('h1_deltaT_totRatioCorr_','') for key in ROOT.gDirectory.GetListOfKeys() if key.GetName().startswith('h1_deltaT_totRatioCorr')]
     for k in listOfKeys:
         barNum = int (k.split('_')[0][3:5])
@@ -151,7 +151,7 @@ for vov in Vovs:
 
 # --- Read the histograms from moduleCharacterization_step2 file
 for label in label_list:
-    inputFile = ROOT.TFile.Open('/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots_fede/moduleCharacterization_step2_%s.root'%label)
+    inputFile = ROOT.TFile.Open('/home/data/mtd/RUptoro2/Lab5015Analysis_MTDST_CERN_Oct21/plots_fede//moduleCharacterization_step2_%s.root'%label)
 
     for bar in bars:
         for l in ['L','R','L-R']:

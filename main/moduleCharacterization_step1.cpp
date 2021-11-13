@@ -117,7 +117,7 @@ int main(int argc, char** argv)
   
   //--- define branches
   float step1, step2;
-  int channelIdx[256];
+  int channelIdx[2048];
   std::vector<unsigned short> *qfine = 0;
   std::vector<float> *tot = 0;
   std::vector<float> *energy = 0;
