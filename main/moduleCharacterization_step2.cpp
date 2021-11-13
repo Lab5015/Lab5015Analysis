@@ -213,6 +213,7 @@ int main(int argc, char** argv)
   //--- open files
   std::string step1FileName= opts.GetOpt<std::string>("Input.step1FileName");
   TFile* inFile = TFile::Open(step1FileName.c_str(),"READ");
+  std::cout << "Open file " << step1FileName.c_str() << std::endl;
   
   std::map<std::string,TTree*> trees;
   

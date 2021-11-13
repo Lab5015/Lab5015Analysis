@@ -105,7 +105,8 @@ int main(int argc, char** argv)
       if( runMax == -1 ) runMax = runMin;
     
       for(int run = runMin; run <= runMax; ++run) {
-	std::string inFileName = Form("/data/tofhir2/reco/run%04d*_e.root",run); 
+	//std::string inFileName = Form("/data/tofhir2/reco/run%04d*_e.root",run); 
+	std::string inFileName = Form("/home/petsys/TOFHiR2X/sw_daq_tofhir2_Milan/sw_daq_tofhir2/data/reco/run%04d_e_0.2.root",run); 
 	std::cout << ">>> Adding file " << inFileName << std::endl;
 	data -> Add(inFileName.c_str());
       }

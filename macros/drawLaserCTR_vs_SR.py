@@ -41,13 +41,14 @@ VovList = [1.5, 2.5, 3.5]
 
 runs_dict = { 
 
-    84 : [ 'ith2_0', 0.60, [2.5, 3.5]],
-    87 : [ 'ith2_0', 0.50, [2.5, 3.5]],
-    89 : [ 'ith2_0', 0.40, [2.5, 3.5]],
-    91 : [ 'ith2_0', 0.30, [2.5, 3.5]],
+    #84 : [ 'ith2_0', 0.60, [2.5, 3.5]],
+    #87 : [ 'ith2_0', 0.50, [2.5, 3.5]],
+    89 : [ 'ith2_0', 0.40, [3.5]],
+    91 : [ 'ith2_0', 0.30, [3.5]],
     93 : [ 'ith2_0', 0.20, [2.5, 3.5]],
+    95 : [ 'ith2_0', 0.10, [2.5, 3.5]],
 
-    98 : [ 'ith2_3', 0.80, [2.5, 3.5]],
+    #98 : [ 'ith2_3', 0.80, [2.5, 3.5]],
     99 : [ 'ith2_3', 0.70, [1.5, 2.5, 3.5]],
     100 : [ 'ith2_3', 0.60, [1.5, 2.5, 3.5]],
     101 : [ 'ith2_3', 0.50, [1.5, 2.5, 3.5]],
@@ -67,9 +68,13 @@ for Vov in VovList:
 #---------------------------
 # -- compute SR vs threshold
 npoints = 7
+nintervals = 6
+pngLabel = ""
 
 for run in sorted(runs_dict):
     print("===>>> Processing run: ", run)
+    
+    pngLabel += str(run)+"-"
 
     ithMode = runs_dict[run][0]
     laserTune = runs_dict[run][1]
@@ -87,9 +92,9 @@ for run in sorted(runs_dict):
         if graph1 == None or graph2 == None:
             continue
         
-        index_cen = int(min(graph1.GetN()/4,graph2.GetN()/4))
-        index_min = max(0,index_cen-int(npoints/2))
-        index_max = min(index_cen+int(npoints/2),int(min(graph1.GetN()/2,graph2.GetN()/2)))
+        index_cen = int( min(graph1.GetN()/nintervals, graph2.GetN()/nintervals))
+        index_min = max(0, index_cen - int(npoints/2))
+        index_max = min(index_cen + int(npoints/2), int(min(graph1.GetN()/2, graph2.GetN()/2)))
 
         for ch in channels:
             graph = inFile.Get('g_ps_totSel_%s_Vov%.01f'%(ch,Vov))
@@ -100,7 +105,7 @@ for run in sorted(runs_dict):
             outFile.cd()
             graph.Write('Run%s_g_ps_totSel_%s_Vov%.01f'%(run,ch,Vov))
         
-            #print index_cen, index_min, index_max, graph.GetY()[index_cen], fitSR.GetParameter(1)
+            print(ch, index_cen, index_min, index_max, graph.GetY()[index_cen], fitSR.GetParameter(1))
             SR += fitSR.GetParameter(1)
             thresh += int(round(graph.GetPointY(index_cen)/dac_to_uA[ithMode]))
         
@@ -111,9 +116,10 @@ for run in sorted(runs_dict):
     
         inFile = ROOT.TFile.Open('/home/petsys/TOFHiR2X/sw_analysis/Lab5015Analysis/plots_fede/moduleCharacterization_step2_run%.04d.root'%run)
         
-        print('NAME: h1_deltaT_totRatioCorr_bar02L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
-        histo = inFile.Get('h1_deltaT_totRatioCorr_bar02L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
+        print('NAME: h1_deltaT_totRatioCorr_bar00L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
+        histo = inFile.Get('h1_deltaT_totRatioCorr_bar00L-R_Vov%.02f_th%.02d_energyBin01'%(Vov,thresh))
         if histo == None:
+            print("MISSING HISTO")
             continue
         if histo.GetEntries() < 100:
             continue
@@ -139,7 +145,7 @@ for run in sorted(runs_dict):
 
 
 c = ROOT.TCanvas('c_tRes_vs_SR','c_tRes_vs_SR',1200,700)
-hPad = ROOT.gPad.DrawFrame(0.,0.,300.,150.)
+hPad = ROOT.gPad.DrawFrame(0.,0.,300.,100.)
 hPad.SetTitle(";slew rate [#muA/ns];#sigma_{t}^{single} [ps]");
 hPad.Draw();
 ROOT.gPad.SetGridx();
@@ -182,5 +188,5 @@ latex.SetTextSize(0.04)
 latex.SetTextColor(ROOT.kBlack)
 latex.Draw('same')
 
-c.Print("c_tRes_vs_SR.png")
+c.Print("/var/www/html/TOFHIR2X/MTDST_CERN_Oct21/Fede/c_tRes_vs_SR_"+pngLabel+".png")
 

@@ -670,7 +670,7 @@ int main(int argc, char** argv)
   
   //-----------
   // draw plots
-  std::string plotDir(Form("/var/www/html/TOFHIR2X/MTDST_CERN_Oct21/pulseShapes/run%s/",runs.c_str()));
+  std::string plotDir(Form("/var/www/html/TOFHIR2X/MTDST_CERN_Oct21/Fede/pulseShapes/run%s/",runs.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
@@ -686,7 +686,7 @@ int main(int argc, char** argv)
       
       c = new TCanvas("c","c");
       //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[0]*1.5) );
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[10]*1.5) );
       hPad -> SetTitle(Form(";%s [DAC]; number of hits",ithMode.c_str()));
       hPad -> Draw();
       g_N_totSel_ch1[Vov] -> SetMarkerColor(kRed);

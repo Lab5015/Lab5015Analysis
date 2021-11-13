@@ -48,9 +48,6 @@ int main(int argc, char** argv)
   //--- parse the config file
   CfgManager opts;
   opts.ParseConfigFile(argv[1]);
-  int debugMode = 0;
-  if( argc > 2 ) debugMode = atoi(argv[2]);
-  
   
   
   //--- open files and make the tree chain
@@ -102,7 +99,7 @@ int main(int argc, char** argv)
      
   //--- define channels (read mapping from the configuration file)
   std::vector<unsigned int> channelMapping = opts.GetOpt<std::vector<unsigned int> >("Channels.channelMapping");
-  
+
   int chL[16];
   int chR[16];
   
@@ -457,7 +454,8 @@ int main(int argc, char** argv)
 	//--- fill histograms for each bar for Co60 & TB analysis
 	if( !opts.GetOpt<std::string>("Input.sourceName").compare("Co60") ||
 	    !opts.GetOpt<std::string>("Input.sourceName").compare("Co60SumPeak") ||
-	    !opts.GetOpt<std::string>("Input.sourceName").compare("TB")
+	    !opts.GetOpt<std::string>("Input.sourceName").compare("TB") ||
+	    !opts.GetOpt<std::string>("Input.sourceName").compare("keepAll")
 	    )
 	{
 	  
@@ -508,10 +506,9 @@ int main(int argc, char** argv)
       }// -- end loop over bars
     
     // --- for Na22 or Laser analysis use only the bar with max energy to remove cross-talk between adjacent bars
-    if( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") |
+    if( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") ||
 	!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") ||
-	!opts.GetOpt<std::string>("Input.sourceName").compare("Laser") ||
-	!opts.GetOpt<std::string>("Input.sourceName").compare("keepAll") )
+	!opts.GetOpt<std::string>("Input.sourceName").compare("Laser"))
       {
 	int index( (10000*int(Vov*100.)) + (100*vth) + maxBar );
 	
