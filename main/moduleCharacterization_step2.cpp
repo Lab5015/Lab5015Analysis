@@ -210,7 +210,7 @@ int main(int argc, char** argv)
     }
   
   int useTrackInfo = opts.GetOpt<int>("Input.useTrackInfo");
-  
+
   //--- open files
   std::string step1FileName= opts.GetOpt<std::string>("Input.step1FileName");
   TFile* inFile = TFile::Open(step1FileName.c_str(),"READ");
@@ -277,8 +277,7 @@ int main(int argc, char** argv)
   float energy1275L;
   float energy1786L;
   float theIndex;
-  
-
+  std::map<double,double> deltaTShift;
 
   std::map<double,TH1F*> h1_energyRatio;
   std::map<double,TH1F*> h1_totRatio;
@@ -374,7 +373,7 @@ int main(int argc, char** argv)
       outTrees[index] -> Branch("energyPeak1786R",&energy1786R);
       outTrees[index] -> Branch("indexID",&theIndex);
       
-			      
+      deltaTShift[index] = ((TH1F*)( inFile->Get(Form("h1_timeDiff_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth1)) ))->GetMean();
 
       // -- loop over L, R, LR
       for(auto LRLabel : LRLabels ) {
@@ -390,8 +389,7 @@ int main(int argc, char** argv)
         latex -> SetTextFont(42);
         latex -> SetTextSize(0.04);
         latex -> SetTextColor(kRed);
-          
-
+ 
         // -- qfine and tot only per L, R
         if (LRLabel == "R" || LRLabel == "L") {
 
@@ -432,6 +430,7 @@ int main(int argc, char** argv)
           c -> Print(Form("%s/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
           delete c;
         }
+
         
         // -- draw energy
         c = new TCanvas(Form("c_energy_%s",label.c_str()),Form("c_energy_%s",label.c_str()));
@@ -745,18 +744,20 @@ int main(int argc, char** argv)
 	      h1_totRatio[index2] = new TH1F(Form("h1_totRatio_%s",labelLR_energyBin.c_str()),"",2000,0.,5.);
 	      h1_t1fineMean[index2] = new TH1F(Form("h1_t1fineMean_%s",labelLR_energyBin.c_str()),"",1000,0.,1000.);
 	      h1_deltaT_raw[index2] = new TH1F(Form("h1_deltaT_raw_%s",labelLR_energyBin.c_str()),"",2000,-24000.,24000.);
+	      
 	    }
 	  
-	  if (fabs(anEvent->timeR-anEvent->timeL)<10000) {
+	  //if (fabs(anEvent->timeR-anEvent->timeL)<10000) {
 	    
 	    if ((anEvent->energyR / anEvent->energyL >0) & (anEvent->energyR / anEvent->energyL <5)){
 	      h1_energyRatio[index2] -> Fill( anEvent->energyR / anEvent->energyL );						     
 	      h1_totRatio[index2] -> Fill( anEvent->totR / anEvent->totL );
-	      h1_deltaT_raw[index2] -> Fill( anEvent->timeR-anEvent->timeL );
+	      h1_deltaT_raw[index2] -> Fill( anEvent->timeR-anEvent->timeL + deltaTShift[index1] );
+	      //std::cout << "--->>> " << anEvent->timeR-anEvent->timeL + deltaTShift[index1] << std::endl;
 	    }
 	    
 	    h1_t1fineMean[index2] -> Fill( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) );
-	  }
+	    //}
 	      
 
 	} //-- end loop over entries
@@ -970,7 +971,7 @@ int main(int argc, char** argv)
 	    }
 	  
 	  
-	  long long deltaT = anEvent->timeR - anEvent->timeL;
+	  long long deltaT = anEvent->timeR - anEvent->timeL + deltaTShift[index1];
 	  
 	  if( h1_deltaT[index2] == NULL )
 	    {
@@ -1126,7 +1127,7 @@ int main(int argc, char** argv)
 	  int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
 	  double  index2( 10000000*energyBinAverage+index1 );     
 	  
-	  long long deltaT = anEvent->timeR - anEvent->timeL;
+	  long long deltaT = anEvent->timeR - anEvent->timeL + deltaTShift[index1];
 	  
 	  float t1fineMean = 0.5 * ( anEvent->t1fineR + anEvent->t1fineL );
 
@@ -1497,7 +1498,7 @@ int main(int argc, char** argv)
 	 int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
 	 double  index2( 10000000*energyBinAverage+index1 );     
 	 
-	 long long deltaT = anEvent->timeR - anEvent->timeL;
+	 long long deltaT = anEvent->timeR - anEvent->timeL + deltaTShift[index1];
 	 	 
 	 // energy ratio
 	 if( !fitFunc_energyRatioCorr[index2] )	continue;
@@ -1974,7 +1975,7 @@ int main(int argc, char** argv)
 	    int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
 	    double  index2( 10000000*energyBinAverage+index1 );     
 	    
-	    long long deltaT = anEvent->timeR - anEvent->timeL;
+	    long long deltaT = anEvent->timeR - anEvent->timeL + deltaTShift[index1];
 	    
 	    if( !fitFunc_energyRatioCorr[index2] )	continue;
 	    if( !p1_deltaT_energyRatioCorr_vs_t1fineMean[index2] )	continue;

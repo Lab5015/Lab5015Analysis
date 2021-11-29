@@ -77,6 +77,7 @@ public:
   float totR;
   long long timeL;
   long long timeR;
+  float timeDiffLR;
   unsigned short t1fineL;
   unsigned short t1fineR;
   int nhits;

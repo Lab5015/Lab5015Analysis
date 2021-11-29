@@ -264,7 +264,7 @@ for label in label_list:
             
 
 
-tResMax = 200
+tResMax = 50
 
 # -- Draw
 for bar in bars:

@@ -138,6 +138,7 @@ int main(int argc, char** argv)
   tree -> SetBranchStatus("tot",    1); tree -> SetBranchAddress("tot",       &tot);
   tree -> SetBranchStatus("energy", 1); tree -> SetBranchAddress("energy", &energy);
   tree -> SetBranchStatus("time",   1); tree -> SetBranchAddress("time",     &time);
+
   
   tree -> SetBranchStatus("qT1",       1); tree -> SetBranchAddress("qT1",      &qT1);
   tree -> SetBranchStatus("t1fine",    1); tree -> SetBranchAddress("t1fine",   &t1fine);
@@ -181,6 +182,7 @@ int main(int argc, char** argv)
   std::map<int,TH1F*> h1_energyR;
   std::map<int,TH1F*> h1_energyLR;
   std::map<int,TH1F*> h1_energyLR_ext;
+  std::map<int,TH1F*> h1_timeDiffLR;
   std::map<int,TCanvas*> c;
   std::map<int,std::vector<float>*> rangesLR;
   std::map<int,std::map<std::string,std::pair<float,float> > > peaksLR;
@@ -331,6 +333,7 @@ int main(int argc, char** argv)
   float totR[16];
   long long timeL[16];
   long long timeR[16];
+  float timeDiffLR[16];
   unsigned short t1fineL[16]; 
   unsigned short t1fineR[16]; 
   float energyL[16];
@@ -393,6 +396,7 @@ int main(int argc, char** argv)
 	    energyR[iBar]=(*energy)[channelIdx[chR[iBar]]];
 	    timeL[iBar]=(*time)[channelIdx[chL[iBar]]];
 	    timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
+	    timeDiffLR[iBar]=(*time)[channelIdx[chL[iBar]]] - (*time)[channelIdx[chR[iBar]]];
 	    t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
 	    t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
 	}
@@ -406,6 +410,7 @@ int main(int argc, char** argv)
 	    energyR[iBar]=-10;
 	    timeL[iBar]=-10;
 	    timeR[iBar]=-10;
+	    timeDiffLR[iBar]=-10;
 	    t1fineL[iBar]=-10;
 	    t1fineR[iBar]=-10;
 	  }     
@@ -440,6 +445,7 @@ int main(int argc, char** argv)
 	  
 	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
 	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
+	  h1_timeDiffLR[index] = new TH1F(Form("h1_timeDiff_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",100000,-500000.,500000.);
 	  
 	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
@@ -463,12 +469,13 @@ int main(int argc, char** argv)
 	  if( totL[iBar] >= 50. ||  totR[iBar] >= 50.) continue;
 	  if( ( thrZero.GetThresholdZero(chL[iBar],vthMode) + vth) > 63. ) continue;
           if( ( thrZero.GetThresholdZero(chR[iBar],vthMode) + vth) > 63. ) continue;
-
+	  
 	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 800 || nBarsArray > 5)) continue; // to remove showering events
 
 
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
+	  h1_timeDiffLR[index] -> Fill( timeDiffLR[iBar] );
 	  h1_energyL[index] -> Fill( energyL[iBar] );
 	  
 	  h1_qfineR[index] -> Fill( qfineR[iBar] );
@@ -486,6 +493,7 @@ int main(int argc, char** argv)
 	  anEvent.totR = totR[iBar];
 	  anEvent.timeL = timeL[iBar];
 	  anEvent.timeR = timeR[iBar];
+	  anEvent.timeDiffLR = timeDiffLR[iBar];
 	  anEvent.t1fineL = t1fineL[iBar];
 	  anEvent.t1fineR = t1fineR[iBar];
 	  if(useTrackInfo){
@@ -515,11 +523,12 @@ int main(int argc, char** argv)
 	if( totL[maxBar] <= 0. || totR[maxBar] <= 0. ) continue;
 	if( totL[maxBar] >= 50. ||  totR[maxBar] >= 50.) continue;
 	if( ( thrZero.GetThresholdZero(chL[maxBar],vthMode) + vth) > 63. ) continue;
-        if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;
-
+	if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;
+	
 	//--- fill histograms
 	h1_qfineL[index] -> Fill( qfineL[maxBar] );
 	h1_totL[index] -> Fill( totL[maxBar] );
+	h1_timeDiffLR[index] -> Fill( timeL[maxBar] - timeR[maxBar]);
 	h1_energyL[index] -> Fill( energyL[maxBar] );
 	
 	h1_qfineR[index] -> Fill( qfineR[maxBar] );
@@ -537,6 +546,7 @@ int main(int argc, char** argv)
 	anEvent.totR = totR[maxBar];
 	anEvent.timeL = timeL[maxBar];
 	anEvent.timeR = timeR[maxBar];
+	anEvent.timeDiffLR = timeDiffLR[maxBar];
 	anEvent.t1fineL = t1fineL[maxBar];
 	anEvent.t1fineR = t1fineR[maxBar];
 	if(useTrackInfo){
