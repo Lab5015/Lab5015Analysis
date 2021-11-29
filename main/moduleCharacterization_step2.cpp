@@ -115,6 +115,8 @@ void GetEnergyBins(TH1F *h, std::vector<float> *r, std::map<int, float> & b){
 int main(int argc, char** argv)
 {
   setTDRStyle();
+
+  gErrorIgnoreLevel = kError;
   
   typedef std::numeric_limits<double> dbl;
         std::cout.precision(dbl::max_digits10);
@@ -224,7 +226,7 @@ int main(int argc, char** argv)
       std::istringstream ss(line);
       ss >> bar >> ov >> value; 
       minE[std::make_pair(bar,ov)] = value; 
-      std::cout<< bar <<  "   " << ov << "  " << minE[std::make_pair(bar,ov)] <<std::endl;
+      //std::cout<< bar <<  "   " << ov << "  " << minE[std::make_pair(bar,ov)] <<std::endl;
     }
   }
   else{
@@ -584,7 +586,7 @@ int main(int argc, char** argv)
 	    histo->GetXaxis()->SetRangeUser(minE[std::make_pair(iBar, Vov)], 950);
 	  }
 	  float max = histo->GetBinCenter(histo->GetMaximumBin());
-	  histo->GetXaxis()->SetRangeUser(0,1000);
+	  histo->GetXaxis()->SetRangeUser(0,1024);
 	  
 	  f_gaus[index] = new TF1(Form("fit_energy_bar%02d%s_Vov%.2f_vth1_%02.0f",iBar,LRLabel.c_str(),Vov,vth1), "gaus", max-50, max+50);
 	  f_gaus[index]->SetParameters(histo->GetMaximumBin(), max, 70);
@@ -600,11 +602,20 @@ int main(int argc, char** argv)
 	  //ranges[LRLabel][index] -> push_back( histo -> GetBinCenter(700) ); // to avoid sturation
 	  
 	  f_landau[index] = new TF1(Form("f_landau_bar%02d%s_Vov%.2f_vth1_%02.0f", iBar,LRLabel.c_str(),Vov,vth1),"[0]*TMath::Landau(x,[1],[2])", 0,1000.);
-	  f_landau[index] -> SetRange(max * 0.60, max * 2.5);
+	  float xmin = max * 0.65;
+	  float xmax = std::min(max*2.5, 950.);
+	  f_landau[index] -> SetRange(xmin,xmax);
 	  f_landau[index] -> SetParameters(histo->Integral(histo->GetMaximumBin(), histo->GetNbinsX())/10, max, 0.1*max);
+	  f_landau[index] -> SetParLimits(1,0,9999);
+	  f_landau[index] -> SetParLimits(2,0,9999);
 	  histo -> Fit(f_landau[index],"QRS");
-	  f_landau[index] -> SetRange(f_landau[index]->GetParameter(1) * 0.60, f_landau[index]->GetParameter(1) * 2.5);
-	  f_landau[index] -> SetParameters(histo->Integral(histo->GetMaximumBin(), histo->GetNbinsX())/10, f_landau[index]->GetParameter(1), 0.1*f_landau[index]->GetParameter(1));
+	  if ( f_landau[index]->GetParameter(1) > 0 ){
+	    xmin = f_landau[index]->GetParameter(1) - 2 * std::abs(f_landau[index]->GetParameter(2));
+	    if (xmin < minE[std::make_pair(iBar, Vov)]) xmin = minE[std::make_pair(iBar, Vov)] ;
+	    xmax = std::min(f_landau[index]->GetParameter(1) * 2.5, 950.);
+	    f_landau[index] -> SetRange(xmin, xmax);
+	    f_landau[index] -> SetParameters(histo->Integral(histo->GetMaximumBin(), histo->GetNbinsX())/10, f_landau[index]->GetParameter(1), 0.1*f_landau[index]->GetParameter(1));
+	  }
 	  histo -> Fit(f_landau[index],"QRS");
 
 	  f_landau[index] -> SetLineColor(kBlack);
@@ -612,14 +623,25 @@ int main(int argc, char** argv)
 	  f_landau[index] -> Draw("same");
 	  
 	  
-	  if (f_landau[index]->GetParameter(1) > minE[std::make_pair(iBar, Vov)]) 
+	  if ( f_landau[index]->GetParameter(1) > minE[std::make_pair(iBar, Vov)] &&  
+	       (f_landau[index]->GetParameter(1) - 2.0 * std::abs(f_landau[index]->GetParameter(2))) >=  minE[std::make_pair(iBar, Vov)] &&
+	       (f_landau[index]->GetParameter(1) - 2.0 * std::abs(f_landau[index]->GetParameter(2))) < 950) {
 	    //ranges[LRLabel][index] -> push_back( 0.75*f_landau[index]->GetParameter(1));
-	    ranges[LRLabel][index] -> push_back( 0.60*f_landau[index]->GetParameter(1));
+	    //ranges[LRLabel][index] -> push_back( 0.60*f_landau[index]->GetParameter(1));
+	    ranges[LRLabel][index] -> push_back( f_landau[index]->GetParameter(1) - 2.0 * std::abs(f_landau[index]->GetParameter(2)));
+	  }
 	  else
 	    ranges[LRLabel][index] -> push_back( minE[std::make_pair(iBar, Vov)] ); // 
-	  
-	  ranges[LRLabel][index] -> push_back( 950 );
 
+	  if ( LRLabel=="L-R" && int(vth1)==10) std::cout << iBar << "  " << Vov  << "  " << ranges[LRLabel][index] ->at(0) <<std::endl;
+
+	  
+	  //ranges[LRLabel][index] -> push_back( f_landau[index]->GetParameter(1)* 2.);
+	  ranges[LRLabel][index] -> push_back( 950 );
+	  //ranges[LRLabel][index] -> push_back( 1024 );
+
+
+          
 	  for(auto range: (*ranges[LRLabel][index])){
 	    TLine* line = new TLine(range,0.,range, histo->GetMaximum());
             line -> SetLineWidth(2);
