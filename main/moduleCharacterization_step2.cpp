@@ -1439,7 +1439,7 @@ int main(int argc, char** argv)
 	   {
 	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	     h1_deltaT_energyRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_energyRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
-	     p1_deltaT_energyRatioCorr_vs_posX[index2] = new TProfile(Form("p1_deltaT_energyRatioCorr_vs_posX_%s",labelLR_energyBin.c_str()),"",50,-50,50);
+	     p1_deltaT_energyRatioCorr_vs_posX[index2] = new TProfile(Form("p1_deltaT_energyRatioCorr_vs_posX_%s",labelLR_energyBin.c_str()),"",100,-50,50);
            }
 	 
 	 //if (fabs(deltaT - energyRatioCorr)>10000 ) continue;
@@ -1464,7 +1464,7 @@ int main(int argc, char** argv)
 	     std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 
 	     h1_deltaT_totRatioPhaseCorr[index2] = new TH1F(Form("h1_deltaT_totRatioPhaseCorr_%s",labelLR_energyBin.c_str()),"",2000,-12000.,12000.);
-	     p1_deltaT_totRatioCorr_vs_posX[index2] = new TProfile(Form("p1_deltaT_totRatioCorr_vs_posX_%s",labelLR_energyBin.c_str()),"",50,-50,50);
+	     p1_deltaT_totRatioCorr_vs_posX[index2] = new TProfile(Form("p1_deltaT_totRatioCorr_vs_posX_%s",labelLR_energyBin.c_str()),"",100,-50,50);
  
            }
 	 
@@ -1937,6 +1937,60 @@ int main(int argc, char** argv)
 
 		c -> Print(Form("%s/CTR_energyRatioPhasePosCorr/c_deltaT_energyRatioPhasePosCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 		c -> Print(Form("%s/CTR_energyRatioPhasePosCorr/c_deltaT_energyRatioPhasePosCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
+		delete c;
+		delete fitFunc;
+		
+
+
+
+		// -- tot and phase corr deltaT
+		c = new TCanvas(Form("c_deltaT_totRatioPhasePosCorr_%s",labelLR_energyBin.c_str()),Form("c_deltaT_totRatioPhasePosCorr_%s",labelLR_energyBin.c_str()));
+		histo = h1_deltaT_totRatioPhasePosCorr[index2];
+
+		histo -> SetTitle(Form(";corrected #Deltat [ps];entries"));
+		histo -> SetLineWidth(2);
+		histo -> SetLineColor(kGreen+1);
+		histo -> SetMarkerColor(kGreen+1);
+		histo -> Draw("");
+
+		FindSmallestInterval(vals,histo,0.68);
+		min = vals[4];
+		max = vals[5];
+		delta = max-min;
+		sigma = 0.5*delta;
+		effSigma = sigma;
+
+		fitXMin = histo->GetBinCenter(histo->GetMaximumBin()) - 200.;
+		fitXMax = histo->GetBinCenter(histo->GetMaximumBin()) + 200.;
+		
+		fitFunc = new TF1(Form("fitFunc_totRatioPhasePosCorr_%s",labelLR_energyBin.c_str()),"gaus",-10000, 10000);
+		fitFunc -> SetParameters(1,histo->GetMean(),histo->GetRMS());
+		fitFunc -> SetRange(fitXMin, fitXMax);
+		histo -> Fit(fitFunc,"QNRSL","", fitXMin, fitXMax);
+		fitFunc -> SetRange(fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+		histo -> Fit(fitFunc,"QNRSL","",fitFunc->GetParameter(1)-fitFunc->GetParameter(2),fitFunc->GetParameter(1)+fitFunc->GetParameter(2));
+		fitFunc -> SetRange(fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+		histo -> Fit(fitFunc,"QRSL+","",fitFunc->GetParameter(1)-2.5*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+2.5*fitFunc->GetParameter(2));
+
+		fitFunc -> SetLineColor(kMagenta);
+		fitFunc -> SetLineWidth(3);
+		fitFunc -> Draw("same");
+
+		outFile -> cd();
+		histo -> Write();
+
+		histo -> SetMaximum(histo->GetMaximum()+0.1*histo->GetMaximum());
+		histo -> GetXaxis() -> SetRangeUser(fitFunc->GetParameter(1)-7.*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+7.*fitFunc->GetParameter(2));
+
+		latex = new TLatex(0.55,0.85,Form("#splitline{#sigma_{corr}^{eff} = %.0f ps}{#sigma_{corr}^{gaus} = %.0f ps}",effSigma,fabs(fitFunc->GetParameter(2))));
+		latex -> SetNDC();
+		latex -> SetTextFont(42);
+		latex -> SetTextSize(0.04);
+		latex -> SetTextColor(kMagenta);
+		latex -> Draw("same");
+
+		c -> Print(Form("%s/CTR_totRatioPhasePosCorr/c_deltaT_totRatioPhasePosCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+		c -> Print(Form("%s/CTR_totRatioPhasePosCorr/c_deltaT_totRatioPhasePosCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
 
 	    }
