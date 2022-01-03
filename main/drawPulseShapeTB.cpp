@@ -182,6 +182,8 @@ int main(int argc, char** argv)
   std::map<int,bool> acceptEvent; 
 
   float fract = 0.90;
+  int minEntries = 100;
+
   //-----------------
   // pre-loop over events  
   int nEntries = data -> GetEntries();
@@ -209,15 +211,19 @@ int main(int argc, char** argv)
 
       acceptEvent[entry] = true;
 
-      // -- remove showering events on array0
-      int nActiveBars = 0;
+      // -- remove showering events on array0,1
+      int nActiveBars0 = 0;
+      int nActiveBars1 = 0;
       for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){          
-        if ( channelIdx[chL[iBar]-64] < 0  ||  channelIdx[chR[iBar]-64] < 0 ) continue;  
-	if ( (*energy)[channelIdx[chL[iBar]-64]] >0 && (*energy)[channelIdx[chR[iBar]-64]] > 0 )
-	  nActiveBars+=1;
+        if ( channelIdx[chL[iBar]-64] > 0  &&  channelIdx[chR[iBar]-64] > 0 && 
+	     (*energy)[channelIdx[chL[iBar]-64]] > 0 && (*energy)[channelIdx[chR[iBar]-64]] > 0 )
+	  nActiveBars0+=1;
+        if ( channelIdx[chL[iBar]] > 0  &&  channelIdx[chR[iBar]] > 0 && 
+	     (*energy)[channelIdx[chL[iBar]]] > 0 && (*energy)[channelIdx[chR[iBar]]] > 0 )
+	  nActiveBars1+=1;
       }
-
-      if (nActiveBars>5){
+      
+      if (nActiveBars0 > 5 || nActiveBars1 > 5){
 	acceptEvent[entry] = false;
 	continue;
       }
@@ -226,8 +232,8 @@ int main(int argc, char** argv)
       if (coincidence.find("yes") != std::string::npos){
 	if( channelIdx[ch1Ext] < 0 ) continue; 
 	if( channelIdx[ch2Ext] < 0 ) continue; 
-	if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 100. ) continue;
-	if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 100. ) continue;
+	if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 50. ) continue;
+	if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 50. ) continue;
 	float energyExt = 0.5 * (  (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
 	if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
       }
@@ -330,7 +336,7 @@ int main(int argc, char** argv)
     histo->GetXaxis()->SetRangeUser(0,1024);
     
     if (  f_landau->GetParameter(1) > minE[std::make_pair(iBar, Vov)] &&                                                                                              
-	 (f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2))) > 0 &&                                                                       
+	 (f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2))) >= minE[std::make_pair(iBar, Vov)] &&
 	 (f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2))) < 940) {     
       energyMins[index] =  f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2));
       //energyMaxs[index] = 1024;
@@ -341,7 +347,7 @@ int main(int argc, char** argv)
       energyMins[index] = minE[std::make_pair(iBar,Vov)];
       energyMaxs[index] = 940;
     }
-    std::cout << Vov << "  th = " << ith  << "   bar = "  << iBar <<  "   minEnergy = " << energyMins[index] <<std::endl;
+    //std::cout << Vov << "  th = " << ith  << "   bar = "  << iBar <<  "   minEnergy = " << energyMins[index] <<std::endl;
     histo->Write();      
   }
 
@@ -362,7 +368,7 @@ int main(int argc, char** argv)
       int index2 = index - ith*100;
 
       histo->Write();
-      if ( histo ->GetEntries() < 500 ) continue;
+      if ( histo ->GetEntries() < 1000 ) continue;
 
       //std::cout << "===>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 
@@ -387,7 +393,7 @@ int main(int argc, char** argv)
       int index2 = index - ith*100;
 
       histo->Write();
-      if ( histo ->GetEntries() < 500 ) continue;
+      if ( histo ->GetEntries() < 1000 ) continue;
 
       //std::cout << "===>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 
@@ -429,8 +435,8 @@ int main(int argc, char** argv)
     if (coincidence.find("yes") != std::string::npos){
       if( channelIdx[ch1Ext] < 0 ) continue;
       if( channelIdx[ch2Ext] < 0 ) continue;
-      if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 100. ) continue;
-      if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 100. ) continue;
+      if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 50. ) continue;
+      if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 50. ) continue;
       float energyExt = 0.5 * (  (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
       if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
     }
@@ -461,7 +467,7 @@ int main(int argc, char** argv)
       timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
       
       if( totL[iBar]/1000 <= 0. || totR[iBar]/1000 <= 0. ) continue;
-      if( totL[iBar]/1000 >= 100. ||  totR[iBar]/1000 >= 100.) continue;
+      if( totL[iBar]/1000 >= 50. ||  totR[iBar]/1000 >= 50.) continue;
     
       if( ( thrZero.GetThresholdZero(chL[iBar],ithMode) + ith) > 63. ) continue;
       if( ( thrZero.GetThresholdZero(chR[iBar],ithMode) + ith) > 63. ) continue;
@@ -472,10 +478,10 @@ int main(int argc, char** argv)
       	
       // -- book histograms if needed
       if (!h1_time1_totSel_chL[index]){
-	h1_time1_totSel_chL[index] = new TH1F(Form("h1_time1_totSel_bar%02dL_Vov%.2f_ith%02d",iBar,Vov,ith),"",5000,timeOffsetL[index2]-50.,timeOffsetL[index2]+50.);
-	h1_time1_totSel_chR[index] = new TH1F(Form("h1_time1_totSel_bar%02dR_Vov%.2f_ith%02d",iBar,Vov,ith),"",5000,timeOffsetR[index2]-50.,timeOffsetR[index2]+50.);
-	h1_time2_totSel_chL[index] = new TH1F(Form("h1_time2_totSel_bar%02dL_Vov%.2f_ith%02d",iBar,Vov,ith),"",5000,timeOffsetL[index2]-50.,timeOffsetL[index2]+50.);
-	h1_time2_totSel_chR[index] = new TH1F(Form("h1_time2_totSel_bar%02dR_Vov%.2f_ith%02d",iBar,Vov,ith),"",5000,timeOffsetR[index2]-50.,timeOffsetR[index2]+50.);
+	h1_time1_totSel_chL[index] = new TH1F(Form("h1_time1_totSel_bar%02dL_Vov%.2f_ith%02d",iBar,Vov,ith),"",10000,timeOffsetL[index2]-50.,timeOffsetL[index2]+50.);
+	h1_time1_totSel_chR[index] = new TH1F(Form("h1_time1_totSel_bar%02dR_Vov%.2f_ith%02d",iBar,Vov,ith),"",10000,timeOffsetR[index2]-50.,timeOffsetR[index2]+50.);
+	h1_time2_totSel_chL[index] = new TH1F(Form("h1_time2_totSel_bar%02dL_Vov%.2f_ith%02d",iBar,Vov,ith),"",10000,timeOffsetL[index2]-50.,timeOffsetL[index2]+50.);
+	h1_time2_totSel_chR[index] = new TH1F(Form("h1_time2_totSel_bar%02dR_Vov%.2f_ith%02d",iBar,Vov,ith),"",10000,timeOffsetR[index2]-50.,timeOffsetR[index2]+50.);
 	h2_time1_vs_energy_totSel_chL[index] = new TH2F(Form("h2_time1_vs_energy_totSel_bar%02dL_Vov%.2f_ith%02d",iBar,Vov,ith),"",1024,0,1024,5000,timeOffsetL[index2]-50.,timeOffsetL[index2]+50.);
 	h2_time1_vs_tot_totSel_chL[index] = new TH2F(Form("h2_time1_vs_tot_totSel_bar%02dL_Vov%.2f_ith%02d",iBar,Vov,ith),"",100,0,100,5000,timeOffsetL[index2]-50.,timeOffsetL[index2]+50.);
       }
@@ -655,7 +661,7 @@ int main(int argc, char** argv)
 
       //std::cout << "+++++>>>> bar "<< iBar << "  Vov = " << Vov <<  "    ith = " << ith << "   nEntries = " << histo->Integral() << std::endl;
       //if( histo->Integral() <= 0.8*h1_time1_totSel_ch1[Vov][lowestThr[index]]->Integral() ) continue;
-      if( histo->Integral() < 500) continue;
+      if( histo->Integral() < minEntries) continue;
       
       if( !g_pulseShapeL[index2] ) g_pulseShapeL[index2] = new TGraphErrors();
       //histo->GetXaxis()->SetRangeUser(-10,10);
@@ -667,7 +673,11 @@ int main(int argc, char** argv)
       float mean = vals[0];
       float meanErr = vals[1];
       histo->GetXaxis()->SetRangeUser(vals[4],vals[5]);
-      std::cout << Vov << "  " <<  iBar << "  " << ith << "  mean = " << mean << "   meanErr = " << meanErr << "   histoGetMeanErr = " << histo->GetMeanError()<<std::endl;  
+      //std::cout << Vov << "  " <<  iBar << "  " << ith << "  mean = " << mean << "   meanErr = " << meanErr << "   histoGetMeanErr = " << histo->GetMeanError()<<std::endl;  
+      std::cout << Vov << "   bar" <<  iBar << "L  " << ith << "  integral/integralTot = " << histo->Integral(histo->FindBin(vals[4]), histo->FindBin(vals[5]))/histo->Integral()<< "   "  <<  histo->Integral(histo->FindBin(vals[4]), histo->FindBin(vals[5]))/histo->GetEntries()<<std::endl;
+ 
+
+
       g_pulseShapeL[index2] -> SetPoint(g_pulseShapeL[index2]->GetN(),mean-timeOffsetL[index2],ith*dac_to_uA);
       g_pulseShapeL[index2] -> SetPointError(g_pulseShapeL[index2]->GetN()-1,meanErr,0.);
       
@@ -688,7 +698,7 @@ int main(int argc, char** argv)
  
       //std::cout << "+++++>>>> bar "<< iBar << "  Vov = " << Vov <<  "    ith = " << ith << "   nEntries = " << histo->Integral() << std::endl;
       //if( histo->Integral() <= 0.8*h1_time1_totSel_ch1[Vov][lowestThr[index]]->Integral() ) continue;
-      if( histo->Integral() < 500) continue;
+      if( histo->Integral() < minEntries) continue;
 
       //histo->GetXaxis()->SetRangeUser(0,40);
       //g_pulseShapeL[index2] -> SetPoint(g_pulseShapeL[index2]->GetN(),histo->GetMean()-timeOffsetL[index2],ith*dac_to_uA);
@@ -720,7 +730,7 @@ int main(int argc, char** argv)
       
       //std::cout << "+++++>>>> bar "<< iBar << "  Vov = " << Vov <<  "    ith = " << ith << "   nEntries = " << histo->Integral() << std::endl;
       //if( histo->Integral() <= 0.8*h1_time1_totSel_ch1[Vov][lowestThr[index]]->Integral() ) continue;
-      if( histo->Integral() < 500) continue;
+      if( histo->Integral() < minEntries) continue;
             
       if( !g_pulseShapeR[index2] ) g_pulseShapeR[index2] = new TGraphErrors();
       //histo->GetXaxis()->SetRangeUser(-10,10);
@@ -731,9 +741,11 @@ int main(int argc, char** argv)
       FindSmallestInterval(vals,histo,fract);
       float mean = vals[0];
       float meanErr = vals[1];
+      histo->GetXaxis()->SetRangeUser(vals[4],vals[5]); 
       g_pulseShapeR[index2] -> SetPoint(g_pulseShapeR[index2]->GetN(),mean-timeOffsetR[index2],ith*dac_to_uA);
       g_pulseShapeR[index2] -> SetPointError(g_pulseShapeR[index2]->GetN()-1,meanErr,0.);
       
+      std::cout << Vov << "   bar" <<  iBar << "R  " << ith << "  integral/integralTot = " << histo->Integral(histo->FindBin(vals[4]), histo->FindBin(vals[5]))/histo->Integral()<< "   "  <<  histo->Integral(histo->FindBin(vals[4]), histo->FindBin(vals[5]))/histo->GetEntries()<<std::endl;
       histo -> Write();
     }
 
@@ -749,7 +761,7 @@ int main(int argc, char** argv)
       
       //std::cout << "+++++>>>> bar "<< iBar << "  Vov = " << Vov <<  "    ith = " << ith << "   nEntries = " << histo->Integral() << std::endl;
       //if( histo->Integral() <= 0.8*h1_time1_totSel_ch1[Vov][lowestThr[index]]->Integral() ) continue;
-      if( histo->Integral() < 500) continue;
+      if( histo->Integral() < minEntries) continue;
 
       //histo->GetXaxis()->SetRangeUser(0,40);
       //g_pulseShapeR[index2] -> SetPoint(g_pulseShapeR[index2]->GetN(),histo->GetMean()-timeOffsetR[index2],ith*dac_to_uA);
