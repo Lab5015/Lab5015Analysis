@@ -326,12 +326,12 @@ int main(int argc, char** argv)
     histo->GetXaxis()->SetRangeUser(0,1024);
     
     if (  f_landau->GetParameter(1) > minE[std::make_pair(iBar, Vov)] &&                                                                                              
-	 (f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2))) >= minE[std::make_pair(iBar, Vov)] &&
-	 (f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2))) < 940) {     
-      energyMins[index] =  f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2));
-      //energyMaxs[index] = 1024;
-      //energyMaxs[index] = f_landau->GetParameter(1)*1.5;
-      energyMaxs[index] = 940;
+	  (f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2))) >= minE[std::make_pair(iBar, Vov)] &&
+	  (f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2))) < 940) {     
+	  energyMins[index] =  f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2));
+	  //(f_landau->GetParameter(1)*0.80) >= minE[std::make_pair(iBar, Vov)] && (f_landau->GetParameter(1) * 0.80) < 940) {
+	  //energyMins[index] =  f_landau->GetParameter(1)*0.80;
+	  energyMaxs[index] = 940;
     }
     else {
       energyMins[index] = minE[std::make_pair(iBar,Vov)];
@@ -723,7 +723,7 @@ int main(int argc, char** argv)
   // draw plots
   std::cout << "Plotting..."<<std::endl;
   //std::string plotDir(Form("/var/www/html/TOFHIR2X/MTDTB_CERN_Oct21/pulseShapes/%s",outName.c_str()));
-  std::string plotDir(Form("/eos/home-m/malberti/www/MTD/TBatH8Oct2021/pulseShapes/%s",outName.c_str()));
+  std::string plotDir(Form("/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/pulseShapes/%s",outName.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
@@ -753,8 +753,17 @@ int main(int argc, char** argv)
       hPad -> GetYaxis()->SetTitle("events");
       hPad -> Draw();
       histo->Draw("same");
-      c -> Print(Form("%s/c_energy_bar%02dLR_Vov%.2f.png",plotDir.c_str(),iBar,Vov));
-      c -> Print(Form("%s/c_energy_bar%02dLR_Vov%.2f.pdf",plotDir.c_str(),iBar,Vov));
+      float yval = std::max(10., histo->GetBinContent(histo->FindBin(energyMins[index])));
+      TLine* line1 = new TLine(energyMins[index],0.,energyMins[index], yval);
+      line1 -> SetLineWidth(1);
+      line1 -> SetLineStyle(7);
+      line1 -> Draw("same");
+      TLine* line2 = new TLine(energyMaxs[index],0.,energyMaxs[index], yval);
+      line2 -> SetLineWidth(1);
+      line2 -> SetLineStyle(7);
+      line2 -> Draw("same");
+      c -> Print(Form("%s/c_energy_bar%02dLR_Vov%.2f_th%02d.png",plotDir.c_str(),iBar,Vov,ith));
+      c -> Print(Form("%s/c_energy_bar%02dLR_Vov%.2f_th%02d.pdf",plotDir.c_str(),iBar,Vov,ith));
       delete c;
     }
   
