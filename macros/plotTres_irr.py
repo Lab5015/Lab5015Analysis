@@ -98,7 +98,7 @@ def findTimingThreshold(g2):
 
 # =====================================
 
-sipmTypes = ['HPK_2E14','HPK_2E14']
+sipmTypes = ['HPK_2E14','FBK_2E14']
 #sipmTypes = ['HPK_unirr_LYSO528','FBK_unirr_LYSO422']
 #sipmTypes = ['HPK_unirr_LYSO528','HPK_unirr_LYSOwithSlit']
 #sipmTypes = ['HPK_unirr_LYSOwithSlit','FBK_unirr_LYSO422']
