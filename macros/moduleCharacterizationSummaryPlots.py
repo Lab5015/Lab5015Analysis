@@ -66,10 +66,12 @@ if (args.resMode == 0): kscale = 1
 if (args.resMode == 1): kscale = math.sqrt(2)
 
 # output
-outdir = '/var/www/html/TOFHIR2X/MTDTB_CERN_Oct21/ModuleCharacterization/'+args.outFolder
+#outdir = '/var/www/html/TOFHIR2X/MTDTB_CERN_Oct21/ModuleCharacterization/'+args.outFolder
+outdir = '/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/ModuleCharacterization/'+args.outFolder 
 print 'Saving plots in ', outdir
 #outFileName = '/home/cmsdaq/Lab5015Analysis_new/TB_CERN_Oct21/Lab5015Analysis/plots/'+args.outFolder+'.root'
-outFileName = '/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_Oct21/Lab5015Analysis/plots/'+args.outFolder+'.root'
+#outFileName = '/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_Oct21/Lab5015Analysis/plots/'+args.outFolder+'.root'
+outFileName = '/afs/cern.ch/work/m/malberti/MTD/TBatH8Oct2021/Lab5015Analysis/plots/'+args.outFolder+'.root' 
 outfile = ROOT.TFile(outFileName, 'RECREATE' )
 
 
@@ -134,7 +136,8 @@ bars = []
 thresholds = []
 Vovs = [] 
 for label in label_list:
-    inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_Oct21/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
+    #inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_Oct21/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
+    inputFile = ROOT.TFile.Open('/afs/cern.ch/work/m/malberti/MTD/TBatH8Oct2021/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
     listOfKeys = [key.GetName().replace('h1_deltaT_energyRatioCorr_','') for key in ROOT.gDirectory.GetListOfKeys() if key.GetName().startswith('h1_deltaT_energyRatioCorr')]
     for k in listOfKeys:
         barNum = int (k.split('_')[0][3:5])
@@ -373,7 +376,8 @@ for vov in Vovs:
 
 # --- Read the histograms from moduleCharacterization_step2 file
 for label in label_list:
-    inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_Oct21/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
+    #inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_Oct21/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
+    inputFile = ROOT.TFile.Open('/afs/cern.ch/work/m/malberti/MTD/TBatH8Oct2021/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
 
     for bar in bars:
         for l in ['L','R','L-R']:
