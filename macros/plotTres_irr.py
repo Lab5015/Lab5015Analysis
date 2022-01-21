@@ -13,8 +13,9 @@ ROOT.gROOT.SetBatch(True)
 #ROOT.gROOT.SetBatch(False)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 ROOT.gStyle.SetOptStat(0)
-ROOT.gStyle.SetOptFit(1111)
+ROOT.gStyle.SetOptFit(0111)
 
+from SiPM import *
 
 outdir = '/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/timeResolution_vs_Vov_2E14/'
 if (os.path.exists(outdir)==False):
@@ -22,62 +23,47 @@ if (os.path.exists(outdir)==False):
 if (os.path.exists(outdir+'/plotsSR')==False):
     os.mkdir(outdir+'/plotsSR/')
 
-def Gain(ov, sipm, irr):
-    k = 1.
-    if (irr == '2E14'): k = 0.7
-    if ('HPK' in sipm):
-        return k*(36890. + 97602.*ov) # HPK
-    if ('FBK' in sipm):
-        return k*(50739. + 95149.*ov) # FBK
-
-def PDE(ov, sipm, irr):
-    k = 1.
-    if (irr == '2E14'): k = 0.85 # account for 15-20% PDE loss for HPK after 2E14
-    if ('HPK' in sipm):
-        return k * 0.384 * ( 1. - math.exp(-1.*0.583*ov) )
-    if ('FBK' in sipm):
-        return 0.466 * ( 1. - math.exp(-1.*0.314*ov) )
-
-def sigma_noise(sr):
-    noise_single = math.sqrt( pow(420./sr,2) + 16.7*16.7 )
-    return noise_single / math.sqrt(2)
-
-
-def getSlewRateFromPulseShape(g1, timingThreshold, npoints, canvas=None):
+def getSlewRateFromPulseShape(g1, timingThreshold, npoints, gtemp, canvas=None):
     if ( g1.GetN()/2 < npoints): return (-1, -1)
     # find index at the timing threshold
     itiming = 0
     for i in range(0,g1.GetN()):
-        #print g1.GetY()[i], round(g1.GetY()[i]/0.313)
         if (round(g1.GetY()[i]/0.313) == timingThreshold):
             itiming = i
             break
-    #fitSR = ROOT.TF1('fitSR', 'expo', 0, 10)
-    fitSR = ROOT.TF1('fitSR', 'pol1', 0, 5)
+
+    ifirst = ROOT.TMath.LocMin(g1.GetN(), g1.GetX())
+    imin = max(0, itiming-2)
+    if ( imin >= 0 and g1.GetX()[imin+1] < g1.GetX()[imin] ): imin = ifirst
+    tmin = g1.GetX()[imin]
+    tmax = min(g1.GetX()[imin+npoints],3.)
+    for i in range(imin, imin+npoints+1):
+        gtemp.SetPoint(gtemp.GetN(), g1.GetX()[i], g1.GetY()[i])
+        gtemp.SetPointError(gtemp.GetN()-1, g1.GetErrorX(i), g1.GetErrorY(i))
+    fitSR = ROOT.TF1('fitSR', 'pol1', tmin, tmax)
     fitSR.SetLineColor(g1.GetMarkerColor()+1)
-    tmin = min(g1.GetX())
-    tmax = min(5.,g1.GetX()[npoints])
     fitSR.SetRange(tmin,tmax)
     fitSR.SetParameters(0, 10)
-    fitStatus = int(g1.Fit(fitSR, 'QRS+'))
+    fitStatus = int(gtemp.Fit(fitSR, 'QRS+'))
     sr = fitSR.Derivative( g1.GetX()[itiming])
     err_sr = fitSR.GetParError(1)
-    #print g1.GetName(), 'SR = ', sr,'+/-', fitSR.GetParError(1) , '   chi2 = ', fitSR.GetChisquare(), '   NDF = ', fitSR.GetNDF(), '  fitStatus = ', fitStatus
-    #if (fitSR.GetNDF()==0 or (fitSR.GetNDF()>0 and fitSR.GetChisquare()/fitSR.GetNDF()>10)):
-    #if (fitSR.GetNDF()<(npoints+1-2)):
-    #    sr = -1
-    #    err_sr = -1
-    tmin = g1.GetX()[0]-1.0
-    tmax = g1.GetX()[g1.GetN()-1]+1.0
     if (canvas!=None):
         canvas.cd()
+        gtemp.SetMarkerStyle(g1.GetMarkerStyle())
+        gtemp.SetMarkerColor(g1.GetMarkerColor())
+        gtemp.Draw('psames')
         g1.Draw('psames')
+        fitSR.Draw('same')
         canvas.Update()
-        ps = g1.FindObject("stats")
+        #ps = g1.FindObject("stats")
+        ps = gtemp.FindObject("stats")
         ps.SetTextColor(g1.GetMarkerColor())
+        if ('L' in g1.GetName()):
+            ps.SetY1NDC(0.85) # new y start position
+            ps.SetY2NDC(0.95)# new y end position
         if ('R' in g1.GetName()):
-            ps.SetY1NDC(0.5)# new y start position
-            ps.SetY2NDC(0.7)#new y end position
+            ps.SetY1NDC(0.73) # new y start position
+            ps.SetY2NDC(0.83)# new y end position
 
     return(sr,err_sr)
 
@@ -167,7 +153,7 @@ DCR['FBK_2E14'] = {1.70 : 14.,
 
 
 sigma_stoch_ref = {'HPK_2E14' : 40.,
-                   'FBK_2E14' : 46.}
+                   'FBK_2E14' : 47.}
 err_sigma_stoch_ref = 2.
 ov_ref = 1.5
 
@@ -263,14 +249,16 @@ for sipm in sipmTypes:
             sr = -1
             err_srL = -1
             err_srR = -1
-            c = ROOT.TCanvas('c_%s'%(g_psL.GetName().replace('g_pulseShapeL','pulseShape').replace('Vov%.2f'%ov,'VovEff%.2f'%VovsEff[sipm][ov])))  
+            c = ROOT.TCanvas('c_%s'%(g_psL.GetName().replace('g_pulseShapeL','pulseShape').replace('Vov%.2f'%ov,'VovEff%.2f'%VovsEff[sipm][ov])),'',600,600)  
             hdummy = ROOT.TH2F('hdummy','', 100, min(g_psR.GetX())-1., 30., 100, 0., 15.)
             #hdummy = ROOT.TH2F('hdummy','', 100, min(g_psL.GetX())-1., min(g_psL.GetX())+3, 100, 0., 15.)
             hdummy.GetXaxis().SetTitle('time [ns]')
             hdummy.GetYaxis().SetTitle('amplitude [#muA]')
             hdummy.Draw()
-            if (g_psL!=None): srL,err_srL = getSlewRateFromPulseShape(g_psL, timingThreshold, np, c)
-            if (g_psR!=None): srR,err_srR = getSlewRateFromPulseShape(g_psR, timingThreshold, np, c) 
+            gtempL = ROOT.TGraphErrors()
+            gtempR = ROOT.TGraphErrors()
+            if (g_psL!=None): srL,err_srL = getSlewRateFromPulseShape(g_psL, timingThreshold, np, gtempL, c)
+            if (g_psR!=None): srR,err_srR = getSlewRateFromPulseShape(g_psR, timingThreshold, np, gtempR, c) 
             line = ROOT.TLine(min(g_psL.GetX())-1., timingThreshold*0.313, 30., timingThreshold*0.313)
             line.SetLineStyle(7)
             line.SetLineWidth(2)
@@ -358,7 +346,7 @@ for sipm in sipmTypes:
         xmin = 1.2
         xmax = 1.8
         if ('FBK' in sipm):
-            xmin = 1.6
+            xmin = 1.5
             xmax = 2.6
         hdummy1[sipm][bar] = ROOT.TH2F('hdummy1_%s_%d'%(sipm,bar),'',100,xmin,xmax,180,0,180)
         hdummy1[sipm][bar].GetXaxis().SetTitle('V_{OV}^{eff} [V]')
@@ -489,14 +477,15 @@ for j,sipm in enumerate(sipmTypes):
         c5[ov] = ROOT.TCanvas('c_slewRate_vs_bar_%s_Vov%.2f'%(sipm,VovsEff[sipm][ov]),'c_slewRate_vs_bar_%s_Vov%.2f'%(sipm,VovsEff[sipm][ov]),600,600)
         c5[ov].SetGridy()
         c5[ov].cd()
-        hdummy5[ov] = ROOT.TH2F('hdummy5_%d'%(ov),'',100,-0.5,15.5,100,0,35)
+        hdummy5[ov] = ROOT.TH2F('hdummy5_%d'%(ov),'',100,-0.5,15.5,100,0,15)
+        #hdummy5[ov] = ROOT.TH2F('hdummy5_%d'%(ov),'',100,-0.5,15.5,100,0,35)
         hdummy5[ov].GetXaxis().SetTitle('bar')
         hdummy5[ov].GetYaxis().SetTitle('slew rate at the timing thr. [#muA/ns]')
         hdummy5[ov].Draw()
         g_SR_vs_bar[sipm][ov].SetMarkerStyle(markers[sipm])
         g_SR_vs_bar[sipm][ov].SetMarkerColor(cols[sipm])
         g_SR_vs_bar[sipm][ov].SetLineColor(cols[sipm])
-        g_SR_vs_bar[sipm][ov].Draw('plsame')
+        g_SR_vs_bar[sipm][ov].Draw('psame')
         leg2.Draw()
         c5[ov].SaveAs(outdir+'/'+c5[ov].GetName()+'.png')
 

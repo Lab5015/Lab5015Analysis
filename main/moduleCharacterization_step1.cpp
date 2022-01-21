@@ -201,9 +201,6 @@ int main(int argc, char** argv)
   }
   
 
-
-
-
   //--- define histograms
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep1");
   TFile* outFile = TFile::Open(Form("%s",outFileName.c_str()),"RECREATE");
@@ -304,7 +301,8 @@ int main(int argc, char** argv)
 	      }
 	    }
 	  }
-	  if (nActiveBarsArray > 5 ) continue;
+	  //if (nActiveBarsArray > 5 ) continue;
+	  if (nActiveBarsArray > 3 ) continue;
 	}
 	
 	energyL_ext = (*energy)[channelIdx[chL_ext]];
@@ -558,8 +556,13 @@ int main(int argc, char** argv)
 
 	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 900 || nActiveBarsArray > 5)) continue; // to remove showering events
 	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nBarsVeto[iBar] > 0)) continue; // to remove showering events/ cross talk
-	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 5)) continue; // to remove showering events
+	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 5)) continue; // to remove showering events
+	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 3)) continue; // to remove showering events
+	  int maxActiveBars = 3;
+	  if (Vov > 4.00) maxActiveBars = 5; // forse meglio, altrimenti si rimuovono molti piu' eventi...
+	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > maxActiveBars)) continue; // to remove showering events
 	  
+
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
 	  h1_energyL[index] -> Fill( energyL[iBar] );

@@ -41,8 +41,8 @@ vovMax = 6
 #tResMin = 0
 #tResMax = 200
 #tResMaxTh = 240
-#tResMin = 40
-#tResMax = 220
+#tResMin = 0
+#tResMax = 200
 #tResMaxTh = 300
 #vovMax = 2.5
 
@@ -155,7 +155,7 @@ Vovs.sort()
 thresholds.sort()
 
 bars.remove(14)
-bars.remove(15)
+if (15 in bars): bars.remove(15)
 
 goodBars = {}
 VovsEff = {}
@@ -376,6 +376,7 @@ for vov in Vovs:
 
 # --- Read the histograms from moduleCharacterization_step2 file
 for label in label_list:
+    print label
     #inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_Oct21/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
     inputFile = ROOT.TFile.Open('/afs/cern.ch/work/m/malberti/MTD/TBatH8Oct2021/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
 
@@ -386,7 +387,7 @@ for label in label_list:
                     # -- tot vs thr, Vov, bar
                     if ( inputFile.GetListOfKeys().Contains('h1_tot_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr)) ): 
                         h1_tot = inputFile.Get('h1_tot_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr))
-                        if (h1_tot==None): continue
+                        if (h1_tot==None or h1_tot.GetEntries()==0): continue
                         
                         max1 = h1_tot.GetBinCenter(h1_tot.GetMaximumBin())
                         h1_tot.GetXaxis().SetRangeUser(0.25*max1,2.*max1)
@@ -407,7 +408,7 @@ for label in label_list:
                     # -- energy vs thr, Vov, bar
                     if ( inputFile.GetListOfKeys().Contains('h1_energy_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr)) ): 
                         h1_energy = inputFile.Get('h1_energy_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr))
-                        if ( h1_energy == None): continue
+                        if ( h1_energy == None or h1_energy.GetEntries()==0): continue
                         energyPeak = {}
                         if (source == 'Na22'):
                             for peak in peaks:
@@ -480,11 +481,12 @@ for label in label_list:
                     fitXMin = h1_deltaT.GetMean() - 3*h1_deltaT.GetRMS()
                     fitXMax = h1_deltaT.GetMean() + 3*h1_deltaT.GetRMS()
                     fitFunc.SetRange(fitXMin, fitXMax)
-                    h1_deltaT.Fit('fitFunc','QNRSL+','', fitXMin, fitXMax)
+                    h1_deltaT.Fit('fitFunc','QNRSL','', fitXMin, fitXMax)
                     fitFunc.SetRange(fitFunc.GetParameter(1) - 3.0*fitFunc.GetParameter(2), fitFunc.GetParameter(1) + 3.0*fitFunc.GetParameter(2))
-                    h1_deltaT.Fit('fitFunc','QNRSL+')
-                    #fitFunc.SetRange(fitFunc.GetParameter(1) - 2.5*fitFunc.GetParameter(2), fitFunc.GetParameter(1) + 2.5*fitFunc.GetParameter(2))
-                    fitFunc.SetRange(fitFunc.GetParameter(1) - 2.0*fitFunc.GetParameter(2), fitFunc.GetParameter(1) + 2.0*fitFunc.GetParameter(2))
+                    h1_deltaT.Fit('fitFunc','QNRSL')
+                    fitFunc.SetRange(fitFunc.GetParameter(1) - 2.5*fitFunc.GetParameter(2), fitFunc.GetParameter(1) + 2.5*fitFunc.GetParameter(2))
+                    h1_deltaT.Fit('fitFunc','QNRSL')
+                    fitFunc.SetRange(fitFunc.GetParameter(1) - 2.5*fitFunc.GetParameter(2), fitFunc.GetParameter(1) + 2.5*fitFunc.GetParameter(2))
                     h1_deltaT.Fit('fitFunc','QRSL+')
 
                     
@@ -493,7 +495,7 @@ for label in label_list:
                     if (fitFunc.GetParameter(2) < 20): continue
                     if (fitFunc.GetParError(2) > 200): continue
                     tRes[enBin] = [ fitFunc.GetParameter(2),fitFunc.GetParError(2)]
-                    print bar, vov, thr, tRes[enBin]
+                    #print bar, vov, thr, tRes[enBin]
                     #print 'best res, par2 , err2 : ', (bestRes[bar, vov, enBin], fitFunc.GetParameter(2), fitFunc.GetParError(2))
                     if (fitFunc.GetParameter(2) < bestRes[bar, vov, enBin][0]):
                         if ('FBK_2E14' in args.outFolder and vov == 1.50 and thr > 15): continue
@@ -781,8 +783,8 @@ for enBin in enBins:
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(20)
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerColor(cols[vov])
         g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetLineColor(cols[vov])
-        #g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')
-        g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('plsame')
+        if ('2E14' in args.outFolder): g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')
+        else: g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('plsame')
         print 'Vov = %0.02f --> Spread of tRes = %.03f'%(vov, g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2))
         leg.AddEntry(g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
         outfile.cd()

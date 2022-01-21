@@ -629,8 +629,7 @@ int main(int argc, char** argv)
 	  f_landau[index] -> SetLineWidth(2);
 	  f_landau[index] -> Draw("same");
 	  
-	  
-	  if ( f_landau[index]->GetParameter(1) > minE[std::make_pair(iBar, Vov)] &&  
+	  if ( f_landau[index]->GetNDF() >0 && f_landau[index]->GetParameter(1) > minE[std::make_pair(iBar, Vov)] &&  
 	       (f_landau[index]->GetParameter(1) - 2.0 * std::abs(f_landau[index]->GetParameter(2))) >=  minE[std::make_pair(iBar, Vov)] &&
 	       (f_landau[index]->GetParameter(1) - 2.0 * std::abs(f_landau[index]->GetParameter(2))) < 950) {
 	    //ranges[LRLabel][index] -> push_back( 0.75*f_landau[index]->GetParameter(1));

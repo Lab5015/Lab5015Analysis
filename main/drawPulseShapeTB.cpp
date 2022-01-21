@@ -219,7 +219,9 @@ int main(int argc, char** argv)
 	  nActiveBars1+=1;
       }
       
-      if (nActiveBars0 > 5 || nActiveBars1 > 5){
+      int maxActiveBars = 3;
+      if (Vov>4.0) maxActiveBars = 5;
+      if (nActiveBars0 > 3 || nActiveBars1 > maxActiveBars){
 	acceptEvent[entry] = false;
 	continue;
       }

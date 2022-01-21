@@ -13,8 +13,9 @@ ROOT.gROOT.SetBatch(True)
 #ROOT.gROOT.SetBatch(False)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 ROOT.gStyle.SetOptStat(0)
-ROOT.gStyle.SetOptFit(1111)
+ROOT.gStyle.SetOptFit(0111)
 
+from SiPM import *
 
 outdir = '/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/timeResolution_vs_Vov_unirr/'
 if (os.path.exists(outdir)==False):
@@ -22,65 +23,52 @@ if (os.path.exists(outdir)==False):
 if (os.path.exists(outdir+'/plotsSR')==False):
     os.mkdir(outdir+'/plotsSR/')
 
-def Gain(ov, sipm):
-    if ('HPK' in sipm):
-        return 36890. + 97602.*ov # HPK
-    if ('FBK' in sipm):
-        return 50739. + 95149.*ov # FBK
-
-def PDE(ov, sipm):
-        if ('HPK' in sipm):
-            return 0.384 * ( 1. - math.exp(-1.*0.583*ov) )
-        if ('FBK' in sipm):
-            return 0.466 * ( 1. - math.exp(-1.*0.314*ov) )
-
-def sigma_noise(sr):
-    noise_single = math.sqrt( pow(420./sr,2) + 16.7*16.7)
-    return noise_single / math.sqrt(2)
-
-
-def getSlewRateFromPulseShape(g1, timingThreshold, npoints, canvas=None):
+def getSlewRateFromPulseShape(g1, timingThreshold, npoints, gtemp, canvas=None):
     if ( g1.GetN()/2 < npoints): return (-1, -1)
     # find index at the timing threshold
     itiming = 0
     for i in range(0,g1.GetN()):
-        #print g1.GetY()[i], round(g1.GetY()[i]/0.313)
         if (round(g1.GetY()[i]/0.313) == timingThreshold):
             itiming = i
             break
-    #fitSR = ROOT.TF1('fitSR', 'expo', 0, 10)
-    fitSR = ROOT.TF1('fitSR', 'pol1', 0, 10)
+
+    ifirst = ROOT.TMath.LocMin(g1.GetN(), g1.GetX())
+    imin = max(0, itiming-2)
+    if ( imin >= 0 and g1.GetX()[imin+1] < g1.GetX()[imin] ): imin = ifirst
+    tmin = g1.GetX()[imin]
+    tmax = min(g1.GetX()[imin+npoints],3.)
+    for i in range(imin, imin+npoints+1):
+        gtemp.SetPoint(gtemp.GetN(), g1.GetX()[i], g1.GetY()[i])
+        gtemp.SetPointError(gtemp.GetN()-1, g1.GetErrorX(i), g1.GetErrorY(i))
+    fitSR = ROOT.TF1('fitSR', 'pol1', tmin, tmax)
     fitSR.SetLineColor(g1.GetMarkerColor()+1)
-    tmin = min(g1.GetX())
-    tmax = g1.GetX()[npoints]
     fitSR.SetRange(tmin,tmax)
     fitSR.SetParameters(0, 10)
-    fitStatus = int(g1.Fit(fitSR, 'QRS+'))
-    #fitStatus = int(g1.Fit(fitSR, 'QRN'))
-    #redefine errors to get chi2/NDF = 1
-    #for i in range(0,g1.GetN()):
-    #    if (fitSR.GetNDF()>0): 
-    #        err = g1.GetErrorX(i)
-    #        g1.SetPointError(i, err*math.sqrt( fitSR.GetChisquare()/fitSR.GetNDF() ) , 0)
-    #fitStatus = int(g1.Fit(fitSR, 'QRS+'))
+    fitStatus = int(gtemp.Fit(fitSR, 'QRS+'))
     sr = fitSR.Derivative( g1.GetX()[itiming])
     err_sr = fitSR.GetParError(1)
     #print g1.GetName(), 'SR = ', sr,'+/-', fitSR.GetParError(1) , '   chi2 = ', fitSR.GetChisquare(), '   NDF = ', fitSR.GetNDF(), '  fitStatus = ', fitStatus
-    #if (fitSR.GetNDF()==0 or (fitSR.GetNDF()>0 and fitSR.GetChisquare()/fitSR.GetNDF()>10)):
     #if (fitSR.GetNDF()==0):
     #    sr = -1
     #    err_sr = -1
-    tmin = g1.GetX()[0]-1.0
-    tmax = g1.GetX()[g1.GetN()-1]+1.0
     if (canvas!=None):
         canvas.cd()
+        #gtemp.SetMarkerStyle(g1.GetMarkerStyle())
+        #gtemp.SetMarkerColor(g1.GetMarkerColor())
+        gtemp.Draw('psames')
         g1.Draw('psames')
+        gtemp.Draw('p*sames')
+        fitSR.Draw('same')
         canvas.Update()
-        ps = g1.FindObject("stats")
+        #ps = g1.FindObject("stats")
+        ps = gtemp.FindObject('stats')
         ps.SetTextColor(g1.GetMarkerColor())
+        if ('L' in g1.GetName()):
+            ps.SetY1NDC(0.85) # new y start position
+            ps.SetY2NDC(0.95)# new y end position
         if ('R' in g1.GetName()):
-            ps.SetY1NDC(0.5)# new y start position
-            ps.SetY2NDC(0.7)#new y end position
+            ps.SetY1NDC(0.73) # new y start position
+            ps.SetY2NDC(0.83)# new y end position
 
     return(sr,err_sr)
 
@@ -180,7 +168,7 @@ for sipm in sipmTypes:
         g_bestTh_vs_bar[sipm][ov] = ROOT.TGraphErrors()
         g_Noise_vs_bar[sipm][ov] = ROOT.TGraphErrors()
         g_Stoch_vs_bar[sipm][ov] = ROOT.TGraphErrors()
-        
+       
     for bar in bars[sipm]:
         #g[sipm][bar] = f.Get('g_deltaT_energyRatioCorr_vs_vov_bar%02d_th10_enBin01'%bar)
         g[sipm][bar] = f.Get('g_deltaT_energyRatioCorr_bestTh_vs_vov_bar%02d_enBin01'%bar)
@@ -211,8 +199,10 @@ for sipm in sipmTypes:
             g_psL.SetName('g_pulseShapeL_bar%02d_Vov%.2f'%(bar,ov))
             g_psR.SetName('g_pulseShapeR_bar%02d_Vov%.2f'%(bar,ov))
             timingThreshold = findTimingThreshold(f.Get('g_deltaT_energyRatioCorr_vs_th_bar%02d_Vov%.2f_enBin01'%(bar,ov)))
-            srL,err_srL = getSlewRateFromPulseShape(g_psL, timingThreshold, np)
-            srR,err_srR = getSlewRateFromPulseShape(g_psR, timingThreshold, np)
+            gtempL = ROOT.TGraphErrors()
+            gtempR = ROOT.TGraphErrors()
+            srL,err_srL = getSlewRateFromPulseShape(g_psL, timingThreshold, np, gtempL)
+            srR,err_srR = getSlewRateFromPulseShape(g_psR, timingThreshold, np, gtempR)
             if (srL>0 and srR>0):
                 # weighted average
                 sr =  ( (srL/(err_srL*err_srL) + srR/(err_srR*err_srR) ) / (1./(err_srL*err_srL) + 1./(err_srR*err_srR) ) )
@@ -251,14 +241,16 @@ for sipm in sipmTypes:
             sr = -1
             err_srL = -1
             err_srR = -1
-            c = ROOT.TCanvas('c_%s'%(g_psL.GetName().replace('g_pulseShapeL','pulseShape')))  
+            c = ROOT.TCanvas('c_%s'%(g_psL.GetName().replace('g_pulseShapeL','pulseShape')),'',600,600)  
             hdummy = ROOT.TH2F('hdummy','', 100, min(g_psL.GetX())-1., 30., 100, 0., 15.)
             #hdummy = ROOT.TH2F('hdummy','', 100, min(g_psL.GetX())-1., min(g_psL.GetX())+2, 100, 0., 15.)
             hdummy.GetXaxis().SetTitle('time [ns]')
             hdummy.GetYaxis().SetTitle('amplitude [#muA]')
             hdummy.Draw()
-            if (g_psL!=None): srL,err_srL = getSlewRateFromPulseShape(g_psL, timingThreshold, np, c)
-            if (g_psR!=None): srR,err_srR = getSlewRateFromPulseShape(g_psR, timingThreshold, np, c) 
+            gtempL = ROOT.TGraphErrors()
+            gtempR = ROOT.TGraphErrors()
+            if (g_psL!=None): srL,err_srL = getSlewRateFromPulseShape(g_psL, timingThreshold, np, gtempL, c)
+            if (g_psR!=None): srR,err_srR = getSlewRateFromPulseShape(g_psR, timingThreshold, np, gtempR, c) 
             line = ROOT.TLine(min(g_psL.GetX())-1., timingThreshold*0.313, 30., timingThreshold*0.313)
             line.SetLineStyle(7)
             line.SetLineWidth(2)
@@ -313,20 +305,49 @@ for sipm in sipmTypes:
             #print sipm,' OV = %.2f  gain = %d  Npe = %d  bar = %02d  thr = %02d  SR = %.1f   noise = %.1f    stoch = %.1f   tot = %.1f'%(ov, gain, Npe, bar, timingThreshold, sr, sigma_noise(sr), sigma_stoch, sigma_tot)
 
 # ratio of stochatic terms at 3.5 OV
-g_ratio_stoch = ROOT.TGraphErrors()
+g_ratio_stoch1 = ROOT.TGraphErrors()
+g_ratio_stoch2 = ROOT.TGraphErrors()
+g_ratio_stoch3 = ROOT.TGraphErrors()
 for bar in range(0,16):
     if (bar not in bars[sipmTypes[1]]): continue
     if (bar not in bars[sipmTypes[0]]): continue
-    #if (bar not in [6,7,8,9,10,11,12]): continue # only bars with good SR fit
     if (g_Stoch_vs_Vov[sipmTypes[0]][bar].Eval(3.5)<=0): continue
     ratio_stoch =  g_Stoch_vs_Vov[sipmTypes[1]][bar].Eval(3.5)/g_Stoch_vs_Vov[sipmTypes[0]][bar].Eval(3.5)
     err1 = [  g_Stoch_vs_Vov[sipmTypes[1]][bar].GetErrorY(i) for i in range(0, g_Stoch_vs_Vov[sipmTypes[1]][bar].GetN()) if g_Stoch_vs_Vov[sipmTypes[1]][bar].GetX()[i] == 3.50]
     err0 = [  g_Stoch_vs_Vov[sipmTypes[0]][bar].GetErrorY(i) for i in range(0, g_Stoch_vs_Vov[sipmTypes[0]][bar].GetN()) if g_Stoch_vs_Vov[sipmTypes[0]][bar].GetX()[i] == 3.50]
     if (err1 == [] or err0 == []): continue
     err_ratio_stoch = ratio_stoch * math.sqrt( pow(err1[0]/g_Stoch_vs_Vov[sipmTypes[1]][bar].Eval(3.5),2) + pow(err0[0]/g_Stoch_vs_Vov[sipmTypes[0]][bar].Eval(3.5),2) ) 
-    print 'ratio stochastic term at 3.5 V OV = ', ratio_stoch
-    g_ratio_stoch.SetPoint(g_ratio_stoch.GetN(), bar, ratio_stoch)
-    g_ratio_stoch.SetPointError(g_ratio_stoch.GetN()-1, 0, err_ratio_stoch)
+    print sipmTypes[1], sipmTypes[0], ' ratio stochastic term at 3.5 V OV = ', ratio_stoch
+    g_ratio_stoch1.SetPoint(g_ratio_stoch1.GetN(), bar, ratio_stoch)
+    g_ratio_stoch1.SetPointError(g_ratio_stoch1.GetN()-1, 0, err_ratio_stoch)
+
+for bar in range(0,16):
+    if (bar not in bars[sipmTypes[1]]): continue
+    if (bar not in bars[sipmTypes[2]]): continue
+    if (g_Stoch_vs_Vov[sipmTypes[2]][bar].Eval(3.5)<=0): continue
+    if (g_Stoch_vs_Vov[sipmTypes[1]][bar].Eval(3.5)<=0): continue
+    ratio_stoch =  g_Stoch_vs_Vov[sipmTypes[1]][bar].Eval(3.5)/g_Stoch_vs_Vov[sipmTypes[2]][bar].Eval(3.5)
+    err1 = [  g_Stoch_vs_Vov[sipmTypes[1]][bar].GetErrorY(i) for i in range(0, g_Stoch_vs_Vov[sipmTypes[1]][bar].GetN()) if g_Stoch_vs_Vov[sipmTypes[1]][bar].GetX()[i] == 3.50]
+    err0 = [  g_Stoch_vs_Vov[sipmTypes[2]][bar].GetErrorY(i) for i in range(0, g_Stoch_vs_Vov[sipmTypes[2]][bar].GetN()) if g_Stoch_vs_Vov[sipmTypes[2]][bar].GetX()[i] == 3.50]
+    if (err1 == [] or err0 == []): continue
+    err_ratio_stoch = ratio_stoch * math.sqrt( pow(err1[0]/g_Stoch_vs_Vov[sipmTypes[1]][bar].Eval(3.5),2) + pow(err0[0]/g_Stoch_vs_Vov[sipmTypes[2]][bar].Eval(3.5),2) ) 
+    print sipmTypes[1], sipmTypes[2],' ratio stochastic term at 3.5 V OV = ', ratio_stoch
+    g_ratio_stoch2.SetPoint(g_ratio_stoch2.GetN(), bar, ratio_stoch)
+    g_ratio_stoch2.SetPointError(g_ratio_stoch2.GetN()-1, 0, err_ratio_stoch)
+
+for bar in range(0,16):
+    if (bar not in bars[sipmTypes[0]]): continue
+    if (bar not in bars[sipmTypes[2]]): continue
+    if (g_Stoch_vs_Vov[sipmTypes[2]][bar].Eval(3.5)<=0): continue
+    if (g_Stoch_vs_Vov[sipmTypes[0]][bar].Eval(3.5)<=0): continue
+    ratio_stoch =  g_Stoch_vs_Vov[sipmTypes[0]][bar].Eval(3.5)/g_Stoch_vs_Vov[sipmTypes[2]][bar].Eval(3.5)
+    err1 = [  g_Stoch_vs_Vov[sipmTypes[0]][bar].GetErrorY(i) for i in range(0, g_Stoch_vs_Vov[sipmTypes[0]][bar].GetN()) if g_Stoch_vs_Vov[sipmTypes[0]][bar].GetX()[i] == 3.50]
+    err0 = [  g_Stoch_vs_Vov[sipmTypes[2]][bar].GetErrorY(i) for i in range(0, g_Stoch_vs_Vov[sipmTypes[2]][bar].GetN()) if g_Stoch_vs_Vov[sipmTypes[2]][bar].GetX()[i] == 3.50]
+    if (err1 == [] or err0 == []): continue
+    err_ratio_stoch = ratio_stoch * math.sqrt( pow(err1[0]/g_Stoch_vs_Vov[sipmTypes[0]][bar].Eval(3.5),2) + pow(err0[0]/g_Stoch_vs_Vov[sipmTypes[2]][bar].Eval(3.5),2) ) 
+    print sipmTypes[0], sipmTypes[2],' ratio stochastic term at 3.5 V OV = ', ratio_stoch
+    g_ratio_stoch3.SetPoint(g_ratio_stoch3.GetN(), bar, ratio_stoch)
+    g_ratio_stoch3.SetPointError(g_ratio_stoch3.GetN()-1, 0, err_ratio_stoch)
         
 # draw
 c1 = {}
@@ -426,8 +447,9 @@ cols = { 'HPK_unirr_LYSO528' : ROOT.kBlack ,
          'HPK_unirr_LYSOwithSlit' : ROOT.kBlue ,
          'FBK_unirr_LYSO422' : ROOT.kRed }
 
-leg2 = ROOT.TLegend(0.15,0.75,0.40,0.89)
+leg2 = ROOT.TLegend(0.15,0.70,0.45,0.89)
 leg2.SetBorderSize(0)
+leg2.SetFillStyle(0)
 for i,bar in enumerate(bars[sipm]):
     c3[bar] = ROOT.TCanvas('c_slewRate_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),'c_slewRate_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),600,600)
     c3[bar].SetGridy()
@@ -439,6 +461,7 @@ for i,bar in enumerate(bars[sipm]):
     for j,sipm in enumerate(sipmTypes):
         if (i==0):
             leg2.AddEntry(g_SR_vs_Vov[sipm][bar], '%s'%sipm, 'PL')
+        if (bar not in g_SR_vs_Vov[sipm].keys()):continue
         g_SR_vs_Vov[sipm][bar].SetMarkerStyle( markers[sipm] )
         g_SR_vs_Vov[sipm][bar].SetMarkerColor(cols[sipm])
         g_SR_vs_Vov[sipm][bar].SetLineColor(cols[sipm])
@@ -454,6 +477,7 @@ for i,bar in enumerate(bars[sipm]):
     hdummy4[bar].GetYaxis().SetTitle('best threshold [DAC]')
     hdummy4[bar].Draw()
     for j,sipm in enumerate(sipmTypes):
+        if (bar not in g_bestTh_vs_Vov[sipm].keys()):continue
         g_bestTh_vs_Vov[sipm][bar].SetMarkerStyle( markers[sipm] )
         g_bestTh_vs_Vov[sipm][bar].SetMarkerColor(cols[sipm])
         g_bestTh_vs_Vov[sipm][bar].SetLineColor(cols[sipm])
@@ -476,7 +500,9 @@ for ov in Vovs[sipm]:
     c5[ov] = ROOT.TCanvas('c_slewRate_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),'c_slewRate_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),600,600)
     c5[ov].SetGridy()
     c5[ov].cd()
-    hdummy5[ov] = ROOT.TH2F('hdummy5_%d'%(ov),'',100,-0.5,15.5,100,0,35)
+    ymax = 35.
+    if (ov == 1.50): ymax = 15.
+    hdummy5[ov] = ROOT.TH2F('hdummy5_%d'%(ov),'',100,-0.5,15.5,100,0,ymax)
     hdummy5[ov].GetXaxis().SetTitle('bar')
     hdummy5[ov].GetYaxis().SetTitle('slew rate at the timing thr. [#muA/ns]')
     hdummy5[ov].Draw()
@@ -537,27 +563,80 @@ for ov in Vovs[sipm]:
     leg2.Draw()        
     c8[ov].SaveAs(outdir+'/'+c8[ov].GetName()+'.png')
     
-cc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[0], sipmTypes[1]),'c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[0], sipmTypes[1]))
+cc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[0]),'c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[0]),600,600)
 cc.cd()
-hdummy = ROOT.TH2F('hdummy2','',16,-0.5,15.5,100,0.8,1.5)
+hdummy = ROOT.TH2F('hdummy2','',16,-0.5,15.5,100,0.0,2.0)
 hdummy.GetXaxis().SetTitle('bar')
-hdummy.GetYaxis().SetTitle('ratio stochastic term')
+hdummy.GetYaxis().SetTitle('ratio photostat.')
 hdummy.Draw('')
-g_ratio_stoch.SetMarkerStyle(20)
-g_ratio_stoch.Draw('psame')
+g_ratio_stoch1.SetMarkerStyle(20)
+g_ratio_stoch1.Draw('psame')
 print 'ratio of stoch. terms expected from LO  = ', math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[1]])
-print 'ratio of stoch. terms measured at 3.5 V = ', g_ratio_stoch.GetMean(2)
+print 'ratio of stoch. terms measured at 3.5 V = ', g_ratio_stoch1.GetMean(2)
 ll = ROOT.TLine(0, math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[1]]), 15, math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[1]]))
 ll.SetLineStyle(7)
 ll.SetLineWidth(2)
-ll.SetLineColor(ROOT.kOrange+1)
+ll.SetLineColor(ROOT.kGray+1)
 ll.Draw('same')
-#g_ratio_stoch.Fit('pol0')
-leg2 = ROOT.TLegend(0.55,0.70,0.89,0.89)
-leg2.AddEntry(g_ratio_stoch,'ratio of stoch. term','PL')
-leg2.AddEntry(ll,'sqrt(LO_{HPK}/LO_{FBK})','PL')
+leg2 = ROOT.TLegend(0.15,0.15,0.55,0.35)
+leg2.SetBorderSize(0)
+leg2.AddEntry(g_ratio_stoch2,'ratio of photostat. terms','PL')
+leg2.AddEntry(ll,'sqrt(LO_{HPK+528}/LO_{FBK+422})','L')
 leg2.Draw('same')
+fitFun=ROOT.TF1('fitFun','pol0',0,16)
+fitFun.SetLineColor(1)
+g_ratio_stoch1.Fit(fitFun,'QRS')
 cc.SaveAs(outdir+'/'+cc.GetName()+'.png')                        
+
+ccc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[2]),'c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[2]),600,600)
+ccc.cd()
+hdummy = ROOT.TH2F('hdummy2','',16,-0.5,15.5,100,0.0,2.0)
+hdummy.GetXaxis().SetTitle('bar')
+hdummy.GetYaxis().SetTitle('ratio photostat.')
+hdummy.Draw('')
+g_ratio_stoch2.SetMarkerStyle(20)
+g_ratio_stoch2.Draw('psame')
+print 'ratio of stoch. terms expected from LO  = ', math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[1]])
+print 'ratio of stoch. terms measured at 3.5 V = ', g_ratio_stoch2.GetMean(2)
+lll = ROOT.TLine(0, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[1]]), 15, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[1]]))
+lll.SetLineStyle(7)
+lll.SetLineWidth(2)
+lll.SetLineColor(ROOT.kGray+1)
+lll.Draw('same')
+leg2 = ROOT.TLegend(0.15,0.15,0.55,0.35)
+leg2.SetBorderSize(0)
+leg2.AddEntry(g_ratio_stoch2,'ratio of photostat. terms','PL')
+leg2.AddEntry(ll,'sqrt(LO_{HPK+Slit}/LO_{FBK+422})','L')
+leg2.Draw('same')
+fitFun=ROOT.TF1('fitFun','pol0',0,16)
+fitFun.SetLineColor(1)
+g_ratio_stoch2.Fit(fitFun,'QRS')
+ccc.SaveAs(outdir+'/'+ccc.GetName()+'.png')                        
+
+cccc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[0], sipmTypes[2]),'c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[0], sipmTypes[2]),600,600)
+cccc.cd()
+hdummy = ROOT.TH2F('hdummy2','',16,-0.5,15.5,100,0.0,2.0)
+hdummy.GetXaxis().SetTitle('bar')
+hdummy.GetYaxis().SetTitle('ratio photostat.')
+hdummy.Draw('')
+g_ratio_stoch3.SetMarkerStyle(20)
+g_ratio_stoch3.Draw('psame')
+print 'ratio of stoch. terms expected from LO  = ', math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[2]])
+print 'ratio of stoch. terms measured at 3.5 V = ', g_ratio_stoch2.GetMean(2)
+llll = ROOT.TLine(0, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[0]]), 15, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[0]]))
+llll.SetLineStyle(7)
+llll.SetLineWidth(2)
+llll.SetLineColor(ROOT.kGray+1)
+llll.Draw('same')
+leg2 = ROOT.TLegend(0.15,0.15,0.55,0.35)
+leg2.SetBorderSize(0)
+leg2.AddEntry(g_ratio_stoch3,'ratio of photostat. terms','PL')
+leg2.AddEntry(ll,'sqrt(LO_{HPK+Slit}/LO_{HPK+528})','L')
+leg2.Draw('same')
+fitFun=ROOT.TF1('fitFun','pol0',0,16)
+fitFun.SetLineColor(1)
+g_ratio_stoch3.Fit(fitFun,'QRS')
+cccc.SaveAs(outdir+'/'+cccc.GetName()+'.png')                        
 
 
 for ov in Vovs[sipm]:
