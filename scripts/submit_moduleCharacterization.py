@@ -74,7 +74,7 @@ for intrun in runs:
       os.system(command)
       command = 'sed -i \"s%^outFileNameStep2 .*$%outFileNameStep2 '+args.baseFolder+'/plots_fede/moduleCharacterization_step2_run'+str(run)+'.root%\" '+configFileName
       os.system(command)
-      command = 'sed -i \"s%^plotDir .*$%plotDir /var/www/html/TOFHIR2X/MTDST_CERN_Oct21/Fede/ModuleCharacterization/run'+str(run)+'/%\" '+configFileName
+      command = 'sed -i \"s%^plotDir .*$%plotDir /var/www/html/MTDST_CERN_Oct21/CCv2/ModuleCharacterization//run'+str(run)+'/%\" '+configFileName
       os.system(command)
       
    parallelCommand += configFileName + " "

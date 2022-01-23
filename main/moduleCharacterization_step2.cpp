@@ -749,12 +749,12 @@ int main(int argc, char** argv)
 	  
 	  //if (fabs(anEvent->timeR-anEvent->timeL)<10000) {
 	    
-	    if ((anEvent->energyR / anEvent->energyL >0) & (anEvent->energyR / anEvent->energyL <5)){
+	  //if ((anEvent->energyR / anEvent->energyL >0) & (anEvent->energyR / anEvent->energyL <5)){
 	      h1_energyRatio[index2] -> Fill( anEvent->energyR / anEvent->energyL );						     
 	      h1_totRatio[index2] -> Fill( anEvent->totR / anEvent->totL );
 	      h1_deltaT_raw[index2] -> Fill( anEvent->timeR-anEvent->timeL + deltaTShift[index1] );
 	      //std::cout << "--->>> " << anEvent->timeR-anEvent->timeL + deltaTShift[index1] << std::endl;
-	    }
+	      //}
 	    
 	    h1_t1fineMean[index2] -> Fill( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) );
 	    //}
