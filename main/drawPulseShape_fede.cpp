@@ -106,7 +106,7 @@ int main(int argc, char** argv)
     
       for(int run = runMin; run <= runMax; ++run) {
 	//std::string inFileName = Form("/data/tofhir2/reco/run%04d*_e.root",run); 
-	std::string inFileName = Form("/home/petsys/TOFHiR2X/sw_daq_tofhir2_Milan/sw_daq_tofhir2/data/reco/run%04d_e.root",run); 
+	std::string inFileName = Form("/home/data/mtd/data/tofhir2/reco/run%04d_e.root",run); 
 	std::cout << ">>> Adding file " << inFileName << std::endl;
 	data -> Add(inFileName.c_str());
       }
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 
 
   float step1, step2;
-  int channelIdx[128];
+  int channelIdx[2048];
   std::vector<float>* tot = 0;
   std::vector<float>* energy = 0;
   std::vector<long long>* time = 0;
@@ -212,7 +212,7 @@ int main(int argc, char** argv)
       // --  laser
       if (frequency > -1){
       
-	long int scale = 1000000000/(frequency);
+	long int scale = 1000000000./(frequency);
 	
 	if( ch == ch1 )
 	  {
@@ -337,10 +337,10 @@ int main(int argc, char** argv)
       if( ch == ch1 && !h1_tot_ch1[Vov][ith] )
 	{
         h1_tot_ch1[Vov][ith]    = new TH1F(Form("h1_tot_ch1_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
+        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
         
         h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
+        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
         h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
         h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
         
@@ -350,12 +350,12 @@ int main(int argc, char** argv)
       if( ch == ch2 && !h1_tot_ch2[Vov][ith] )
       {
         h1_tot_ch2[Vov][ith]    = new TH1F(Form("h1_tot_ch2_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
+        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
         
         h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
-        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
-        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
+        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",500,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",500,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
       }
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
@@ -627,7 +627,7 @@ int main(int argc, char** argv)
       int ith = mapIt2.first;
       TH1F* histo = h1_time2_totSel_ch1[Vov][ith];
 
-      //std::cout << "+++++++++++>>>> " << ith << " " << histo->Integral() << std::endl;
+      std::cout << "+++++++++++>>>> " << ith << " " << histo->Integral() << std::endl;
       //if( histo->Integral() <= 0.8*h1_time2_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
       //if( histo->Integral() < 10) continue;  
 
@@ -670,7 +670,8 @@ int main(int argc, char** argv)
   
   //-----------
   // draw plots
-  std::string plotDir(Form("/var/www/html/TOFHIR2X/MTDST_CERN_Oct21/Fede/pulseShapes/run%s/",runs.c_str()));
+  std::cout << "+++ DRAW PLOTS +++" << std::endl;
+  std::string plotDir(Form("/var/www/html/MTDST_CERN_Oct21/CCv2/pulseShapes/run%s/",runs.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
@@ -725,6 +726,7 @@ int main(int argc, char** argv)
       f_sigmoid_ch2 -> SetLineWidth(2);
       f_sigmoid_ch2 -> SetLineColor(kBlue);
       index = 0;
+
       for (int j = 0; j < g_N_ch2[Vov] -> GetN(); j++ ){
         if ( g_N_ch2[Vov]->GetPointY(j) < g_N_ch2[Vov]->GetPointY(0)/2){
           index = j;
@@ -748,7 +750,6 @@ int main(int argc, char** argv)
       
       delete c;
     }
-  
   for(auto mapIt : h1_tot_ch1)
   {  
     float Vov = mapIt.first;
