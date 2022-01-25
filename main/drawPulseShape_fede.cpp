@@ -197,11 +197,11 @@ int main(int argc, char** argv)
 
       if( ch == ch1 && !h1_time1_wide_ch1[Vov][ith] )
 	{
-	  h1_time1_wide_ch1[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch1_Vov%.1f_ith%02d",Vov,ith),"",10000,-10000.,10000.);
+	  h1_time1_wide_ch1[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch1_Vov%.1f_ith%02d",Vov,ith),"",20000,-1000.,1000.);
 	}
       if( ch == ch2 && !h1_time1_wide_ch2[Vov][ith] )
       {
-        h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.1f_ith%02d",Vov,ith),"",10000,-10000.,10000.);
+        h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.1f_ith%02d",Vov,ith),"",20000,-1000.,1000.);
       }
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
@@ -211,8 +211,8 @@ int main(int argc, char** argv)
 
       // --  laser
       if (frequency > -1){
-      
-	long int scale = 1000000000./(frequency);
+	//long int scale = 1000000000/(frequency);
+	long int scale = 25000;
 	
 	if( ch == ch1 )
 	  {
@@ -266,7 +266,7 @@ int main(int argc, char** argv)
 	      std::cout << "=========>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 
 	      timeOffset[Vov][ch1] = histo->GetBinCenter(histo->GetMaximumBin());
-	      std::cout << "timeOffset = " << timeOffset[Vov][ch1] <<std::endl;
+	      std::cout << "timeOffset = " << timeOffset[Vov][ch1] << std::endl;
 	      //timeOffset[Vov][ch1] = 230;
 	      lowestThr[Vov][ch1] = ith;
 	    }
@@ -284,9 +284,13 @@ int main(int argc, char** argv)
 	  TH1F* histo = mapIt2.second;
 	  histo->Write();
 	  
+	  std::cout << "===>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
 	  if( (lowestThr[Vov][ch2] != 0 && ith < lowestThr[Vov][ch2]) || (lowestThr[Vov][ch2] == 0) )
 	    {
+	      std::cout << "=========>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
+
 	      timeOffset[Vov][ch2] = histo->GetBinCenter(histo->GetMaximumBin());
+	      std::cout << "timeOffset = " << timeOffset[Vov][ch2] << std::endl;
 	      //timeOffset[Vov][ch2] = 230;
 	      lowestThr[Vov][ch2] = ith;
 	    }
@@ -337,12 +341,12 @@ int main(int argc, char** argv)
       if( ch == ch1 && !h1_tot_ch1[Vov][ith] )
 	{
         h1_tot_ch1[Vov][ith]    = new TH1F(Form("h1_tot_ch1_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
+        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
         
         h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
-        h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
-        h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
+        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
+        h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
+        h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
         
         h1_deltaT1_totSel[Vov][ith] = new TH1F(Form("h1_deltaT1_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
         h1_deltaT2_totSel[Vov][ith] = new TH1F(Form("h1_deltaT2_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
@@ -350,12 +354,12 @@ int main(int argc, char** argv)
       if( ch == ch2 && !h1_tot_ch2[Vov][ith] )
       {
         h1_tot_ch2[Vov][ith]    = new TH1F(Form("h1_tot_ch2_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
+        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
         
         h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,2999.5);
-        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",500,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
-        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",500,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
+        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
       }
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
@@ -376,8 +380,8 @@ int main(int argc, char** argv)
 
       // -- laser 
       if (frequency > -1) {
-
-	long int scale = 1000000000/(frequency);
+	//long int scale = 1000000000/(frequency);
+	long int scale = 25000;
       
 	if( ch == ch1 )
 	  {
@@ -879,13 +883,14 @@ int main(int argc, char** argv)
       if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 4. )
       {
         fitXMin = g_ps_totSel_ch1[Vov]->GetPointX(point);
+        std::cout << "fitXMin: " << fitXMin << std::endl;
         break;
       }
     for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
       if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 15. )
       {
         fitXMax = g_ps_totSel_ch1[Vov]->GetPointX(point);
-        std::cout << fitXMax << std::endl;
+        std::cout << "fitXMax: " << fitXMax << std::endl;
         break;
       }
     // TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,7.);
