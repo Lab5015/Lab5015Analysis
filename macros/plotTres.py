@@ -100,6 +100,10 @@ LO = { 'HPK_unirr_LYSO528' : 1450.,
        'FBK_unirr_LYSO422' :1040.,
        'HPK_unirr_LYSOwithSlit' : 1100.}
 
+tau = { 'HPK_unirr_LYSO528' : 38.6,
+        'FBK_unirr_LYSO422' : 41.4,  
+        'HPK_unirr_LYSOwithSlit' : 38.5}
+
 #fitFunc_SR = (ROOT.TFile.Open('SR_vs_amp.root')).Get('fitFunc_SR_vs_amp')
 
 np = 3
@@ -109,10 +113,12 @@ g = {}
 g_Noise_vs_Vov = {}
 g_Stoch_vs_Vov = {}
 g_Tot_vs_Vov   = {}
+
 g_Stoch_vs_Npe = {}
 
 g_SR_vs_bar = {}
 g_SR_vs_Vov = {}
+g_SR_vs_GainNpe = {}
 
 g_bestTh_vs_bar = {}
 g_bestTh_vs_Vov = {}
@@ -159,6 +165,8 @@ for sipm in sipmTypes:
     g_Noise_vs_bar[sipm] = {}
     g_Stoch_vs_bar[sipm] = {}
 
+    g_SR_vs_GainNpe[sipm] = {}
+
     fPS[sipm] = {}
     for ov in Vovs[sipm]:
         if (sipm == 'HPK_unirr_LYSO528'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_HPK528_unirr_52deg_T10C_Vov%.2f_ith1.root'%ov)
@@ -175,9 +183,11 @@ for sipm in sipmTypes:
         g_Noise_vs_Vov[sipm][bar] = ROOT.TGraphErrors()
         g_Stoch_vs_Vov[sipm][bar] = ROOT.TGraphErrors()
         g_Tot_vs_Vov[sipm][bar] = ROOT.TGraphErrors()
+
         g_Stoch_vs_Npe[sipm][bar] = ROOT.TGraphErrors()
 
         g_SR_vs_Vov[sipm][bar] = ROOT.TGraphErrors()
+        g_SR_vs_GainNpe[sipm][bar] = ROOT.TGraphErrors()
         g_bestTh_vs_Vov[sipm][bar] = ROOT.TGraphErrors()
         
         sigma_stoch_ref = 0
@@ -273,6 +283,8 @@ for sipm in sipmTypes:
             #print ov, gain, Npe, srL, srR, sr, errSR
             g_SR_vs_Vov[sipm][bar].SetPoint( g_SR_vs_Vov[sipm][bar].GetN(), ov, sr )
             g_SR_vs_Vov[sipm][bar].SetPointError( g_SR_vs_Vov[sipm][bar].GetN()-1, 0, errSR )
+            g_SR_vs_GainNpe[sipm][bar].SetPoint( g_SR_vs_GainNpe[sipm][bar].GetN(), gain*Npe/(Gain(ov_ref, sipm)*LO[sipm]*4.2), sr )
+            g_SR_vs_GainNpe[sipm][bar].SetPointError( g_SR_vs_GainNpe[sipm][bar].GetN()-1, 0, errSR )
             g_bestTh_vs_Vov[sipm][bar].SetPoint( g_bestTh_vs_Vov[sipm][bar].GetN(), ov, timingThreshold )
             g_bestTh_vs_Vov[sipm][bar].SetPointError( g_bestTh_vs_Vov[sipm][bar].GetN()-1, 0, 0 )
             g_SR_vs_bar[sipm][ov].SetPoint( g_SR_vs_bar[sipm][ov].GetN(), bar, sr )
@@ -288,8 +300,8 @@ for sipm in sipmTypes:
                 s = math.sqrt(sigma_meas*sigma_meas-sigma_noise(sr)*sigma_noise(sr))
                 es = 1./s * math.sqrt( pow(sigma_meas*g[sipm][bar].GetErrorY(i),2) + pow( sigma_noise(sr)*g_Noise_vs_Vov[sipm][bar].GetErrorY(g_Noise_vs_Vov[sipm][bar].GetN()-1),2) )
                 g_Stoch_vs_Npe[sipm][bar].SetPoint(g_Stoch_vs_Npe[sipm][bar].GetN(), Npe, s)
-                #g_Stoch_vs_Npe[sipm][bar].SetPointError(g_Stoch_vs_Npe[sipm][bar].GetN()-1, 0.05*Npe, es )
                 g_Stoch_vs_Npe[sipm][bar].SetPointError(g_Stoch_vs_Npe[sipm][bar].GetN()-1, 0., es )
+
             # compute stoch by scaling from 3.5 V OV
             sigma_stoch = sigma_stoch_ref/math.sqrt(  PDE(ov,sipm)/PDE(ov_ref,sipm)  )
             err_sigma_stoch = err_sigma_stoch_ref/math.sqrt( PDE(ov,sipm)/PDE(ov_ref,sipm) )
@@ -451,7 +463,7 @@ leg2 = ROOT.TLegend(0.15,0.70,0.45,0.89)
 leg2.SetBorderSize(0)
 leg2.SetFillStyle(0)
 for i,bar in enumerate(bars[sipm]):
-    c3[bar] = ROOT.TCanvas('c_slewRate_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),'c_slewRate_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),600,600)
+    c3[bar] = ROOT.TCanvas('c_slewRate_vs_Vov_bar%02d'%(bar),'c_slewRate_vs_Vov_bar%02d'%(bar),600,600)
     c3[bar].SetGridy()
     c3[bar].cd()
     hdummy3[bar] = ROOT.TH2F('hdummy3_%d'%(bar),'',100,0,6,100,0,35)
@@ -468,8 +480,25 @@ for i,bar in enumerate(bars[sipm]):
         g_SR_vs_Vov[sipm][bar].Draw('psame')
     leg2.Draw()
     c3[bar].SaveAs(outdir+'/'+c3[bar].GetName()+'.png')
+    c3[bar].Delete()
+    hdummy3[bar].Delete() 
+
+    c3[bar] = ROOT.TCanvas('c_slewRate_vs_GainNpe_bar%02d'%(bar),'c_slewRate_vs_GainNpe_bar%02d'%(bar),600,600)
+    c3[bar].SetGridy()
+    c3[bar].cd()
+    hdummy3[bar] = ROOT.TH2F('hdummy3_%d'%(bar),'',100,0,2,100,0,35)
+    hdummy3[bar].GetXaxis().SetTitle('gain x Npe')
+    hdummy3[bar].GetYaxis().SetTitle('slew rate at the timing thr. [#muA/ns]')
+    hdummy3[bar].Draw()
+    for j,sipm in enumerate(sipmTypes):
+        g_SR_vs_GainNpe[sipm][bar].SetMarkerStyle( markers[sipm] )
+        g_SR_vs_GainNpe[sipm][bar].SetMarkerColor(cols[sipm])
+        g_SR_vs_GainNpe[sipm][bar].SetLineColor(cols[sipm])
+        g_SR_vs_GainNpe[sipm][bar].Draw('psame')
+    leg2.Draw()
+    c3[bar].SaveAs(outdir+'/'+c3[bar].GetName()+'.png')
     
-    c4[bar] = ROOT.TCanvas('c_bestTh_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),'c_bestTh_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),600,600)
+    c4[bar] = ROOT.TCanvas('c_bestTh_vs_Vov_bar%02d'%(bar),'c_bestTh_vs_Vov_bar%02d'%(bar),600,600)
     c4[bar].SetGridy()
     c4[bar].cd()
     hdummy4[bar] = ROOT.TH2F('hdummy4_%d'%(bar),'',100,0,6,100,0,20)
@@ -497,7 +526,7 @@ hdummy7 = {}
 c8 = {}
 hdummy8 = {}
 for ov in Vovs[sipm]:
-    c5[ov] = ROOT.TCanvas('c_slewRate_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),'c_slewRate_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),600,600)
+    c5[ov] = ROOT.TCanvas('c_slewRate_vs_bar_Vov%.2f'%(ov),'c_slewRate_vs_bar_Vov%.2f'%(ov),600,600)
     c5[ov].SetGridy()
     c5[ov].cd()
     ymax = 35.
@@ -515,7 +544,7 @@ for ov in Vovs[sipm]:
     leg2.Draw()
     c5[ov].SaveAs(outdir+'/'+c5[ov].GetName()+'.png')
 
-    c6[ov] = ROOT.TCanvas('c_bestTh_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),'c_bestTh_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),600,600)
+    c6[ov] = ROOT.TCanvas('c_bestTh_vs_bar_Vov%.2f'%(ov),'c_bestTh_vs_bar_Vov%.2f'%(ov),600,600)
     c6[ov].SetGridy()
     c6[ov].cd()
     hdummy6[ov] = ROOT.TH2F('hdummy6_%d'%(ov),'',100,-0.5,15.5,100,0,20)
@@ -531,7 +560,7 @@ for ov in Vovs[sipm]:
     leg2.Draw()        
     c6[ov].SaveAs(outdir+'/'+c6[ov].GetName()+'.png')
 
-    c7[ov] = ROOT.TCanvas('c_noise_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),'c_noise_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),600,600)
+    c7[ov] = ROOT.TCanvas('c_noise_vs_bar_Vov%.2f'%(ov),'c_noise_vs_bar_Vov%.2f'%(ov),600,600)
     c7[ov].SetGridy()
     c7[ov].cd()
     hdummy7[ov] = ROOT.TH2F('hdummy7_%d'%(ov),'',100,-0.5,15.5,100,0,80)
@@ -547,7 +576,7 @@ for ov in Vovs[sipm]:
     leg2.Draw()        
     c7[ov].SaveAs(outdir+'/'+c7[ov].GetName()+'.png')
 
-    c8[ov] = ROOT.TCanvas('c_stoch_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),'c_stoch_vs_bar_%s_%s_Vov%.2f'%(sipmTypes[0], sipmTypes[1],ov),600,600)
+    c8[ov] = ROOT.TCanvas('c_stoch_vs_bar_Vov%.2f'%(ov),'c_stoch_vs_bar_Vov%.2f'%(ov),600,600)
     c8[ov].SetGridy()
     c8[ov].cd()
     hdummy8[ov] = ROOT.TH2F('hdummy8_%d'%(ov),'',100,-0.5,15.5,100,0,80)
@@ -563,81 +592,53 @@ for ov in Vovs[sipm]:
     leg2.Draw()        
     c8[ov].SaveAs(outdir+'/'+c8[ov].GetName()+'.png')
     
-cc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[0]),'c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[0]),600,600)
-cc.cd()
-hdummy = ROOT.TH2F('hdummy2','',16,-0.5,15.5,100,0.0,2.0)
-hdummy.GetXaxis().SetTitle('bar')
-hdummy.GetYaxis().SetTitle('ratio photostat.')
-hdummy.Draw('')
-g_ratio_stoch1.SetMarkerStyle(20)
-g_ratio_stoch1.Draw('psame')
-print 'ratio of stoch. terms expected from LO  = ', math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[1]])
-print 'ratio of stoch. terms measured at 3.5 V = ', g_ratio_stoch1.GetMean(2)
-ll = ROOT.TLine(0, math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[1]]), 15, math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[1]]))
-ll.SetLineStyle(7)
-ll.SetLineWidth(2)
-ll.SetLineColor(ROOT.kGray+1)
-ll.Draw('same')
-leg2 = ROOT.TLegend(0.15,0.15,0.55,0.35)
-leg2.SetBorderSize(0)
-leg2.AddEntry(g_ratio_stoch2,'ratio of photostat. terms','PL')
-leg2.AddEntry(ll,'sqrt(LO_{HPK+528}/LO_{FBK+422})','L')
-leg2.Draw('same')
-fitFun=ROOT.TF1('fitFun','pol0',0,16)
-fitFun.SetLineColor(1)
-g_ratio_stoch1.Fit(fitFun,'QRS')
-cc.SaveAs(outdir+'/'+cc.GetName()+'.png')                        
-
-ccc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[2]),'c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[1], sipmTypes[2]),600,600)
-ccc.cd()
-hdummy = ROOT.TH2F('hdummy2','',16,-0.5,15.5,100,0.0,2.0)
-hdummy.GetXaxis().SetTitle('bar')
-hdummy.GetYaxis().SetTitle('ratio photostat.')
-hdummy.Draw('')
-g_ratio_stoch2.SetMarkerStyle(20)
-g_ratio_stoch2.Draw('psame')
-print 'ratio of stoch. terms expected from LO  = ', math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[1]])
-print 'ratio of stoch. terms measured at 3.5 V = ', g_ratio_stoch2.GetMean(2)
-lll = ROOT.TLine(0, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[1]]), 15, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[1]]))
-lll.SetLineStyle(7)
-lll.SetLineWidth(2)
-lll.SetLineColor(ROOT.kGray+1)
-lll.Draw('same')
-leg2 = ROOT.TLegend(0.15,0.15,0.55,0.35)
-leg2.SetBorderSize(0)
-leg2.AddEntry(g_ratio_stoch2,'ratio of photostat. terms','PL')
-leg2.AddEntry(ll,'sqrt(LO_{HPK+Slit}/LO_{FBK+422})','L')
-leg2.Draw('same')
-fitFun=ROOT.TF1('fitFun','pol0',0,16)
-fitFun.SetLineColor(1)
-g_ratio_stoch2.Fit(fitFun,'QRS')
-ccc.SaveAs(outdir+'/'+ccc.GetName()+'.png')                        
-
-cccc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[0], sipmTypes[2]),'c_ratioStoch_vs_bar_%s_%s_'%(sipmTypes[0], sipmTypes[2]),600,600)
-cccc.cd()
-hdummy = ROOT.TH2F('hdummy2','',16,-0.5,15.5,100,0.0,2.0)
-hdummy.GetXaxis().SetTitle('bar')
-hdummy.GetYaxis().SetTitle('ratio photostat.')
-hdummy.Draw('')
-g_ratio_stoch3.SetMarkerStyle(20)
-g_ratio_stoch3.Draw('psame')
-print 'ratio of stoch. terms expected from LO  = ', math.sqrt(LO[sipmTypes[0]]/LO[sipmTypes[2]])
-print 'ratio of stoch. terms measured at 3.5 V = ', g_ratio_stoch2.GetMean(2)
-llll = ROOT.TLine(0, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[0]]), 15, math.sqrt(LO[sipmTypes[2]]/LO[sipmTypes[0]]))
-llll.SetLineStyle(7)
-llll.SetLineWidth(2)
-llll.SetLineColor(ROOT.kGray+1)
-llll.Draw('same')
-leg2 = ROOT.TLegend(0.15,0.15,0.55,0.35)
-leg2.SetBorderSize(0)
-leg2.AddEntry(g_ratio_stoch3,'ratio of photostat. terms','PL')
-leg2.AddEntry(ll,'sqrt(LO_{HPK+Slit}/LO_{HPK+528})','L')
-leg2.Draw('same')
-fitFun=ROOT.TF1('fitFun','pol0',0,16)
-fitFun.SetLineColor(1)
-g_ratio_stoch3.Fit(fitFun,'QRS')
-cccc.SaveAs(outdir+'/'+cccc.GetName()+'.png')                        
-
+# ratio of photo-stat. terms:
+for i,g in enumerate([g_ratio_stoch1, g_ratio_stoch2, g_ratio_stoch3]):
+    if i == 0:
+        sipm1 = sipmTypes[1]
+        sipm2 = sipmTypes[0]
+    if i == 1:
+        sipm1 = sipmTypes[1]
+        sipm2 = sipmTypes[2]
+    if i == 2:
+        sipm1 = sipmTypes[0]
+        sipm2 = sipmTypes[2]
+    
+    cc = ROOT.TCanvas('c_ratioStoch_vs_bar_%s_%s'%(sipm1, sipm2),'c_ratioStoch_vs_bar_%s_%s_'%(sipm1, sipm2),600,600)
+    print cc.GetName()
+    cc.cd()
+    hdummy = ROOT.TH2F('hdummy','',16,-0.5,15.5,100,0.0,2.0)
+    hdummy.GetXaxis().SetTitle('bar')
+    hdummy.GetYaxis().SetTitle('ratio photostat.')
+    hdummy.Draw('')
+    g.SetMarkerStyle(20)
+    g.Draw('psame')
+    expRatioLO    = math.sqrt(LO[sipm2]/LO[sipm1])
+    expRatioLOTau = math.sqrt((LO[sipm2]/tau[sipm2])/(LO[sipm1]/tau[sipm1]))
+    ll = ROOT.TLine(0, expRatioLO, 15, expRatioLO)
+    ll.SetLineStyle(7)
+    ll.SetLineWidth(2)
+    ll.SetLineColor(ROOT.kGray+1)
+    ll.Draw('same')
+    lll = ROOT.TLine(0, expRatioLOTau, 15, expRatioLOTau)
+    lll.SetLineStyle(7)
+    lll.SetLineWidth(2)
+    lll.SetLineColor(ROOT.kBlue)
+    lll.Draw('same')
+    leg2 = ROOT.TLegend(0.15,0.15,0.55,0.35)
+    leg2.SetBorderSize(0)
+    leg2.AddEntry(g,'ratio of photostat. terms','PL')
+    leg2.AddEntry(ll,'sqrt(LO)','L')
+    leg2.AddEntry(lll,'sqrt(LO/#tau)','L')
+    leg2.Draw('same')
+    fitFun=ROOT.TF1('fitFun','pol0',0,16)
+    fitFun.SetLineColor(1)
+    g.Fit(fitFun,'QRS')
+    print 'ratio of stoch. terms expected from sqrt(LO)      = ', expRatioLO
+    print 'ratio of stoch. terms expected from sqrt(LO/tau)  = ', expRatioLOTau
+    print 'ratio of stoch. terms measured at 3.5 V           = ', fitFun.GetParameter(0)
+    cc.SaveAs(outdir+'/'+cc.GetName()+'.png')                        
+    hdummy.Delete()
 
 for ov in Vovs[sipm]:
     for sipm in sipmTypes:
