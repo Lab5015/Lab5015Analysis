@@ -866,6 +866,8 @@ int main(int argc, char** argv)
         fitFunc_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
       }
     }
+    std::cout << "Slew rate max on ch1 = " << slewRate << std::endl;
+
 
     //-- slew rate at low threshold
     TF1* fitFuncLow_ch1 = new TF1("fitFuncLow_ch1","pol1",-5.,10.);
@@ -878,23 +880,25 @@ int main(int argc, char** argv)
     g_temp -> Fit(f_temp,"QNRS"); 
     fitFuncLow_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
     float slewRate_low = fitFuncLow_ch1->GetParameter(1); 
-    std::cout << "Slew rate at low threshold = " << slewRate_low << std::endl;
+    std::cout << "Slew rate at low threshold on ch1 = " << slewRate_low << std::endl;
+
+    //find xmin and xmax for the range fit correspoding to Y=4 and Y=6 respectively
     for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
       if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 4. )
       {
         fitXMin = g_ps_totSel_ch1[Vov]->GetPointX(point);
-        std::cout << "fitXMin: " << fitXMin << std::endl;
+        //std::cout << "fitXMin: " << fitXMin << std::endl;
         break;
       }
     for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-      if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 15. )
+      if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 6. )
       {
         fitXMax = g_ps_totSel_ch1[Vov]->GetPointX(point);
-        std::cout << "fitXMax: " << fitXMax << std::endl;
+        //std::cout << "fitXMax: " << fitXMax << std::endl;
         break;
       }
     // TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,7.);
-    fitFunc_ch1 -> SetParameters(0.,250.);
+    fitFunc_ch1 -> SetParameters(-10.,150.);
     g_ps_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QNS+","",fitXMin,fitXMax);
     fitFunc_ch1 -> SetLineColor(kRed-4);
     fitFunc_ch1 -> Draw("same");
@@ -950,14 +954,14 @@ int main(int argc, char** argv)
           break;
         }
       for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
-        if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 15. )
+        if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 6. )
         {
           fitXMax = g_ps_totSel_ch2[Vov]->GetPointX(point);
           break;
         }
     }
     // TF1* fitFunc_ch2 = new TF1("fitFunc_ch2","pol1",0.,7.);
-    fitFunc_ch2 -> SetParameters(0.,250.);
+    fitFunc_ch2 -> SetParameters(-10.,250.);
     g_ps_totSel_ch2[Vov] -> Fit(fitFunc_ch2,"QNS+","",fitXMin,fitXMax);
     fitFunc_ch2 -> SetLineColor(kBlue-4);
     fitFunc_ch2 -> Draw("same");
