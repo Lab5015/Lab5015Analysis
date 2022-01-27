@@ -17,7 +17,8 @@ ROOT.gStyle.SetOptFit(0111)
 
 from SiPM import *
 
-outdir = '/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/timeResolution_vs_Vov_2E14/'
+#outdir = '/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/timeResolution_vs_Vov_2E14/'
+outdir = '/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/timeResolution_vs_Vov_FBK_2E14/'
 if (os.path.exists(outdir)==False):
     os.mkdir(outdir)
 if (os.path.exists(outdir+'/plotsSR')==False):
@@ -81,26 +82,19 @@ def findTimingThreshold(g2):
 
 # =====================================
 
-sipmTypes = ['HPK_2E14','FBK_2E14']
-#sipmTypes = ['HPK_unirr_LYSO528','FBK_unirr_LYSO422']
-#sipmTypes = ['HPK_unirr_LYSO528','HPK_unirr_LYSOwithSlit']
-#sipmTypes = ['HPK_unirr_LYSOwithSlit','FBK_unirr_LYSO422']
-#sipmTypes = ['HPK_unirr_LYSOwithSlit']
+#sipmTypes = ['HPK_2E14_T-40C','FBK_2E14_T-40C']
+sipmTypes = ['FBK_2E14_T-40C', 'FBK_2E14_T-32C', 'FBK_2E14_T-22C']
 
-fnames = {'HPK_unirr_LYSO528'      : '../plots/HPK528_unirr_52deg_T10C_summary.root',
-          'FBK_unirr_LYSO422'      : '../plots/FBK_unirr_52deg_T10C_summary.root',
-          'HPK_unirr_LYSOwithSlit' : '../plots/HPK_unirr_LYSOwithSlit_52deg_T18C_new_summary.root',
-          'HPK_2E14' : '../plots/HPK_2E14_52deg_T-40C_summary.root',
-          'FBK_2E14' : '../plots/FBK_2E14_52deg_T-40C_summary.root'
-          }
+fnames = {'HPK_2E14_T-40C' : '../plots/HPK_2E14_52deg_T-40C_summary.root',
+          'FBK_2E14_T-40C' : '../plots/FBK_2E14_52deg_T-40C_summary.root',
+          'FBK_2E14_T-32C' : '../plots/FBK_2E14_52deg_T-32C_summary.root',
+          'FBK_2E14_T-22C' : '../plots/FBK_2E14_52deg_T-22C_summary.root'}
 
-LO = { 'HPK_unirr_LYSO528' : 1450.,
-       'FBK_unirr_LYSO422' :1040.,
-       'HPK_unirr_LYSOwithSlit' : 1100.,
-       'HPK_2E14': 1100., #?
-       'FBK_2E14': 1100.} #?
 
-#fitFunc_SR = (ROOT.TFile.Open('SR_vs_amp.root')).Get('fitFunc_SR_vs_amp')
+LO = { 'HPK_2E14_T-40C': 1100., #?
+       'FBK_2E14_T-40C': 1100., #?
+       'FBK_2E14_T-32C': 1100., #?
+       'FBK_2E14_T-22C': 1100.} #?
 
 np = 3
 errSRsyst  = 0.10 # error on the slew rate
@@ -127,35 +121,61 @@ bars = {}
 Vovs = {}
 VovsEff = {}
 DCR = {}
-VovsEff['HPK_2E14'] = { 1.60 : 1.40,
-                        1.70 : 1.46,
-                        1.80 : 1.50,
-                        1.90 : 1.55,
-                        2.00 : 1.59}
+# effective Vov
+VovsEff['HPK_2E14_T-40C'] = { 1.60 : 1.40,
+                              1.70 : 1.46,
+                              1.80 : 1.50,
+                              1.90 : 1.55,
+                              2.00 : 1.59}
 
-VovsEff['FBK_2E14'] = { 1.70 : 1.57 ,
-                        2.00 : 1.78 ,
-                        2.50 : 2.06 , 
-                        3.00 : 2.27 , 
-                        3.50 : 2.40 }
+VovsEff['FBK_2E14_T-40C'] = { 1.70 : 1.57 ,
+                              2.00 : 1.78 ,
+                              2.50 : 2.06 , 
+                              3.00 : 2.27 , 
+                              3.50 : 2.40 }
 
-DCR['HPK_2E14'] = {1.60 : 25.,
-                   1.70 : 31.,
-                   1.80 : 36.,
-                   1.90 : 42.,
-                   2.00 : 52.}
+VovsEff['FBK_2E14_T-32C'] = { 1.40 : 1.30 ,
+                              1.70 : 1.52 ,
+                              2.10 : 1.76 , 
+                              2.80 : 2.07 , 
+                              3.70 : 2.33 }
 
-DCR['FBK_2E14'] = {1.70 : 14.,
-                   2.00 : 23.,
-                   2.50 : 42.,
-                   3.00 : 60.,
-                   3.50 : 75.}
+VovsEff['FBK_2E14_T-22C'] = { 1.50 : 1.23 ,
+                              2.00 : 1.50 ,
+                              2.50 : 1.69 , 
+                              2.70 : 1.76 }
 
 
-sigma_stoch_ref = {'HPK_2E14' : 40.,
-                   'FBK_2E14' : 47.}
+DCR['HPK_2E14_T-40C'] = {1.60 : 25.,
+                         1.70 : 31.,
+                         1.80 : 36.,
+                         1.90 : 42.,
+                         2.00 : 52.}
+
+DCR['FBK_2E14_T-40C'] = {1.70 : 14.,
+                         2.00 : 23.,
+                         2.50 : 42.,
+                         3.00 : 60.,
+                         3.50 : 75.}
+
+DCR['FBK_2E14_T-32C'] = {1.40 : 13.5 ,
+                         1.70 : 21.3 ,
+                         2.10 : 35.5 ,
+                         2.80 : 68.  ,
+                         3.70 : 100.}
+
+DCR['FBK_2E14_T-22C'] = { 1.50 : 38.0 ,
+                          2.00 : 61.6 ,
+                          2.50 : 88.5 , 
+                          2.70 : 99.6 }
+
+sigma_stoch_ref = {'HPK_2E14_T-40C' : 40.,
+                   'FBK_2E14_T-40C' : 47.,
+                   'FBK_2E14_T-32C' : 47.,
+                   'FBK_2E14_T-22C' : 47.}
+
 err_sigma_stoch_ref = 2.
-ov_ref = 1.5
+ov_ref = 1.50
 
 for sipm in sipmTypes:
     f = ROOT.TFile.Open(fnames[sipm])
@@ -197,11 +217,10 @@ for sipm in sipmTypes:
         
     fPS[sipm] = {}
     for ov in Vovs[sipm]:
-        if (sipm == 'HPK_unirr_LYSO528'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_HPK528_unirr_52deg_T10C_Vov%.2f_ith1.root'%ov)
-        if (sipm == 'FBK_unirr_LYSO422'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_FBK_unirr_52deg_T10C_Vov%.2f_ith1.root'%ov)
-        if (sipm == 'HPK_unirr_LYSOwithSlit'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_HPK_unirr_LYSOwithSlit_52deg_T18C_Vov%.2f_ith1.root'%ov)
-        if (sipm == 'HPK_2E14'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_HPK_2E14_52deg_T-40C_Vov%.2f_ith1.root'%ov)
-        if (sipm == 'FBK_2E14'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_FBK_2E14_52deg_T-40C_Vov%.2f_ith1.root'%ov)
+        if (sipm == 'HPK_2E14_T-40C'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_HPK_2E14_52deg_T-40C_Vov%.2f_ith1.root'%ov)
+        if (sipm == 'FBK_2E14_T-40C'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_FBK_2E14_52deg_T-40C_Vov%.2f_ith1.root'%ov)
+        if (sipm == 'FBK_2E14_T-32C'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_FBK_2E14_52deg_T-32C_Vov%.2f_ith1.root'%ov)
+        if (sipm == 'FBK_2E14_T-22C'): fPS[sipm][ov] = ROOT.TFile.Open('../plots/pulseShape_FBK_2E14_52deg_T-22C_Vov%.2f_ith1.root'%ov)
         g_SR_vs_bar[sipm][ov] = ROOT.TGraphErrors()
         g_bestTh_vs_bar[sipm][ov] = ROOT.TGraphErrors()
         g_Noise_vs_bar[sipm][ov] = ROOT.TGraphErrors()
@@ -333,8 +352,6 @@ leg = {}
 for sipm in sipmTypes:
     c1[sipm] = {}
     hdummy1[sipm] = {}
-    c2[sipm] = {}
-    hdummy2[sipm] = {}
     leg[sipm] = ROOT.TLegend(0.55,0.70,0.89,0.89)
     leg[sipm].SetBorderSize(0)
     leg[sipm].SetFillStyle(0)
@@ -343,11 +360,8 @@ for sipm in sipmTypes:
         c1[sipm][bar] =  ROOT.TCanvas('c_timeResolution_vs_Vov_%s_bar%02d'%(sipm,bar),'c_timeResolution_vs_Vov_%s_bar%02d'%(sipm,bar),600,600)
         c1[sipm][bar].SetGridy()
         c1[sipm][bar].cd()
-        xmin = 1.2
-        xmax = 1.8
-        if ('FBK' in sipm):
-            xmin = 1.5
-            xmax = 2.6
+        xmin = 1.1
+        xmax = 2.5
         hdummy1[sipm][bar] = ROOT.TH2F('hdummy1_%s_%d'%(sipm,bar),'',100,xmin,xmax,180,0,180)
         hdummy1[sipm][bar].GetXaxis().SetTitle('V_{OV}^{eff} [V]')
         hdummy1[sipm][bar].GetYaxis().SetTitle('#sigma_{t} [ps]')
@@ -392,44 +406,53 @@ for sipm in sipmTypes:
         leg[sipm].Draw('same')
         c1[sipm][bar].SaveAs(outdir+'/'+c1[sipm][bar].GetName()+'.png')
 
-        # vs npe
-        c2[sipm][bar] =  ROOT.TCanvas('c_timeResolutionDCR_vs_Npe_%s_bar%02d'%(sipm,bar),'c_timeResolutionDCR_vs_Npe_%s_bar%02d'%(sipm,bar),600,600)
-        c2[sipm][bar].SetGridy()
-        c2[sipm][bar].cd()
-        hdummy2[sipm][bar] = ROOT.TH2F('hdummy2_%s_%d'%(sipm,bar),'',100,0,0.2,50,0,150)
-        hdummy2[sipm][bar].GetXaxis().SetTitle('#sqrt{DCR}/Npe')
-        hdummy2[sipm][bar].GetYaxis().SetTitle('#sigma_{t}^{DCR} [ps]')
-        hdummy2[sipm][bar].Draw()
-        g_DCR_vs_Npe[sipm][bar].SetMarkerStyle(20)
-        g_DCR_vs_Npe[sipm][bar].SetMarkerSize(0.8)
-        g_DCR_vs_Npe[sipm][bar].SetMarkerColor(ROOT.kOrange+2)
+markers = { 'HPK_2E14_T-40C' : 20 ,
+            'FBK_2E14_T-40C' : 21 ,
+            'FBK_2E14_T-32C' : 21 ,
+            'FBK_2E14_T-22C' : 21 }
+
+cols = { 'HPK_2E14_T-40C' : ROOT.kBlack ,
+         'FBK_2E14_T-40C' : ROOT.kRed ,
+         'FBK_2E14_T-32C' : ROOT.kOrange+2 ,
+         'FBK_2E14_T-22C' : ROOT.kMagenta }
+
+# vs npe
+for bar in range(0,16):      
+    c2 =  ROOT.TCanvas('c_timeResolutionDCR_vs_Npe_bar%02d'%(bar),'c_timeResolutionDCR_vs_Npe_bar%02d'%(bar),600,600)
+    c2.SetGridx()
+    c2.SetGridy()
+    c2.cd()
+    hdummy2 = ROOT.TH2F('hdummy2_%d'%(bar),'',100,0,0.30,100,0,180)
+    hdummy2.GetXaxis().SetTitle('#sqrt{DCR}/Npe')
+    hdummy2.GetYaxis().SetTitle('#sigma_{t}^{DCR} [ps]')
+    hdummy2.Draw()
+    for sipm in sipmTypes:    
+        if (bar not in g_DCR_vs_Npe[sipm].keys()): continue
+        g_DCR_vs_Npe[sipm][bar].SetMarkerStyle(markers[sipm])
+        g_DCR_vs_Npe[sipm][bar].SetMarkerColor(cols[sipm])
         g_DCR_vs_Npe[sipm][bar].SetLineWidth(1)
-        g_DCR_vs_Npe[sipm][bar].SetLineColor(ROOT.kOrange+2)
+        g_DCR_vs_Npe[sipm][bar].SetLineColor(cols[sipm])
         g_DCR_vs_Npe[sipm][bar].Draw('plsame')
         fitFun = ROOT.TF1('fitFun_%s_%.2d'%(sipm,bar),'pol1',g_DCR_vs_Npe[sipm][bar].GetX()[0]-0.05, g_DCR_vs_Npe[sipm][bar].GetX()[g_DCR_vs_Npe[sipm][bar].GetN()-1]+0.05)
-        fitFun.SetLineColor(ROOT.kOrange+4)
+        fitFun.SetLineColor(cols[sipm])
         fitFun.SetLineStyle(2)
         g_DCR_vs_Npe[sipm][bar].Fit(fitFun,'QRS')
-        c2[sipm][bar].SaveAs(outdir+'/'+c2[sipm][bar].GetName()+'.png')
-
+    c2.SaveAs(outdir+'/'+c2.GetName()+'.png')
+    hdummy2.Delete()
+    c2.Delete()
+    
 
 
 # SR and best threshold vs Vov
-markers = { 'HPK_2E14' : 20 ,
-            'FBK_2E14' : 24 }
-
-cols = { 'HPK_2E14' : ROOT.kBlack ,
-         'FBK_2E14' : ROOT.kRed }
-
 leg2 = ROOT.TLegend(0.15,0.70,0.45,0.89)
 leg2.SetBorderSize(0)
 leg2.SetFillStyle(0)
 for i,bar in enumerate(bars[sipm]):
     if (bar not in g[sipm].keys()): continue
-    c3[bar] = ROOT.TCanvas('c_slewRate_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),'c_slewRate_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),600,600)
+    c3[bar] = ROOT.TCanvas('c_slewRate_vs_Vov_bar%02d'%(bar),'c_slewRate_vs_Vov_bar%02d'%(bar),600,600)
     c3[bar].SetGridy()
     c3[bar].cd()
-    hdummy3[bar] = ROOT.TH2F('hdummy3_%d'%(bar),'',100,1.3,2.5,100,0,15)
+    hdummy3[bar] = ROOT.TH2F('hdummy3_%d'%(bar),'',100,1.1,2.5,100,0,15)
     hdummy3[bar].GetXaxis().SetTitle('V_{OV}^{eff} [V]')
     hdummy3[bar].GetYaxis().SetTitle('slew rate at the timing thr. [#muA/ns]')
     hdummy3[bar].Draw()
@@ -444,10 +467,10 @@ for i,bar in enumerate(bars[sipm]):
     leg2.Draw()
     c3[bar].SaveAs(outdir+'/'+c3[bar].GetName()+'.png')
     
-    c4[bar] = ROOT.TCanvas('c_bestTh_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),'c_bestTh_vs_Vov_%s_%s_bar%02d'%(sipmTypes[0], sipmTypes[1],bar),600,600)
+    c4[bar] = ROOT.TCanvas('c_bestTh_vs_Vov_bar%02d'%(bar),'c_bestTh_vs_Vov_bar%02d'%(bar),600,600)
     c4[bar].SetGridy()
     c4[bar].cd()
-    hdummy4[bar] = ROOT.TH2F('hdummy4_%d'%(bar),'',100,1.3,2.5,100,0,20)
+    hdummy4[bar] = ROOT.TH2F('hdummy4_%d'%(bar),'',100,1.1,2.5,100,0,20)
     hdummy4[bar].GetXaxis().SetTitle('V_{OV}^{eff} [V]')
     hdummy4[bar].GetYaxis().SetTitle('best threshold [DAC]')
     hdummy4[bar].Draw()
