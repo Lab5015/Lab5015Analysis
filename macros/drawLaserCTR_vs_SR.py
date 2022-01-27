@@ -38,10 +38,11 @@ dac_to_uA = {
     'ith1_0': 0.156
 }
 
-VovList = [1.0, 1.5, 2.0, 2.5, 3.0]
+VovList = [0.7, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
 
 runs_dict = { 
 
+    #FE1 FE5, chipID0 chipID5, ch16 ch16
     "2318-2348" : [ 'ith2_0', 0.50, [1.0]],
     "2349-2379" : [ 'ith2_0', 0.60, [1.0]],
     "2380-2410" : [ 'ith2_0', 0.70, [1.0]],
@@ -55,7 +56,14 @@ runs_dict = {
     "2612-2642" : [ 'ith2_0', 0.50, [1.5]],
     "2643-2673" : [ 'ith2_0', 0.30, [1.5]],
     #"2674-2704" : [ 'ith2_0', 0.10, [1.5]],
-    "2705-2765" : [ 'ith2_0', 0.10, [2.5,3.0]]
+    "2705-2765" : [ 'ith2_0', 0.10, [2.5,3.0]],
+    "2773-2803" : [ 'ith2_0', 0.5, [0.7]],
+    "2804-2835" : [ 'ith2_0', 0.7, [0.7]],
+    "2836-2959" : [ 'ith2_0', 0.7, [2.0,3.0,4.0,5.0]],
+    "3580-3682" : [ 'ith2_0', 0.3, [0.7,2.0,3.0,4.0,5.0]],
+    "3265-3295" : [ 'ith2_0', 0.6, [0.7]],
+    "4053-4176" : [ 'ith2_0', 0.1, [0.7,1.0,2.0,3.0]]
+    
 
 }
 
@@ -158,7 +166,7 @@ for run in sorted(runs_dict):
             histo.Fit('fitFunc','QNS+','', fitFunc.GetParameter(1)-3.0*fitFunc.GetParameter(2),fitFunc.GetParameter(1)+3.0*fitFunc.GetParameter(2))
             res = [fitFunc.GetParameter(2), fitFunc.GetParError(2)]
             canvas.Print(fullPath+'/tRes_%s_thr%s_Vov%.01f.png'%(ch,thresh,Vov))
-        
+
             print 'runRange = ', run, 'bestTh = ', thresh, '   time res = ',  res[0]/math.sqrt(2), '  SR =', SR
             g_tRes_vs_SR[Vov].SetPoint(g_tRes_vs_SR[Vov].GetN(), SR, res[0]/math.sqrt(2))
             g_tRes_vs_SR[Vov].SetPointError(g_tRes_vs_SR[Vov].GetN()-1, 0., math.sqrt(pow(res[1]/math.sqrt(2),2) + 2.*2.))
@@ -170,7 +178,7 @@ for run in sorted(runs_dict):
 
 
 c = ROOT.TCanvas('c_tRes_vs_SR','c_tRes_vs_SR',1200,700)
-hPad = ROOT.gPad.DrawFrame(0.,0.,600.,100.)
+hPad = ROOT.gPad.DrawFrame(0.,0.,300.,100.)
 hPad.SetTitle(";slew rate [#muA/ns];#sigma_{t}^{single} [ps]");
 hPad.Draw();
 ROOT.gPad.SetGridx();
@@ -183,8 +191,8 @@ legend.SetBorderSize(0)
 fit = {}
 it = 1
 for Vov in VovList:
-    g_tRes_vs_SR[Vov].SetLineColor(51+8*it)
-    g_tRes_vs_SR[Vov].SetMarkerColor(51+8*it)
+    g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRainBow+6*it)
+    g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRainBow+6*it)
     g_tRes_vs_SR[Vov].SetMarkerSize(1)
     g_tRes_vs_SR[Vov].Draw('psame')
     legend.AddEntry(g_tRes_vs_SR[Vov], 'V_{OV} = %.1f V'%Vov,'PL')
