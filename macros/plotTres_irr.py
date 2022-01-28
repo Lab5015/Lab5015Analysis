@@ -327,8 +327,8 @@ for sipm in sipmTypes:
                 g_DCR_vs_Vov[sipm][bar].SetPointError(g_DCR_vs_Vov[sipm][bar].GetN()-1, 0, err_sigma_dcr)
                 g_DCR_vs_bar[sipm][ov].SetPoint( g_DCR_vs_bar[sipm][ov].GetN(), bar, sigma_dcr )
                 g_DCR_vs_bar[sipm][ov].SetPointError( g_DCR_vs_bar[sipm][ov].GetN()-1, 0,  err_sigma_dcr)
-                g_DCR_vs_Npe[sipm][bar].SetPoint( g_DCR_vs_Npe[sipm][bar].GetN(), math.sqrt(DCR[sipm][ov]/Npe), sigma_dcr )
-                #g_DCR_vs_Npe[sipm][bar].SetPoint( g_DCR_vs_Npe[sipm][bar].GetN(), math.sqrt(0.7*DCR[sipm][ov]/Npe), sigma_dcr )
+                g_DCR_vs_Npe[sipm][bar].SetPoint( g_DCR_vs_Npe[sipm][bar].GetN(), math.sqrt(DCR[sipm][ov])/Npe / (math.sqrt(30.)/4000.), sigma_dcr )
+                #g_DCR_vs_Npe[sipm][bar].SetPoint( g_DCR_vs_Npe[sipm][bar].GetN(), math.sqrt(0.7*DCR[sipm][ov])/Npe, sigma_dcr )
                 g_DCR_vs_Npe[sipm][bar].SetPointError( g_DCR_vs_Npe[sipm][bar].GetN()-1, 0,  err_sigma_dcr)
             #
             sigma_tot = math.sqrt( sigma_stoch*sigma_stoch + sigma_noise(sr)*sigma_noise(sr) )
@@ -337,6 +337,23 @@ for sipm in sipmTypes:
             g_Tot_vs_Vov[sipm][bar].SetPointError(g_Tot_vs_Vov[sipm][bar].GetN()-1, 0, err_sigma_tot)
             #print sipm,' OV = %.2f  gain = %d  Npe = %d  bar = %02d  thr = %02d  SR = %.1f   noise = %.1f    stoch = %.1f   tot = %.1f'%(ov, gain, Npe, bar, timingThreshold, sr, sigma_noise(sr), sigma_stoch, sigma_tot)
             
+
+g_DCR_vs_DCR = {}
+g1_DCR_vs_Vov = {}
+
+for sipm in sipmTypes:
+    g1_DCR_vs_Vov[sipm] = ROOT.TGraphErrors() 
+    for ov in Vovs[sipm]:
+        g1_DCR_vs_Vov[sipm].SetPoint(g1_DCR_vs_Vov[sipm].GetN(), VovsEff[sipm][ov], DCR[sipm][ov])
+
+for bar in range(0,16):
+    g_DCR_vs_DCR[bar] = ROOT.TGraphErrors()
+    for sipm in sipmTypes:
+        if (bar not in g_DCR_vs_Vov[sipm].keys()): continue
+        ovEff = 1.60
+        g_DCR_vs_DCR[bar].SetPoint( g_DCR_vs_DCR[bar].GetN(), g1_DCR_vs_Vov[sipm].Eval(ovEff), g_DCR_vs_Vov[sipm][bar].Eval(ovEff))
+        g_DCR_vs_DCR[bar].SetPointError( g_DCR_vs_DCR[bar].GetN()-1, 0, g_DCR_vs_Vov[sipm][bar].GetErrorY(0))
+
 
 # draw
 c1 = {}
@@ -422,7 +439,8 @@ for bar in range(0,16):
     c2.SetGridx()
     c2.SetGridy()
     c2.cd()
-    hdummy2 = ROOT.TH2F('hdummy2_%d'%(bar),'',100,0,0.30,100,0,180)
+    #hdummy2 = ROOT.TH2F('hdummy2_%d'%(bar),'',100,0,0.30,100,0,180)
+    hdummy2 = ROOT.TH2F('hdummy2_%d'%(bar),'',100,0,4,100,0,180)
     hdummy2.GetXaxis().SetTitle('#sqrt{DCR}/Npe')
     hdummy2.GetYaxis().SetTitle('#sigma_{t}^{DCR} [ps]')
     hdummy2.Draw()
@@ -433,11 +451,32 @@ for bar in range(0,16):
         g_DCR_vs_Npe[sipm][bar].SetLineWidth(1)
         g_DCR_vs_Npe[sipm][bar].SetLineColor(cols[sipm])
         g_DCR_vs_Npe[sipm][bar].Draw('plsame')
-        fitFun = ROOT.TF1('fitFun_%s_%.2d'%(sipm,bar),'pol1',g_DCR_vs_Npe[sipm][bar].GetX()[0]-0.05, g_DCR_vs_Npe[sipm][bar].GetX()[g_DCR_vs_Npe[sipm][bar].GetN()-1]+0.05)
+        fitFun = ROOT.TF1('fitFun_%s_%2d'%(sipm,bar),'pol1',g_DCR_vs_Npe[sipm][bar].GetX()[0]-0.05, g_DCR_vs_Npe[sipm][bar].GetX()[g_DCR_vs_Npe[sipm][bar].GetN()-1]+0.05)
         fitFun.SetLineColor(cols[sipm])
         fitFun.SetLineStyle(2)
         g_DCR_vs_Npe[sipm][bar].Fit(fitFun,'QRS')
     c2.SaveAs(outdir+'/'+c2.GetName()+'.png')
+    hdummy2.Delete()
+    c2.Delete()
+
+# sigma_DCR vs DCR @ reference OV
+for bar in range(0,16):      
+    c2 =  ROOT.TCanvas('c_timeResolutionDCR_vs_DCR_bar%02d'%(bar),'c_timeResolutionDCR_vs_DCR_bar%02d'%(bar),600,600)
+    c2.SetGridx()
+    c2.SetGridy()
+    c2.cd()
+    hdummy2 = ROOT.TH2F('hdummy2_%d'%(bar),'',100,0,100,100,0,180)
+    hdummy2.GetXaxis().SetTitle('DCR [GHz]')
+    hdummy2.GetYaxis().SetTitle('#sigma_{t}^{DCR} [ps]')
+    hdummy2.Draw()
+    g_DCR_vs_DCR[bar].SetMarkerStyle(20)
+    g_DCR_vs_DCR[bar].SetMarkerSize(1)
+    g_DCR_vs_DCR[bar].Draw('plsame')
+    fitFun = ROOT.TF1('fitFun_%2d'%(bar),'[0]*pow(x,[1])',0,200)
+    fitFun.SetParameters(20.,0.5)
+    g_DCR_vs_DCR[bar].Fit(fitFun,'QRS')
+    c2.SaveAs(outdir+'/'+c2.GetName()+'.png')
+    fitFun.Delete()
     hdummy2.Delete()
     c2.Delete()
     

@@ -34,13 +34,14 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 source = 'TB'
-tResMin = 0
-tResMax = 120
-tResMaxTh = 200
-vovMax = 6
 #tResMin = 0
-#tResMax = 200
-#tResMaxTh = 240
+#tResMax = 120
+#tResMaxTh = 200
+#vovMax = 6
+tResMin = 0
+tResMax = 200
+tResMaxTh = 240
+vovMax = 5 
 #tResMin = 0
 #tResMax = 200
 #tResMaxTh = 300
@@ -93,6 +94,7 @@ if (source == 'TB'):
 
 # --- colors
 cols = { 1.00 : 49,  
+         1.20 : 50,  
          1.25 : 50,  
          1.40 : 46, 
          1.50 : 51, 
@@ -232,22 +234,6 @@ elif ('FBK_2E14_52deg_T-22C' in args.outFolder):
     goodBars[2.50] = [0,1,2,6,8,9,10,12]
     goodBars[2.70] = [0,1,2,6,8,9,10,12]
 
-elif ('HPK_1E13_LYSOtype1_58deg_T-6C' in args.outFolder):
-    VovsEff = { 1.60 : 1.33 ,
-                1.80 : 1.45 ,
-                2.00 : 1.57 , 
-                2.40 : 1.81 , 
-                2.60 : 1.92 , 
-                2.80 : 2.04 , 
-                3.00 : 2.15 }
-    goodBars[1.60] = [4,5,7,9,10,11,12,13]
-    goodBars[1.80] = [0,1,2,3,4,5,6,9,10,11,12,13]
-    goodBars[2.00] = [0,1,2,3,4,5,6,9,10,11,12,13]
-    goodBars[2.40] = [0,1,2,3,4,5,6,9,10,11,12]
-    goodBars[2.60] = [0,1,2,3,4,5,6,9,10,11,12]
-    goodBars[2.80] = [0,1,2,3,4,5,6,9,10,11,12]
-    goodBars[3.00] = [0,1,2,3,4,5,6,9,10,11,12]
-
 elif ('HPK_1E13_LYSOtype1_58deg_T0C' in args.outFolder):
     VovsEff = { 1.60 : 1.20 ,
                 1.80 : 1.32 ,
@@ -259,6 +245,22 @@ elif ('HPK_1E13_LYSOtype1_58deg_T0C' in args.outFolder):
                 3.00 : 1.94 }
     goodBars[1.60] = [4,5,7,9,10,11,12,13]
     goodBars[1.80] = [4,5,7,9,10,11,12,13]
+    goodBars[2.00] = [0,1,2,3,4,5,6,9,10,11,12,13]
+    goodBars[2.40] = [0,1,2,3,4,5,6,9,10,11,12]
+    goodBars[2.60] = [0,1,2,3,4,5,6,9,10,11,12]
+    goodBars[2.80] = [0,1,2,3,4,5,6,9,10,11,12]
+    goodBars[3.00] = [0,1,2,3,4,5,6,9,10,11,12]
+
+elif ('HPK_1E13_LYSOtype1_58deg_T-6C' in args.outFolder):
+    VovsEff = { 1.60 : 1.33 ,
+                1.80 : 1.45 ,
+                2.00 : 1.57 , 
+                2.40 : 1.81 , 
+                2.60 : 1.92 , 
+                2.80 : 2.04 , 
+                3.00 : 2.15 }
+    goodBars[1.60] = [4,5,7,9,10,11,12,13]
+    goodBars[1.80] = [0,1,2,3,4,5,6,9,10,11,12,13]
     goodBars[2.00] = [0,1,2,3,4,5,6,9,10,11,12,13]
     goodBars[2.40] = [0,1,2,3,4,5,6,9,10,11,12]
     goodBars[2.60] = [0,1,2,3,4,5,6,9,10,11,12]
@@ -279,10 +281,28 @@ elif ('HPK_1E13_LYSOtype1_58deg_T-20C' in args.outFolder):
     goodBars[2.40] = [0,1,2,3,6,9]
     goodBars[2.60] = [1,2,3,6,9]
     goodBars[2.80] = [1,2,3,9]
+
+elif ('HPK_1E13_LYSOtype1_58deg_T-40C' in args.outFolder):
+    VovsEff = { 1.20 : 1.19 ,
+                1.50 : 1.47 ,
+                1.75 : 1.71 ,
+                2.00 : 1.95 , 
+                2.50 : 2.35 , 
+                3.50 : 3.30 , 
+                5.00 : 4.49 }
+    goodBars[1.20] = [4,7,13]
+    goodBars[1.50] = [0,4,5,7,8,9,13]
+    goodBars[1.75] = [0,4,5,6,7,8,9,10,11,12,13]
+    goodBars[2.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13]
+    goodBars[2.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13]
+    goodBars[3.50] = [1,4,5,6,7,8,9,10,11,12,13]
+    goodBars[5.00] = [0,1,4,5,6,7,8,9,10,11,12,13]
+
 elif ('narrowBeam' in args.outFolder):
     for vov in Vovs:      
         VovsEff[vov] = vov
         goodBars[vov] = [4,5,6,7,8,9,10,11,12]
+
 elif ('HPK528' in args.outFolder):
     for vov in Vovs:
         VovsEff[vov] = vov 

@@ -2,7 +2,7 @@
 #python moduleCharacterizationSummaryPlots.py -i HPK_unirr_LYSOwithSlit_52deg_T18C_Vov1.50_new -o HPK_unirr_LYSOwithSlit_52deg_T18C_Vov1.50_new -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK_unirr_LYSOwithSlit_52deg_T18C_Vov2.50_new -o HPK_unirr_LYSOwithSlit_52deg_T18C_Vov2.50_new -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK_unirr_LYSOwithSlit_52deg_T18C_Vov3.50_new -o HPK_unirr_LYSOwithSlit_52deg_T18C_Vov3.50_new -m 2
-python moduleCharacterizationSummaryPlots.py -i HPK_unirr_LYSOwithSlit_52deg_T18C_Vov1.50_new,HPK_unirr_LYSOwithSlit_52deg_T18C_Vov2.50_new,HPK_unirr_LYSOwithSlit_52deg_T18C_Vov3.50_new -o HPK_unirr_LYSOwithSlit_52deg_T18C_new_summary -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_unirr_LYSOwithSlit_52deg_T18C_Vov1.50_new,HPK_unirr_LYSOwithSlit_52deg_T18C_Vov2.50_new,HPK_unirr_LYSOwithSlit_52deg_T18C_Vov3.50_new -o HPK_unirr_LYSOwithSlit_52deg_T18C_new_summary -m 2
 
 ## HPK528 unirr T = 10
 #python moduleCharacterizationSummaryPlots.py -i HPK528_unirr_52deg_T10C_Vov1.50 -o HPK528_unirr_52deg_T10C_Vov1.50 -m 2
@@ -11,7 +11,7 @@ python moduleCharacterizationSummaryPlots.py -i HPK_unirr_LYSOwithSlit_52deg_T18
 #python moduleCharacterizationSummaryPlots.py -i HPK528_unirr_52deg_T10C_Vov2.50 -o HPK528_unirr_52deg_T10C_Vov2.50 -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK528_unirr_52deg_T10C_Vov3.50 -o HPK528_unirr_52deg_T10C_Vov3.50 -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK528_unirr_52deg_T10C_Vov5.00 -o HPK528_unirr_52deg_T10C_Vov5.00 -m 2
-python moduleCharacterizationSummaryPlots.py -i HPK528_unirr_52deg_T10C_Vov1.50,HPK528_unirr_52deg_T10C_Vov1.75,HPK528_unirr_52deg_T10C_Vov2.00,HPK528_unirr_52deg_T10C_Vov2.50,HPK528_unirr_52deg_T10C_Vov3.50,HPK528_unirr_52deg_T10C_Vov5.00 -o HPK528_unirr_52deg_T10C_summary -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK528_unirr_52deg_T10C_Vov1.50,HPK528_unirr_52deg_T10C_Vov1.75,HPK528_unirr_52deg_T10C_Vov2.00,HPK528_unirr_52deg_T10C_Vov2.50,HPK528_unirr_52deg_T10C_Vov3.50,HPK528_unirr_52deg_T10C_Vov5.00 -o HPK528_unirr_52deg_T10C_summary -m 2
 
 ## FBK unirr T = 10
 #python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov1.50 -o FBK_unirr_52deg_T10C_Vov1.50 -m 2
@@ -20,7 +20,7 @@ python moduleCharacterizationSummaryPlots.py -i HPK528_unirr_52deg_T10C_Vov1.50,
 #python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov2.50 -o FBK_unirr_52deg_T10C_Vov2.50 -m 2
 #python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov3.50 -o FBK_unirr_52deg_T10C_Vov3.50 -m 2
 #python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov5.00 -o FBK_unirr_52deg_T10C_Vov5.00 -m 2
-python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov1.50,FBK_unirr_52deg_T10C_Vov1.75,FBK_unirr_52deg_T10C_Vov2.00,FBK_unirr_52deg_T10C_Vov2.50,FBK_unirr_52deg_T10C_Vov3.50,FBK_unirr_52deg_T10C_Vov5.00 -o FBK_unirr_52deg_T10C_summary -m 2
+#python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov1.50,FBK_unirr_52deg_T10C_Vov1.75,FBK_unirr_52deg_T10C_Vov2.00,FBK_unirr_52deg_T10C_Vov2.50,FBK_unirr_52deg_T10C_Vov3.50,FBK_unirr_52deg_T10C_Vov5.00 -o FBK_unirr_52deg_T10C_summary -m 2
 
 ## FBK unirr T = 5
 #python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T5C_Vov3.50 -o FBK_unirr_52deg_T5C_Vov3.50 -m 2
@@ -78,18 +78,6 @@ python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov1.50,FBK
 
 
 
-# HPK_1E13_LYSOtype1_58deg_T-6C
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60 -m 2
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80 -m 2
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00 -m 2
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40 -m 2
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60 -m 2
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80 -m 2
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00 -m 2
-#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60,HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80,HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00 -o HPK_1E13_LYSOtype1_58deg_T-6C_summary -m 2
-
-
-
 # HPK_1E13_LYSOtype1_58deg_T0C
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T0C_Vov1.60 -o  HPK_1E13_LYSOtype1_58deg_T0C_Vov1.60 -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T0C_Vov1.80 -o  HPK_1E13_LYSOtype1_58deg_T0C_Vov1.80 -m 2
@@ -101,6 +89,17 @@ python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov1.50,FBK
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T0C_Vov1.60,HPK_1E13_LYSOtype1_58deg_T0C_Vov1.80,HPK_1E13_LYSOtype1_58deg_T0C_Vov2.00,HPK_1E13_LYSOtype1_58deg_T0C_Vov2.40,HPK_1E13_LYSOtype1_58deg_T0C_Vov3.00 -o HPK_1E13_LYSOtype1_58deg_T0C_summary -m 2
 
 
+# HPK_1E13_LYSOtype1_58deg_T-6C
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00 -o  HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60,HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60,HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80,HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00 -o HPK_1E13_LYSOtype1_58deg_T-6C_summary -m 2
+
+
 # HPK_1E13_LYSOtype1_58deg_T-20C
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.60 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.60 -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.80 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.80 -m 2
@@ -109,6 +108,16 @@ python moduleCharacterizationSummaryPlots.py -i FBK_unirr_52deg_T10C_Vov1.50,FBK
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.60 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.60 -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.80 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.80 -m 2
 #python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.60,HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.80,HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.00,HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.40  -o HPK_1E13_LYSOtype1_58deg_T-20C_summary -m 2
+
+
+# HPK_1E13_LYSOtype1_58deg_T-40C
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.60 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.60 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.80 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov1.80 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.00 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.00 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.40 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.40 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.60 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.60 -m 2
+#python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.80 -o  HPK_1E13_LYSOtype1_58deg_T-20C_Vov2.80 -m 2
+python moduleCharacterizationSummaryPlots.py -i HPK_1E13_LYSOtype1_58deg_T-40C_Vov1.20,HPK_1E13_LYSOtype1_58deg_T-40C_Vov1.50,HPK_1E13_LYSOtype1_58deg_T-40C_Vov1.75,HPK_1E13_LYSOtype1_58deg_T-40C_Vov2.00,HPK_1E13_LYSOtype1_58deg_T-40C_Vov2.50,HPK_1E13_LYSOtype1_58deg_T-40C_Vov3.50,HPK_1E13_LYSOtype1_58deg_T-40C_Vov5.00  -o HPK_1E13_LYSOtype1_58deg_T-40C_summary -m 2
 
 
 
