@@ -130,7 +130,7 @@ int main(int argc, char** argv)
   CfgManager opts;
   opts.ParseConfigFile(argv[1]);
   
-  int overrideOutFile = 1;
+  int overrideOutFile = 0;
   if(argc == 3)
     {
       overrideOutFile = atoi(argv[2]);

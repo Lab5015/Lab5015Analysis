@@ -27,7 +27,9 @@ drawPulseExe  = baseFolder+"/bin/drawPulseShape_fede.exe"
 
 
 
-#parallelBaseCommand = "parallel --bar --jobs 8 --results "+jobsFolder+"/ "  #limit to 8 cpu on ceacmsfw server
+parallelModChar1  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ " + moduleCharExe1 + " ::: "  #limit to 8 cpu on ceacmsfw server
+parallelModChar2  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ " + moduleCharExe2 + " ::: "  #limit to 8 cpu on ceacmsfw server
+parallelPulseShape = "parallel --bar --jobs 8 --results "+jobsFolder+"/ " + drawPulseExe + " ::: "   #limit to 8 cpu on ceacmsfw server
 
 
 
@@ -87,7 +89,8 @@ for run_range, params in sorted(runs_dict.items()):
       os.system(command)
       
 
-   #parallelCommand = parallelBaseCommand + moduleCharExe1 + "  " + configFileName + " " 
+   parallelModChar1 += configFileName + " " 
+   parallelModChar2 += configFileName + " " 
    submitCommandModChar = moduleCharExe1 +" "+ configFileName +" 0; "+moduleCharExe2 +" "+ configFileName +" 0"
 
 
@@ -112,46 +115,52 @@ for run_range, params in sorted(runs_dict.items()):
       command = 'sed -i \"s%^ch2 .*$%ch2 '+ch2+'%\" '+configFileName
       os.system(command)
 
+   parallelPulseShape += configFileName + " " 
    submitCommandPulseShape = drawPulseExe +" "+ configFileName +" 0"
 
 
-   ##### creates job file #######
-   jobs_modChar = "jobs_modChar_run" + run_range + ".sh"
-   with open(jobsFolder+'/'+jobs_modChar, 'w') as fout:
-      fout.write("#!/bin/sh\n")
-      fout.write("echo\n")
-      fout.write("echo 'START---------------'\n")
-      fout.write("echo 'current dir: ' ${PWD}\n")
-      fout.write("cd "+str(baseFolder)+"\n")
-      fout.write("echo 'current dir: ' ${PWD}\n")
-      fout.write("source scripts/setup.sh\n")
-      fout.write(submitCommandModChar+"\n")
-      fout.write("echo 'STOP---------------'\n")
-      fout.write("echo\n")
-      fout.write("echo\n")
-   os.system("chmod 755 "+jobsFolder+"/"+jobs_modChar)
+##### creates job file #######
+#jobs_modChar = "jobs_modChar_run" + run_range + ".sh"
+jobs_modChar = "jobs_modChar.sh"
+with open(jobsFolder+'/'+jobs_modChar, 'w') as fout:
+   fout.write("#!/bin/sh\n")
+   fout.write("echo\n")
+   fout.write("echo 'START---------------'\n")
+   fout.write("echo 'current dir: ' ${PWD}\n")
+   fout.write("cd "+str(baseFolder)+"\n")
+   fout.write("echo 'current dir: ' ${PWD}\n")
+   fout.write("source scripts/setup.sh\n")
+   #fout.write(submitCommandModChar+"\n")
+   fout.write(parallelModChar1+"\n")
+   fout.write(parallelModChar2+"\n")
+   fout.write("echo 'STOP---------------'\n")
+   fout.write("echo\n")
+   fout.write("echo\n")
+os.system("chmod 755 "+jobsFolder+"/"+jobs_modChar)
 
-   ##### creates job file #######
-   jobs_drawPS = "jobs_drawPS_run" + run_range + ".sh"
-   with open(jobsFolder+'/'+jobs_drawPS, 'w') as fout:
-      fout.write("#!/bin/sh\n")
-      fout.write("echo\n")
-      fout.write("echo 'START---------------'\n")
-      fout.write("echo 'current dir: ' ${PWD}\n")
-      fout.write("cd "+str(baseFolder)+"\n")
-      fout.write("echo 'current dir: ' ${PWD}\n")
-      fout.write("source scripts/setup.sh\n")
-      fout.write(submitCommandPulseShape+"\n")
-      fout.write("echo 'STOP---------------'\n")
-      fout.write("echo\n")
-      fout.write("echo\n")
-   os.system("chmod 755 "+jobsFolder+"/"+jobs_drawPS)
+##### creates job file #######
+#jobs_drawPS = "jobs_drawPS_run" + run_range + ".sh"
+jobs_drawPS = "jobs_drawPS.sh"
+with open(jobsFolder+'/'+jobs_drawPS, 'w') as fout:
+   fout.write("#!/bin/sh\n")
+   fout.write("echo\n")
+   fout.write("echo 'START---------------'\n")
+   fout.write("echo 'current dir: ' ${PWD}\n")
+   fout.write("cd "+str(baseFolder)+"\n")
+   fout.write("echo 'current dir: ' ${PWD}\n")
+   fout.write("source scripts/setup.sh\n")
+   #fout.write(submitCommandPulseShape+"\n")
+   fout.write(parallelPulseShape+"\n")
+   fout.write("echo 'STOP---------------'\n")
+   fout.write("echo\n")
+   fout.write("echo\n")
+os.system("chmod 755 "+jobsFolder+"/"+jobs_drawPS)
       
-   if args.submit:
-      print("++++ SUBMIT MODULE CHARACTERIZATION "+ run_range +" ++++")
-      os.system("source "+jobsFolder+"/"+jobs_modChar)
-      print("++++ SUBMIT PULSE SHAPE "+ run_range +"++++")
-      os.system("source "+jobsFolder+"/"+jobs_drawPS)
+if args.submit:
+   print("++++ SUBMIT MODULE CHARACTERIZATION  ++++")
+   os.system("source "+jobsFolder+"/"+jobs_modChar)
+   print("++++ SUBMIT PULSE SHAPE ++++")
+   os.system("source "+jobsFolder+"/"+jobs_drawPS)
 
    
 

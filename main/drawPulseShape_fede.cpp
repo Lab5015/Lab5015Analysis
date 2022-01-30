@@ -46,7 +46,7 @@ int main(int argc, char** argv)
   std::string runs = opts.GetOpt<std::string>("Input.runs");
 
 
-  int overrideOutFile = 1;
+  int overrideOutFile = 0;
   if(argc == 3)
     {
       overrideOutFile = atoi(argv[2]);
