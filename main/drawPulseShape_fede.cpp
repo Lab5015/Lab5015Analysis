@@ -92,7 +92,10 @@ int main(int argc, char** argv)
   int ch2Ext   = opts.GetOpt<float>("Cuts.ch2Ext");           
   float energyMinExt = opts.GetOpt<float>("Cuts.energyMinExt");
   float energyMaxExt = opts.GetOpt<float>("Cuts.energyMaxExt");
-    
+  
+  int npoints = 15;
+  int nintervals = 4;
+   
 
   //------------------------------
   // open file and define branches
@@ -844,9 +847,6 @@ int main(int argc, char** argv)
 
     float Vov = mapIt.first;
     
-    float fitXMin = 0.;
-    float fitXMax = 999.;
-    
     c = new TCanvas("c","c");
     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,40.) );
     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,100.) );
@@ -899,26 +899,34 @@ int main(int argc, char** argv)
     float slewRate_low = fitFuncLow_ch1->GetParameter(1); 
     std::cout << "Slew rate at low threshold on ch1 = " << slewRate_low << std::endl;
 
-    //find xmin and xmax for the range fit correspoding to Y=4 and Y=6 respectively
-    for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-      if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 4. )
+
+    // fit the inverted TGraph of the PS
+    int index_cen = int(g_ps_totSel_ch1[Vov]->GetN()/nintervals) -1;
+    int index_min = std::max(1, index_cen - int(npoints/2)) -1;
+    int index_max = std::min(index_cen + int(npoints/2), int(g_ps_totSel_ch1[Vov]->GetN()/2)) -1;
+
+
+    TGraph* invertedGraph_ch1 = new TGraph();
+    TGraph* partialGraph_ch1 = new TGraph();
+    partialGraph_ch1->SetMarkerStyle(26);
+    partialGraph_ch1->SetMarkerColor(kRed+3);
+    for(int iPoint=index_min; iPoint<index_max+1; ++iPoint)
       {
-        fitXMin = g_ps_totSel_ch1[Vov]->GetPointX(point);
-        //std::cout << "fitXMin: " << fitXMin << std::endl;
-        break;
+	invertedGraph_ch1->SetPoint(iPoint-index_min, g_ps_totSel_ch1[Vov]->GetPointY(iPoint), g_ps_totSel_ch1[Vov]->GetPointX(iPoint));
+	partialGraph_ch1->SetPoint(iPoint-index_min, g_ps_totSel_ch1[Vov]->GetPointX(iPoint), g_ps_totSel_ch1[Vov]->GetPointY(iPoint));
       }
-    for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-      if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 6. )
-      {
-        fitXMax = g_ps_totSel_ch1[Vov]->GetPointX(point);
-        //std::cout << "fitXMax: " << fitXMax << std::endl;
-        break;
-      }
-    // TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,7.);
-    fitFunc_ch1 -> SetParameters(-10.,150.);
-    g_ps_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QNS+","",fitXMin,fitXMax);
+    
+    TF1* fitSR_inverted_ch1 = new TF1("fitSR_inverted_ch1", "pol1");
+    
+    partialGraph_ch1->Draw("P,sames");
+    fitSR_inverted_ch1->SetParameters(0., 1e-3);
+    invertedGraph_ch1->Fit(fitSR_inverted_ch1,"QS");
+
+    fitFunc_ch1->SetNpx(10000);
+    fitFunc_ch1->SetParameters( -fitSR_inverted_ch1->GetParameter(0)/fitSR_inverted_ch1->GetParameter(1), 1./fitSR_inverted_ch1->GetParameter(1) );
     fitFunc_ch1 -> SetLineColor(kRed-4);
-    fitFunc_ch1 -> Draw("same");
+    fitFunc_ch1->Draw("sames");
+
     TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("slew rate = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
     if (tofhirVersion.find("2A")!= std::string::npos ){
       latex_ch1 = new TLatex(0.40,0.80,Form("slew rate = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));     
@@ -962,36 +970,44 @@ int main(int argc, char** argv)
     }
     if( g_ps_totSel_ch2[Vov] )
     {
-      fitXMin = 0.;
-      fitXMax = 999.;
-      for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
-        if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 4. )
-        {
-          fitXMin = g_ps_totSel_ch2[Vov]->GetPointX(point);
-          break;
-        }
-      for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
-        if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 6. )
-        {
-          fitXMax = g_ps_totSel_ch2[Vov]->GetPointX(point);
-          break;
-        }
+
+      index_cen = int(g_ps_totSel_ch2[Vov]->GetN()/nintervals) -1;
+      index_min = std::max(1, index_cen - int(npoints/2)) -1;
+      index_max = std::min(index_cen + int(npoints/2), int(g_ps_totSel_ch2[Vov]->GetN()/2)) -1;
+
+
+      TGraph* invertedGraph_ch2 = new TGraph();
+      TGraph* partialGraph_ch2 = new TGraph();
+      partialGraph_ch2->SetMarkerStyle(32);
+      partialGraph_ch2->SetMarkerColor(kBlue+3);
+      for(int iPoint=index_min; iPoint<index_max+1; ++iPoint)
+	{
+	  invertedGraph_ch2->SetPoint(iPoint-index_min, g_ps_totSel_ch2[Vov]->GetPointY(iPoint), g_ps_totSel_ch2[Vov]->GetPointX(iPoint));
+	  partialGraph_ch2->SetPoint(iPoint-index_min, g_ps_totSel_ch2[Vov]->GetPointX(iPoint), g_ps_totSel_ch2[Vov]->GetPointY(iPoint));
+	}
+    
+      TF1* fitSR_inverted_ch2 = new TF1("fitSR_inverted_ch2", "pol1");
+    
+      partialGraph_ch2->Draw("P,sames");
+      fitSR_inverted_ch2->SetParameters(0., 1e-3);
+      invertedGraph_ch2->Fit(fitSR_inverted_ch2,"QS");
+
+      fitFunc_ch2->SetNpx(10000);
+      fitFunc_ch2->SetParameters( -fitSR_inverted_ch2->GetParameter(0)/fitSR_inverted_ch2->GetParameter(1), 1./fitSR_inverted_ch2->GetParameter(1) );
+      fitFunc_ch2 -> SetLineColor(kBlue-4);
+      fitFunc_ch2->Draw("sames");
+      
+      TLatex* latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
+      if (tofhirVersion.find("2A")!= std::string::npos ){
+	latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f mV/ns",fitFunc_ch2->GetParameter(1)));     
+      }
+      latex_ch2 -> SetNDC();
+      latex_ch2 -> SetTextFont(82);
+      latex_ch2 -> SetTextSize(0.04);
+      latex_ch2 -> SetTextAlign(11);
+      latex_ch2 -> SetTextColor(kBlue-4);
+      latex_ch2 -> Draw("same");
     }
-    // TF1* fitFunc_ch2 = new TF1("fitFunc_ch2","pol1",0.,7.);
-    fitFunc_ch2 -> SetParameters(-10.,250.);
-    g_ps_totSel_ch2[Vov] -> Fit(fitFunc_ch2,"QNS+","",fitXMin,fitXMax);
-    fitFunc_ch2 -> SetLineColor(kBlue-4);
-    fitFunc_ch2 -> Draw("same");
-    TLatex* latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f mV/ns",fitFunc_ch2->GetParameter(1)));     
-    }
-    latex_ch2 -> SetNDC();
-    latex_ch2 -> SetTextFont(82);
-    latex_ch2 -> SetTextSize(0.04);
-    latex_ch2 -> SetTextAlign(11);
-    latex_ch2 -> SetTextColor(kBlue-4);
-    latex_ch2 -> Draw("same");
     
     c -> Print(Form("%s/g_ps_Vov%.1f_ch1_%d_ch2_%d.png", plotDir.c_str(),Vov, ch1, ch2));
     delete c;
