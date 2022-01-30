@@ -6,7 +6,7 @@ import math
 import array
 import sys
 import time
-
+import argparse
 
 import ROOT
 import tdrstyle
@@ -22,7 +22,13 @@ ROOT.gROOT.SetBatch(True)
 #ROOT.gROOT.SetBatch(False)
 
 
-plotDir = '/var/www/html/MTDST_CERN_Oct21/CCv2//'
+parser = argparse.ArgumentParser(description='This script creates the final noise summary plot starting from the moduleCharacterization and drawPulseShape analyses')
+parser.add_argument("-r",         "--rangeFile", required=True, type=str, help="input file containing the run ranges to be processed")
+parser.add_argument("--pngName",  "--pngName", required=False, default="", type=str, help="name of the output picture")
+args = parser.parse_args()
+
+
+baseFolder    = "/home/data/mtd/RUptoro2/Lab5015Analysis_MTDST_CERN_Oct21"
 outFile = ROOT.TFile("/home/data/mtd/RUptoro2/Lab5015Analysis_MTDST_CERN_Oct21/plots_fede/drawLaserCTR_vs_SR.root","RECREATE");
 outDir = "/var/www/html/MTDST_CERN_Oct21/CCv2/slewRate/"
 
@@ -38,10 +44,36 @@ dac_to_uA = {
     'ith1_0': 0.156
 }
 
-runs_dict = { 
+runs_dict = {}
+cfgFile = open(baseFolder+'/'+args.rangeFile)
+lines = cfgFile.readlines()
 
-#    # runs for channels 1040 and 1200
-#    #FE1 FE5, chipID0 chipID5, ch16 ch16
+for line in lines:
+   if "#" in line:
+      continue
+
+   line = line.strip()
+   if line == "":
+      continue
+
+   line = line.split()
+
+   if "ch1" in line:
+      ch1 = line[1]
+      continue
+   if "ch2" in line:
+      ch2 = line[1]
+      continue
+   if "pngName" in line:
+      pngName = line[1]
+      continue
+
+
+   runs_dict[line[0]] = [line[1], float(line[2]), list(map(float, line[3].split(",")))]
+
+
+    # runs for channels 1040 and 1200
+    #FE1 FE5, chipID0 chipID5, ch16 ch16
 #    "2318-2348" : [ 'ith2_0', 0.50, [1.0]],
 #    "2349-2379" : [ 'ith2_0', 0.60, [1.0]],
 #    "2380-2410" : [ 'ith2_0', 0.70, [1.0]],
@@ -54,34 +86,78 @@ runs_dict = {
 #    "2581-2611" : [ 'ith2_0', 0.05, [1.0]],
 #    "2612-2642" : [ 'ith2_0', 0.50, [1.5]],
 #    "2643-2673" : [ 'ith2_0', 0.30, [1.5]],
-#    #"2674-2704" : [ 'ith2_0', 0.10, [1.5]],
+    #"2674-2704" : [ 'ith2_0', 0.10, [1.5]],
 #    "2705-2765" : [ 'ith2_0', 0.10, [2.5,3.0]],
-#    "2773-2803" : [ 'ith2_0', 0.5, [0.7]],
-#    "2804-2835" : [ 'ith2_0', 0.7, [0.7]],
-#    "2836-2959" : [ 'ith2_0', 0.7, [2.0,3.0,4.0,5.0]],
-#    "3580-3682" : [ 'ith2_0', 0.3, [0.7,2.0,3.0,4.0]],
-#    "3265-3295" : [ 'ith2_0', 0.6, [0.7]],
-#    "4053-4176" : [ 'ith2_0', 0.1, [0.7,1.0,2.0,3.0]]
+#    "2773-2803" : [ 'ith2_0', 0.50, [0.7]],
+#    "2804-2835" : [ 'ith2_0', 0.70, [0.7]],
+#    "2836-2959" : [ 'ith2_0', 0.70, [2.0,3.0,4.0,5.0]],
+#    "3580-3682" : [ 'ith2_0', 0.30, [0.7,2.0,3.0,4.0]],
+#    "3265-3295" : [ 'ith2_0', 0.60, [0.7]],
+    # the list is complete from this point on. I have not yet checked that the above list is complete
+#    "4053-4176" : [ 'ith2_0', 0.10, [0.7,1.0,2.0,3.0]],
+#    "4177-4269" : [ 'ith2_0', 0.05, [0.7,2.0,3.0]],
+#    "4282-4308" : [ 'ith2_0', 0.85, [4.0,5.0]],
+#    "4310-4349" : [ 'ith2_0', 0.82, [3.0,4.0,5.0]],
+#    "4350-4561" : [ 'ith2_0', 0.78, [0.7,1.0,2.0,3.0]],
+#    "4564-4687" : [ 'ith2_0', 0.75, [0.7,1.0,2.0,3.0]],
     
 
-    # runs for channels 1040 and 1210, the following list is complete
-    #FE1 FE5, chipID0 chipID5, ch16 ch16
-    "4858-5049" : [ 'ith2_0', 0.50, [0.7,1.0,2.0,3.0,4.0,5.0]],
-    "5050-5235" : [ 'ith2_0', 0.60, [0.7,1.0,2.0,3.0,4.0,5.0]],
-    "5236-5421" : [ 'ith2_0', 0.70, [0.7,1.0,2.0,3.0,4.0,5.0]],
-    "5422-5605" : [ 'ith2_0', 0.75, [0.7,1.0,2.0,3.0,4.0,5.0]],
-    "5606-5747" : [ 'ith2_0', 0.80, [1.0,2.0,3.0,4.0,5.0]],
-    "5773-5860" : [ 'ith2_0', 0.82, [2.0,3.0,4.0,5.0]],
+#    # runs for channels 1040 and 1210, the following list is complete
+#    #FE1 FE5, chipID0 chipID5, ch16 ch26
+#    "4858-5049" : [ 'ith2_0', 0.50, [0.7,1.0,2.0,3.0,4.0,5.0]],
+#    "5050-5235" : [ 'ith2_0', 0.60, [0.7,1.0,2.0,3.0,4.0,5.0]],
+#    "5236-5421" : [ 'ith2_0', 0.70, [0.7,1.0,2.0,3.0,4.0,5.0]],
+#    "5422-5605" : [ 'ith2_0', 0.75, [0.7,1.0,2.0,3.0,4.0,5.0]],
+#    "5606-5747" : [ 'ith2_0', 0.80, [1.0,2.0,3.0,4.0,5.0]],
+#    "5773-5860" : [ 'ith2_0', 0.82, [2.0,3.0,4.0,5.0]],
 #    "5862-6023" : [ 'ith2_0', 0.40, [0.7,1.0,2.0,3.0,4.0,5.0]],
 #    "6026-6211" : [ 'ith2_0', 0.30, [0.7,1.0,2.0,3.0,4.0,5.0]],
 #    "6212-6397" : [ 'ith2_0', 0.20, [0.7,1.0,2.0,3.0,4.0,5.0]],
-    "6398-6583" : [ 'ith2_0', 0.10, [0.7,1.0,2.0,3.0,4.0,5.0]],
+#    "6398-6583" : [ 'ith2_0', 0.10, [0.7,1.0,2.0,3.0,4.0,5.0]],
 #    "6584-6769" : [ 'ith2_0', 0.05, [0.7,1.0,2.0,3.0,4.0,5.0]],
 #    "6770-6940" : [ 'ith2_0', 0.77, [0.7,1.0,2.0,3.0,4.0,5.0]],
 #    "6943-6992" : [ 'ith2_0', 0.83, [3.0,4.0,5.0]],
 #    "6993-7155" : [ 'ith2_0', 0.78, [1.0,2.0,3.0,4.0,5.0]],
 
-}
+#    # runs for channels 1040 and 1214, the following list is complete
+#    #FE1 FE5, chipID0 chipID5, ch16 ch30
+#    "7407-7528" : [ 'ith2_0', 0.50, [0.7,1.0,3.0,5.0]],
+#    "7530-7653" : [ 'ith2_0', 0.40, [0.7,1.0,3.0,5.0]],
+#    "7654-7777" : [ 'ith2_0', 0.30, [0.7,1.0,3.0,5.0]],
+#    "7778-7901" : [ 'ith2_0', 0.20, [0.7,1.0,3.0,5.0]],
+#    "7902-8033" : [ 'ith2_0', 0.10, [0.7,1.0,3.0,5.0]],
+#    "8034-8157" : [ 'ith2_0', 0.05, [0.7,1.0,3.0,5.0]],
+#    "8163-8286" : [ 'ith2_0', 0.60, [0.7,1.0,3.0,5.0]],
+#    "8287-8394" : [ 'ith2_0', 0.70, [1.0,3.0,5.0]], # exclude 0.7V b/c shapes are starting to diverge
+#    "8399-8460" : [ 'ith2_0', 0.80, [3.0,5.0]],
+#    "8461-8553" : [ 'ith2_0', 0.75, [1.0,3.0,5.0]],
+#    "8461-8553" : [ 'ith2_0', 0.75, [1.0,3.0,5.0]],
+#    "8566-8657" : [ 'ith2_0', 0.78, [3.0,5.0]], # exclude 0.7V and 1.0V b/c shapes are starting to diverge
+#    "8659-8773" : [ 'ith2_0', 0.73, [0.7,1.0,3.0,5.0]], # exclude 0.7V b/c shapes are starting to diverge
+#    # update alignment to improve 0.7V pulse shape agreement at low slew rate
+#    "8774-8805" : [ 'ith2_0', 0.73, [0.7]], # exclude 1.0V b/c shapes are starting to diverge
+#    "8806-8821" : [ 'ith2_0', 0.75, [0.7]],
+#    "8822-8834" : [ 'ith2_0', 0.78, [0.7]],
+#    #"8839-8848" : [ 'ith2_0', 0.79, [0.7]], # exculde b/c fit isn't very good
+#    "8851-8866" : [ 'ith2_0', 0.70, [0.7]],
+
+#    # runs for channels 1040 and 1211, the following list is complete
+#    #FE1 FE5, chipID0 chipID5, ch16 ch27
+#    "10073-10196" : [ 'ith2_0', 0.05, [0.7,1.0,3.0,5.0]],
+#    "10197-10304" : [ 'ith2_0', 0.10, [0.7,1.0,3.0,5.0]],
+#    "10306-10344" : [ 'ith2_0', 0.20, [0.7,1.0,3.0,5.0]],
+#    "10437-10562" : [ 'ith2_0', 0.30, [0.7,1.0,3.0,5.0]],
+#    "10569-10696" : [ 'ith2_0', 0.40, [0.7,1.0,3.0,5.0]],
+#    "10697-10825" : [ 'ith2_0', 0.50, [0.7,1.0,3.0,5.0]],
+#    "10826-10952" : [ 'ith2_0', 0.60, [0.7,1.0,3.0,5.0]],
+#    "10953-11076" : [ 'ith2_0', 0.70, [0.7,1.0,3.0,5.0]],
+#    "11077-11198" : [ 'ith2_0', 0.75, [0.7,1.0,3.0,5.0]],
+#    "11213-11305" : [ 'ith2_0', 0.80, [2.0,3.0,5.0]],
+#    "11306-11371" : [ 'ith2_0', 0.78, [1.0,3.0,5.0]],
+#    "11374-11384" : [ 'ith2_0', 0.80, [1.0]], 
+#    "11389-11399" : [ 'ith2_0', 0.815, [2.0]]
+#    "11405-11410" : [ 'ith2_0', 0.815, [1.5]],
+
 
 VovList = []
 for run_range, value in runs_dict.items():
@@ -90,6 +166,7 @@ for run_range, value in runs_dict.items():
 VovList = sorted(set(VovList))
 
 
+print(VovList)
 
 g_tRes_vs_SR = {}
 g_tRes_vs_SR_all = ROOT.TGraphErrors()
@@ -232,13 +309,16 @@ legend.SetBorderSize(0)
 fit = {}
 it = 1
 for Vov in VovList:
-    g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRainBow+6*it)
-    g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRainBow+6*it)
+    g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRainBow+3*it)
+    g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRainBow+3*it)
+    #g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRed+it)
+    #g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRed+it)
     g_tRes_vs_SR[Vov].SetMarkerSize(1)
     g_tRes_vs_SR[Vov].Draw('psame')
     legend.AddEntry(g_tRes_vs_SR[Vov], 'V_{OV} = %.1f V'%Vov,'PL')
     fit[Vov] = ROOT.TF1('fit%d'%laserTune,'sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
     fit[Vov].SetLineColor(51+8*it)
+   # fit[Vov].SetLineColor(ROOT.kRed+it)
     fit[Vov].SetLineWidth(1)
     fit[Vov].SetParameters(12, 500)
     g_tRes_vs_SR[Vov].Fit(fit[Vov],'QRNS')
@@ -263,5 +343,11 @@ latex.SetTextColor(ROOT.kBlack)
 latex.Draw('same')
 
 
-c.Print(outDir+"/c_tRes_vs_SR_"+pngLabel+".png")
+if args.pngName != "":
+    pngLabel = args.pngName
+    c.Print(outDir+"/"+pngLabel)
+
+else:
+    pngLabel = pngLabel[:-1]
+    c.Print(outDir+"/c_tRes_vs_SR_"+pngLabel+".png")
 

@@ -43,11 +43,28 @@ int main(int argc, char** argv)
   //--- parse the config file
   CfgManager opts;
   opts.ParseConfigFile(argv[1]);
-  int debugMode = 0;
-  if( argc > 2 ) debugMode = atoi(argv[2]);
+  std::string runs = opts.GetOpt<std::string>("Input.runs");
+
+
+  int overrideOutFile = 1;
+  if(argc == 3)
+    {
+      overrideOutFile = atoi(argv[2]);
+    }
+
+  std::string outFilePath = opts.GetOpt<std::string>("Output.outFilePath");
+  std::string outFileName = outFilePath+Form("/pulseShape_run%s.root",runs.c_str());
+  //check if outFile alread exists
+  std::ifstream f(outFileName.c_str());
+  if(f.good() && !overrideOutFile)
+    {
+      std::cout << "===>>> RUN RANGE ALREADY PROCESSED... exiting <<<==="  << std::endl;
+      return 0;
+    }
+    
+
   
   //  int run = opts.GetOpt<int>("Input.run");
-  std::string runs = opts.GetOpt<std::string>("Input.runs");
   std::string tofhirVersion = opts.GetOpt<std::string>("Input.tofhirVersion");
   std::cout << tofhirVersion <<std::endl;
   std::string ithMode = opts.GetOpt<std::string>("Input.ithMode");
@@ -132,7 +149,7 @@ int main(int argc, char** argv)
   //---------------
   // define outfile
   //TFile* outFile = new TFile(Form("./plots/pulseShape_run%04d.root",run),"RECREATE");
-  TFile* outFile = new TFile(Form("./plots_fede/pulseShape_run%s.root",runs.c_str()),"RECREATE");
+  TFile* outFile = new TFile(outFileName.c_str(),"RECREATE");
   //  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
   
   

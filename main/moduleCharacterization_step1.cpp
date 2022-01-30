@@ -48,7 +48,23 @@ int main(int argc, char** argv)
   //--- parse the config file
   CfgManager opts;
   opts.ParseConfigFile(argv[1]);
-  
+
+  int overrideOutFile = 1;
+  if(argc == 3)
+    {
+      overrideOutFile = atoi(argv[2]);
+    }
+
+  std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep1");
+  //check if outFile alread exists
+  std::ifstream f(outFileName.c_str());
+  if(f.good() && !overrideOutFile)
+    {
+      std::cout << "===>>> RUN RANGE ALREADY PROCESSED... exiting <<<==="  << std::endl;
+      return 0;
+    }
+    
+    
   
   //--- open files and make the tree chain
   std::string inputDir = opts.GetOpt<std::string>("Input.inputDir");
@@ -168,7 +184,6 @@ int main(int argc, char** argv)
   
   
   //--- define histograms
-  std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep1");
   TFile* outFile = TFile::Open(Form("%s",outFileName.c_str()),"RECREATE");
   outFile -> cd();
   
@@ -569,5 +584,6 @@ int main(int argc, char** argv)
   std::cout << "nr of KB written:  " << int(bytes/1024.)       << std::endl;
   std::cout << "nr of MB written:  " << int(bytes/1024./1024.) << std::endl;
   std::cout << "============================================"  << std::endl;
-  
+
+  return 0; 
 }

@@ -130,8 +130,24 @@ int main(int argc, char** argv)
   CfgManager opts;
   opts.ParseConfigFile(argv[1]);
   
-  int debugMode = 0;
-  if( argc > 2 ) debugMode = atoi(argv[2]);
+  int overrideOutFile = 1;
+  if(argc == 3)
+    {
+      overrideOutFile = atoi(argv[2]);
+    }
+
+  std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep2");
+  //check if outFile alread exists
+  std::ifstream f(outFileName.c_str());
+  if(f.good() && !overrideOutFile)
+    {
+      std::cout << "===>>> RUN RANGE ALREADY PROCESSED... exiting <<<==="  << std::endl;
+      return 0;
+    }
+    
+  
+
+
   
   
   //--- get parameters
@@ -212,7 +228,7 @@ int main(int argc, char** argv)
   int useTrackInfo = opts.GetOpt<int>("Input.useTrackInfo");
 
   //--- open files
-  std::string step1FileName= opts.GetOpt<std::string>("Input.step1FileName");
+  std::string step1FileName= opts.GetOpt<std::string>("Output.outFileNameStep1");
   TFile* inFile = TFile::Open(step1FileName.c_str(),"READ");
   std::cout << "Open file " << step1FileName.c_str() << std::endl;
   
@@ -261,7 +277,6 @@ int main(int argc, char** argv)
   
   
   //--- define histograms
-  std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep2");
   TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");
   outFile->cd();
 
@@ -1180,7 +1195,6 @@ int main(int argc, char** argv)
   float timeResPhaseCorr;
   float errTimeRes;
   float errTimeResToT;
-  float errTimeResPhaseCorr;
   float timeResEffSigma;
   
   
@@ -1642,7 +1656,6 @@ int main(int argc, char** argv)
 	      histo -> Write();
 	      
 	      timeResPhaseCorr = fabs(fitFunc->GetParameter(2));
-	      errTimeResPhaseCorr = fabs(fitFunc->GetParError(2));
 	      
 	      int contr = 0;
 	      if(!source.compare("Na22") && fitFunc->GetParameter(0)<20){
