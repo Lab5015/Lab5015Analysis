@@ -1,9 +1,9 @@
-#FE1 FE3, chipID0 chipID5, ch16 ch27
+#FE1 FE3, chipID0 chipID5, ch16 ch16
 
 ch1 1040
-ch2 1211
+ch2 1200
 
-pngName tRes_vs_SR_FE1-FE3_chipID0-chipID5_ch1040-ch1211.png
+pngName tRes_vs_SR_FE1-FE3_chipID0-chipID5_ch1040-ch1200.png
 
 #runRange	thr	tune	OV
 4053-4176	ith2_0	0.10	0.7,1.0,2.0,3.0

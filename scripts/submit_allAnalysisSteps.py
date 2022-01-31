@@ -42,7 +42,7 @@ cfgFile = open(baseFolder+'/'+args.rangeFile)
 lines = cfgFile.readlines()
 
 for line in lines:
-   if "#" in line:
+   if line[0] == "#":
       continue
 
    line = line.strip()
