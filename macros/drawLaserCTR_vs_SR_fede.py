@@ -221,17 +221,17 @@ legend.SetBorderSize(0)
 
 fit = {}
 it = 1
+colors = {1:ROOT.kRed-4, 2:ROOT.kMagenta-4, 3:ROOT.kBlue-4, 4:ROOT.kCyan, 5:ROOT.kGreen+1, 6:ROOT.kOrange, 7:ROOT.kYellow-3, 8:ROOT.kBlack}
 for Vov in VovList:
-    g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRainBow+3*it)
-    g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRainBow+3*it)
-    #g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRed+it)
-    #g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRed+it)
+    #g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRainBow+3*it)
+    #g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRainBow+3*it)
+    g_tRes_vs_SR[Vov].SetLineColor(colors[it])
+    g_tRes_vs_SR[Vov].SetMarkerColor(colors[it])
     g_tRes_vs_SR[Vov].SetMarkerSize(1)
     g_tRes_vs_SR[Vov].Draw('psame')
     legend.AddEntry(g_tRes_vs_SR[Vov], 'V_{OV} = %.1f V'%Vov,'PL')
     fit[Vov] = ROOT.TF1('fit%d'%laserTune,'sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
-    fit[Vov].SetLineColor(51+8*it)
-   # fit[Vov].SetLineColor(ROOT.kRed+it)
+    fit[Vov].SetLineColor(colors[it])
     fit[Vov].SetLineWidth(1)
     fit[Vov].SetParameters(12, 500)
     g_tRes_vs_SR[Vov].Fit(fit[Vov],'QRNS')

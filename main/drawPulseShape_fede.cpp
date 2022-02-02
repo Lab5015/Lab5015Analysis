@@ -365,8 +365,8 @@ int main(int argc, char** argv)
         
         h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
         h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
-        h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
-        h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
+        h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-10.,timeOffset[Vov][ch1]+10.);
+        h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-10.,timeOffset[Vov][ch1]+10.);
         
         h1_deltaT1_totSel[Vov][ith] = new TH1F(Form("h1_deltaT1_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
         h1_deltaT2_totSel[Vov][ith] = new TH1F(Form("h1_deltaT2_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
@@ -378,8 +378,8 @@ int main(int argc, char** argv)
         
         h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
         h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
-        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
-        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-10.,timeOffset[Vov][ch2]+10.);
+        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-10.,timeOffset[Vov][ch2]+10.);
       }
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
