@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description='This script runs the moduleCharact
 
 parser.add_argument("-r",         "--rangeFile", required=True, type=str, help="input file containing the run ranges to be processed")
 parser.add_argument("-s",         "--submit",                             help="submit jobs", action='store_true')
+parser.add_argument("-o",         "--overwrite",                          help="overwrite previous pulseShape and moduleCharacterization output", action='store_true')
 args = parser.parse_args()
 
 
@@ -27,9 +28,9 @@ drawPulseExe  = baseFolder+"/bin/drawPulseShape_fede.exe"
 
 
 
-parallelModChar1  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ " + moduleCharExe1 + " ::: "  #limit to 8 cpu on ceacmsfw server
-parallelModChar2  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ " + moduleCharExe2 + " ::: "  #limit to 8 cpu on ceacmsfw server
-parallelPulseShape = "parallel --bar --jobs 8 --results "+jobsFolder+"/ " + drawPulseExe + " ::: "   #limit to 8 cpu on ceacmsfw server
+parallelModChar1  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ModChar1 " + moduleCharExe1 + " ::: "  #limit to 8 cpu on ceacmsfw server
+parallelModChar2  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ModChar2 " + moduleCharExe2 + " ::: "  #limit to 8 cpu on ceacmsfw server
+parallelPulseShape = "parallel --bar --jobs 8 --results "+jobsFolder+"/PulseShape " + drawPulseExe + " ::: "   #limit to 8 cpu on ceacmsfw server
 
 
 
@@ -91,7 +92,6 @@ for run_range, params in sorted(runs_dict.items()):
 
    parallelModChar1 += configFileName + " " 
    parallelModChar2 += configFileName + " " 
-   submitCommandModChar = moduleCharExe1 +" "+ configFileName +" 0; "+moduleCharExe2 +" "+ configFileName +" 0"
 
 
    #prepare drawPulseShape config
@@ -116,8 +116,11 @@ for run_range, params in sorted(runs_dict.items()):
       os.system(command)
 
    parallelPulseShape += configFileName + " " 
-   submitCommandPulseShape = drawPulseExe +" "+ configFileName +" 0"
 
+if args.overwrite:
+    parallelModChar1 += " ::: 1 "
+    parallelModChar2 += " ::: 1 "
+    parallelPulseShape += " ::: 1 "
 
 ##### creates job file #######
 #jobs_modChar = "jobs_modChar_run" + run_range + ".sh"
@@ -130,7 +133,6 @@ with open(jobsFolder+'/'+jobs_modChar, 'w') as fout:
    fout.write("cd "+str(baseFolder)+"\n")
    fout.write("echo 'current dir: ' ${PWD}\n")
    fout.write("source scripts/setup.sh\n")
-   #fout.write(submitCommandModChar+"\n")
    fout.write(parallelModChar1+"\n")
    fout.write(parallelModChar2+"\n")
    fout.write("echo 'STOP---------------'\n")
@@ -149,7 +151,6 @@ with open(jobsFolder+'/'+jobs_drawPS, 'w') as fout:
    fout.write("cd "+str(baseFolder)+"\n")
    fout.write("echo 'current dir: ' ${PWD}\n")
    fout.write("source scripts/setup.sh\n")
-   #fout.write(submitCommandPulseShape+"\n")
    fout.write(parallelPulseShape+"\n")
    fout.write("echo 'STOP---------------'\n")
    fout.write("echo\n")
