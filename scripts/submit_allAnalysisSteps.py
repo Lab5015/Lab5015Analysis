@@ -27,11 +27,13 @@ drawPulseCfg  = baseFolder+"/cfg/drawPulseShape_fede.cfg"
 drawPulseExe  = baseFolder+"/bin/drawPulseShape_fede.exe"
 
 
+overwrite = 0
+if args.overwrite:
+   overwrite = 1
 
-parallelModChar1  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ModChar1 " + moduleCharExe1 + " ::: "  #limit to 8 cpu on ceacmsfw server
-parallelModChar2  = "parallel --bar --jobs 8 --results "+jobsFolder+"/ModChar2 " + moduleCharExe2 + " ::: "  #limit to 8 cpu on ceacmsfw server
-parallelPulseShape = "parallel --bar --jobs 8 --results "+jobsFolder+"/PulseShape " + drawPulseExe + " ::: "   #limit to 8 cpu on ceacmsfw server
 
+
+parallelCommand  = "parallel --bar --jobs 16 --results "+jobsFolder+"/fullProcess source ::: "  #limit to 8 cpu on ceacmsfw server
 
 
 #parse input file
@@ -88,10 +90,28 @@ for run_range, params in sorted(runs_dict.items()):
       os.system(command)
       command = 'sed -i \"s%^channelMapping .*$%channelMapping '+ch1+' '+ch2+'%\" '+configFileName
       os.system(command)
-      
 
-   parallelModChar1 += configFileName + " " 
-   parallelModChar2 += configFileName + " " 
+
+   ##### creates job file #######
+   jobs_modChar = jobsFolder + "/jobs_modChar_run" + run_range + ".sh"
+   with open(jobs_modChar, 'w') as fout:
+      fout.write("#!/bin/sh\n")
+      fout.write("echo\n")
+      fout.write("echo 'START---------------'\n")
+      fout.write("echo 'current dir: ' ${PWD}\n")
+      fout.write("cd "+str(baseFolder)+"\n")
+      fout.write("echo 'current dir: ' ${PWD}\n")
+      fout.write("source scripts/setup.sh\n")
+      fout.write(moduleCharExe1+" "+configFileName+" "+str(overwrite)+"\n")
+      fout.write(moduleCharExe2+" "+configFileName+" "+str(overwrite)+"\n")
+      fout.write("echo 'STOP---------------'\n")
+      fout.write("echo\n")
+      fout.write("echo\n")
+   os.system("chmod 755 "+jobs_modChar)
+
+   parallelCommand += jobs_modChar + " " 
+
+
 
 
    #prepare drawPulseShape config
@@ -115,53 +135,33 @@ for run_range, params in sorted(runs_dict.items()):
       command = 'sed -i \"s%^ch2 .*$%ch2 '+ch2+'%\" '+configFileName
       os.system(command)
 
-   parallelPulseShape += configFileName + " " 
 
-if args.overwrite:
-    parallelModChar1 += " ::: 1 "
-    parallelModChar2 += " ::: 1 "
-    parallelPulseShape += " ::: 1 "
+   ##### creates job file #######
+   jobs_drawPS = jobsFolder + "/jobs_drawPS_run" + run_range + ".sh"
+   with open(jobs_drawPS, 'w') as fout:
+      fout.write("#!/bin/sh\n")
+      fout.write("echo\n")
+      fout.write("echo 'START---------------'\n")
+      fout.write("echo 'current dir: ' ${PWD}\n")
+      fout.write("cd "+str(baseFolder)+"\n")
+      fout.write("echo 'current dir: ' ${PWD}\n")
+      fout.write("source scripts/setup.sh\n")
+      fout.write(drawPulseExe+" "+configFileName+" "+str(overwrite)+"\n")
+      fout.write("echo 'STOP---------------'\n")
+      fout.write("echo\n")
+      fout.write("echo\n")
+   os.system("chmod 755 "+jobs_drawPS)
 
-##### creates job file #######
-#jobs_modChar = "jobs_modChar_run" + run_range + ".sh"
-jobs_modChar = "jobs_modChar.sh"
-with open(jobsFolder+'/'+jobs_modChar, 'w') as fout:
-   fout.write("#!/bin/sh\n")
-   fout.write("echo\n")
-   fout.write("echo 'START---------------'\n")
-   fout.write("echo 'current dir: ' ${PWD}\n")
-   fout.write("cd "+str(baseFolder)+"\n")
-   fout.write("echo 'current dir: ' ${PWD}\n")
-   fout.write("source scripts/setup.sh\n")
-   fout.write(parallelModChar1+"\n")
-   fout.write(parallelModChar2+"\n")
-   fout.write("echo 'STOP---------------'\n")
-   fout.write("echo\n")
-   fout.write("echo\n")
-os.system("chmod 755 "+jobsFolder+"/"+jobs_modChar)
+   parallelCommand += jobs_drawPS + " " 
 
-##### creates job file #######
-#jobs_drawPS = "jobs_drawPS_run" + run_range + ".sh"
-jobs_drawPS = "jobs_drawPS.sh"
-with open(jobsFolder+'/'+jobs_drawPS, 'w') as fout:
-   fout.write("#!/bin/sh\n")
-   fout.write("echo\n")
-   fout.write("echo 'START---------------'\n")
-   fout.write("echo 'current dir: ' ${PWD}\n")
-   fout.write("cd "+str(baseFolder)+"\n")
-   fout.write("echo 'current dir: ' ${PWD}\n")
-   fout.write("source scripts/setup.sh\n")
-   fout.write(parallelPulseShape+"\n")
-   fout.write("echo 'STOP---------------'\n")
-   fout.write("echo\n")
-   fout.write("echo\n")
-os.system("chmod 755 "+jobsFolder+"/"+jobs_drawPS)
+
+print("GOING TO SUBMIT EVERYTHING IN PARALLEL WITH COMMAND:")
+print(parallelCommand)
+
       
 if args.submit:
-   print("++++ SUBMIT MODULE CHARACTERIZATION  ++++")
-   os.system("source "+jobsFolder+"/"+jobs_modChar)
-   print("++++ SUBMIT PULSE SHAPE ++++")
-   os.system("source "+jobsFolder+"/"+jobs_drawPS)
+   print("++++ SUBMIT IN PARALLEL ++++")
+   os.system(parallelCommand)
 
    
 
@@ -169,3 +169,6 @@ if args.submit:
 if args.submit:
    print("++++ CREATE SUMMARY PLOT ++++")
    os.system("python macros/drawLaserCTR_vs_SR_fede.py --pngName "+pngName+" --rangeFile "+args.rangeFile)
+
+
+
