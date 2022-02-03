@@ -36,6 +36,8 @@ if args.overwrite:
 parallelCommand  = "parallel --bar --jobs 16 --results "+jobsFolder+"/fullProcess source ::: "  #limit to 8 cpu on ceacmsfw server
 
 
+
+
 #parse input file
 runs_dict = {}
 ch1 = -1
@@ -104,6 +106,7 @@ for run_range, params in sorted(runs_dict.items()):
       fout.write("source scripts/setup.sh\n")
       fout.write(moduleCharExe1+" "+configFileName+" "+str(overwrite)+"\n")
       fout.write(moduleCharExe2+" "+configFileName+" "+str(overwrite)+"\n")
+      fout.write("python macros/moduleCharacterizationSummaryPlots.py -m 1 -i run"+ run_range +" -o /var/www/html/MTDST_CERN_Oct21/CCv2/ModuleCharacterization/run"+ run_range +"/\n")
       fout.write("echo 'STOP---------------'\n")
       fout.write("echo\n")
       fout.write("echo\n")
