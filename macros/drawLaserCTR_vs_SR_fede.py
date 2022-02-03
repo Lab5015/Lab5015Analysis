@@ -87,6 +87,9 @@ for Vov in VovList:
     g_tRes_vs_SR[Vov] = ROOT.TGraphErrors()
 
 
+g_SRch2_vs_SRch1 = ROOT.TGraphErrors()
+
+
 
 def get_list(input_list):
     if input_list is None:
@@ -109,7 +112,7 @@ npoints = 15
 nintervals = 4
 pngLabel = ""
 
-for run in sorted(runs_dict):
+for it,run in enumerate(sorted(runs_dict)):
         print("===>>> Processing run range: ", run)
 
         fullPath = outDir+"/"+run
@@ -127,6 +130,7 @@ for run in sorted(runs_dict):
             inFile = ROOT.TFile.Open('/home/data/mtd/RUptoro2/Lab5015Analysis_MTDST_CERN_Oct21/plots_fede/pulseShape_run%s.root'%run)
     
             SR = 0.
+            SRsingleCh = []
             thresh = 0.
             channels = ['ch1', 'ch2']
 
@@ -170,7 +174,10 @@ for run in sorted(runs_dict):
                 
                 print(ch, index_cen, index_min, index_max, graph.GetX()[index_cen], graph.GetX()[index_min], graph.GetX()[index_max], fitSR.GetParameter(1))
                 SR += fitSR.GetParameter(1)
+                SRsingleCh.append(SR)
                 thresh += int(round(graph.GetPointY(index_cen)/dac_to_uA[ithMode]))
+
+            g_SRch2_vs_SRch1.SetPoint(it, SRsingleCh[0], SRsingleCh[1])
         
             SR /= 2.
             thresh /= 2.
@@ -208,6 +215,18 @@ for run in sorted(runs_dict):
         
 
 
+
+
+b = ROOT.TCanvas('c_SRch2_vs_SRch1','c_SRch2_vs_SRch1',1200,700)
+bPad = ROOT.gPad.DrawFrame(0.,0.,500.,500.)
+bPad.SetTitle(";slew rate ch1 [#muA/ns];slew rate ch2 [#muA/ns]");
+bPad.Draw();
+ROOT.gPad.SetGridx();
+ROOT.gPad.SetGridy();
+g_SRch2_vs_SRch1.Draw("psame")
+
+
+
 c = ROOT.TCanvas('c_tRes_vs_SR','c_tRes_vs_SR',1200,700)
 hPad = ROOT.gPad.DrawFrame(0.,0.,300.,100.)
 hPad.SetTitle(";slew rate [#muA/ns];#sigma_{t}^{single} [ps]");
@@ -215,13 +234,14 @@ hPad.Draw();
 ROOT.gPad.SetGridx();
 ROOT.gPad.SetGridy();
 
-
-legend = ROOT.TLegend(0.60, 0.70, 0.89, 0.89)
+legLow = 0.94 - len(VovList)*0.03
+legend = ROOT.TLegend(0.60, legLow, 0.89, 0.94)
 legend.SetBorderSize(0)
 
 fit = {}
 it = 1
 colors = {1:ROOT.kRed-4, 2:ROOT.kMagenta-4, 3:ROOT.kBlue-4, 4:ROOT.kCyan, 5:ROOT.kGreen+1, 6:ROOT.kOrange, 7:ROOT.kYellow-3, 8:ROOT.kBlack}
+latexes = {}
 for Vov in VovList:
     #g_tRes_vs_SR[Vov].SetLineColor(ROOT.kRainBow+3*it)
     #g_tRes_vs_SR[Vov].SetMarkerColor(ROOT.kRainBow+3*it)
@@ -236,9 +256,18 @@ for Vov in VovList:
     fit[Vov].SetParameters(12, 500)
     g_tRes_vs_SR[Vov].Fit(fit[Vov],'QRNS')
     fit[Vov].Draw('same')
+
+    legY = 0.89 - it*0.04
+    latexes[Vov] = ROOT.TLatex(0.55,legY,'V_{OV} = %.1f V:   #sigma_{t} = %.02f #muA / (dV/dt) #oplus %.01f ps'%(Vov,fit[Vov].GetParameter(1)/1000.,fit[Vov].GetParameter(0)))
+    latexes[Vov].SetNDC()
+    latexes[Vov].SetTextFont(42)
+    latexes[Vov].SetTextSize(0.035)
+    latexes[Vov].SetTextColor(colors[it])
+    latexes[Vov].Draw('same')
+
     it += 1
 
-legend.Draw('same')
+#legend.Draw('same')
 
 
 fitAll = ROOT.TF1('fitAll','sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
@@ -248,7 +277,7 @@ fitAll.SetParameters(12, 500)
 g_tRes_vs_SR_all.Fit(fitAll,'SR')
 fitAll.Draw('same')
 
-latex = ROOT.TLatex(0.62,0.60,'#sigma_{t} = %.02f #muA / (dV/dt) #oplus %.01f ps'%(fitAll.GetParameter(1)/1000.,fitAll.GetParameter(0)))
+latex = ROOT.TLatex(0.55,0.89,'#sigma_{t} = %.02f #muA / (dV/dt) #oplus %.01f ps'%(fitAll.GetParameter(1)/1000.,fitAll.GetParameter(0)))
 latex.SetNDC()
 latex.SetTextFont(42)
 latex.SetTextSize(0.04)
@@ -258,9 +287,12 @@ latex.Draw('same')
 
 if args.pngName != "":
     pngLabel = args.pngName
-    c.Print(outDir+"/"+pngLabel)
+    c.Print(outDir+"/tRes_vs_SR_"+pngLabel)
+    b.Print(outDir+"/SRch2_vs_SRc1_"+pngLabel)
+
 
 else:
     pngLabel = pngLabel[:-1]
-    c.Print(outDir+"/c_tRes_vs_SR_"+pngLabel+".png")
+    c.Print(outDir+"/tRes_vs_SR_"+pngLabel+".png")
+    b.Print(outDir+"/SRch2_vs_SRc1_"+pngLabel+".png")
 
