@@ -130,6 +130,7 @@ for it,run in enumerate(sorted(runs_dict)):
             inFile = ROOT.TFile.Open('/home/data/mtd/RUptoro2/Lab5015Analysis_MTDST_CERN_Oct21/plots_fede/pulseShape_run%s.root'%run)
     
             SR = 0.
+            SR_errSum = 0.
             SRsingleCh = []
             thresh = 0.
             channels = ['ch1', 'ch2']
@@ -153,10 +154,11 @@ for it,run in enumerate(sorted(runs_dict)):
                 fitSR = ROOT.TF1('fitSR', 'pol1',-10.,10.)
                 fitSR.SetNpx(10000)
 
-                invertedGraph = ROOT.TGraph()
-                partialGraph = ROOT.TGraph()
+                invertedGraph = ROOT.TGraphErrors()
+                partialGraph = ROOT.TGraphErrors()
                 for iPoint in range(index_min,index_max+1):
                     invertedGraph.SetPoint(iPoint-index_min, graph.GetPointY(iPoint), graph.GetPointX(iPoint))
+                    invertedGraph.SetPointError(iPoint-index_min, 0., 0.015)
                     partialGraph.SetPoint(iPoint-index_min, graph.GetPointX(iPoint), graph.GetPointY(iPoint))
 
                 partialGraph.Draw("P,sames")
@@ -165,6 +167,9 @@ for it,run in enumerate(sorted(runs_dict)):
                 invertedGraph.Fit(fitSR_inverted,'QS')
 
                 fitSR.SetParameters( -fitSR_inverted.GetParameter(0)/fitSR_inverted.GetParameter(1), 1./fitSR_inverted.GetParameter(1) )
+                errX = fitSR_inverted.GetParError(1) / fitSR_inverted.GetParameter(1) / fitSR_inverted.GetParameter(1)
+                #print("ERROR: ",fitSR_inverted.GetParError(1), errX)
+                fitSR.SetParError(1, errX)
                 fitSR.Draw("sames")
 
                 canvas.Print(fullPath+'/ps_totSel_%s_Vov%.01f.png'%(ch,Vov))
@@ -173,13 +178,15 @@ for it,run in enumerate(sorted(runs_dict)):
                 invertedGraph.Write('Run%s_g_ps_inverted_totSel_%s_Vov%.01f'%(run,ch,Vov))
                 
                 print(ch, index_cen, index_min, index_max, graph.GetX()[index_cen], graph.GetX()[index_min], graph.GetX()[index_max], fitSR.GetParameter(1))
-                SR += fitSR.GetParameter(1)
+                SR += fitSR.GetParameter(1) * 1./errX/errX
+                SR_errSum += 1./errX/errX
+
                 SRsingleCh.append(SR)
                 thresh += int(round(graph.GetPointY(index_cen)/dac_to_uA[ithMode]))
 
             g_SRch2_vs_SRch1.SetPoint(it, SRsingleCh[0], SRsingleCh[1])
         
-            SR /= 2.
+            SR /= SR_errSum
             thresh /= 2.
     
     
@@ -207,10 +214,10 @@ for it,run in enumerate(sorted(runs_dict)):
 
             print 'runRange = ', run, 'bestTh = ', thresh, '   time res = ',  res[0]/math.sqrt(2), '  SR =', SR
             g_tRes_vs_SR[Vov].SetPoint(g_tRes_vs_SR[Vov].GetN(), SR, res[0]/math.sqrt(2))
-            g_tRes_vs_SR[Vov].SetPointError(g_tRes_vs_SR[Vov].GetN()-1, 0., math.sqrt(pow(res[1]/math.sqrt(2),2) + 2.*2.))
+            g_tRes_vs_SR[Vov].SetPointError(g_tRes_vs_SR[Vov].GetN()-1, 1./math.sqrt(SR_errSum)/2., res[1]/math.sqrt(2))
             
             g_tRes_vs_SR_all.SetPoint(g_tRes_vs_SR_all.GetN(), SR, res[0]/math.sqrt(2))
-            g_tRes_vs_SR_all.SetPointError(g_tRes_vs_SR_all.GetN()-1, 0., math.sqrt(pow(res[1]/math.sqrt(2),2) + 2.*2.))
+            g_tRes_vs_SR_all.SetPointError(g_tRes_vs_SR_all.GetN()-1, 1./math.sqrt(SR_errSum)/2., res[1]/math.sqrt(2))
             print("   ")
         
 
@@ -277,12 +284,20 @@ fitAll.SetParameters(12, 500)
 g_tRes_vs_SR_all.Fit(fitAll,'SR')
 fitAll.Draw('same')
 
-latex = ROOT.TLatex(0.55,0.89,'#sigma_{t} = %.02f #muA / (dV/dt) #oplus %.01f ps'%(fitAll.GetParameter(1)/1000.,fitAll.GetParameter(0)))
+latex = ROOT.TLatex(0.55,0.89,'#sigma_{t} = %.02f #pm %.02f #muA / (dV/dt) #oplus %.01f #pm %.01f ps'%(fitAll.GetParameter(1)/1000., fitAll.GetParError(1)/1000., fitAll.GetParameter(0), fitAll.GetParError(0)))
 latex.SetNDC()
 latex.SetTextFont(42)
 latex.SetTextSize(0.04)
 latex.SetTextColor(ROOT.kBlack)
 latex.Draw('same')
+
+coordinates = pngName.strip(".png").split("_")
+latex2 = ROOT.TLatex(0.63,0.965,coordinates[0]+"   "+coordinates[1]+"   "+coordinates[2])
+latex2.SetNDC()
+latex2.SetTextFont(42)
+latex2.SetTextSize(0.03)
+latex2.SetTextColor(ROOT.kBlack)
+latex2.Draw('same')
 
 
 if args.pngName != "":
