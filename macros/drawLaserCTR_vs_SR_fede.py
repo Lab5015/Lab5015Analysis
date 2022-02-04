@@ -214,10 +214,10 @@ for it,run in enumerate(sorted(runs_dict)):
 
             print 'runRange = ', run, 'bestTh = ', thresh, '   time res = ',  res[0]/math.sqrt(2), '  SR =', SR
             g_tRes_vs_SR[Vov].SetPoint(g_tRes_vs_SR[Vov].GetN(), SR, res[0]/math.sqrt(2))
-            g_tRes_vs_SR[Vov].SetPointError(g_tRes_vs_SR[Vov].GetN()-1, 1./math.sqrt(SR_errSum)/2., res[1]/math.sqrt(2))
+            g_tRes_vs_SR[Vov].SetPointError(g_tRes_vs_SR[Vov].GetN()-1, 1./math.sqrt(SR_errSum), res[1]/math.sqrt(2))
             
             g_tRes_vs_SR_all.SetPoint(g_tRes_vs_SR_all.GetN(), SR, res[0]/math.sqrt(2))
-            g_tRes_vs_SR_all.SetPointError(g_tRes_vs_SR_all.GetN()-1, 1./math.sqrt(SR_errSum)/2., res[1]/math.sqrt(2))
+            g_tRes_vs_SR_all.SetPointError(g_tRes_vs_SR_all.GetN()-1, 1./math.sqrt(SR_errSum), res[1]/math.sqrt(2))
             print("   ")
         
 
