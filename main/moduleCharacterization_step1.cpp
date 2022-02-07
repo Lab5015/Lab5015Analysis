@@ -339,33 +339,36 @@ int main(int argc, char** argv)
       if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
 	for( auto index : h1_energyLR_ext){
 	  rangesLR[index.first] = new std::vector<float>;
-	  
+
+
 	  float Vov = float ((int(index.first /10000))/100.);
-	  float vth1 = float(int((index.first-Vov*100000*100)/100.));
-	  float vth2 = int((step2-10000*(vth1+1))/100.)-1;
+	  float vth1 = float(int((index.first-Vov*10000*100)/100.));
+	  float vth2 = float(int((step2-10000*(vth1+1))/100.)-1);
           float vth = 0;
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 	  
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(200,900);
+	    index.second->GetXaxis()->SetRangeUser(100,900);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    index.second->GetXaxis()->SetRangeUser(200,900);
+	    index.second->GetXaxis()->SetRangeUser(100,900);
 	  }
 
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	  index.second->GetXaxis()->SetRangeUser(0,1024);
 	  
 	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.2f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
-	  f_pre -> SetRange(max*0.75, max*1.5);
+	  f_pre -> SetRange(max*0.70, max*1.5);
 	  f_pre -> SetLineColor(kBlack);
           f_pre -> SetLineWidth(2);
           f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 0.1*max);
+	  f_pre -> SetParLimits(1, 0, 9999);
+	  f_pre -> SetParLimits(2, 0, 9999);
 	  index.second->Fit(f_pre, "QRS+");      
 	  
 	  if (f_pre->GetParameter(1)>20)
-	    rangesLR[index.first] -> push_back( 0.75*f_pre->GetParameter(1));
+	    rangesLR[index.first] -> push_back( 0.70*f_pre->GetParameter(1));
 	  else
 	    rangesLR[index.first] -> push_back( 20 );
 	  

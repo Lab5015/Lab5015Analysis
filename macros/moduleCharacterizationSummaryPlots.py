@@ -96,14 +96,17 @@ if (source == 'TB'):
 cols = { 1.00 : 49,  
          1.20 : 50,  
          1.25 : 50,  
+         1.27 : 50,  
          1.40 : 46, 
          1.50 : 51, 
+         1.53 : 51, 
          1.60 : 51+4, 
          1.70 : 51+8,
          1.75 : 51+8,
          1.80 : 51+12,
          1.90 : 51+16,
          2.00 : 51 + 20, 
+         2.08 : 51 + 24, 
          2.10 : 51 + 24, 
          2.30 : 51 + 28,
          2.40 : 51 + 30,
@@ -161,7 +164,19 @@ if (15 in bars): bars.remove(15)
 
 goodBars = {}
 VovsEff = {}
-if ('HPK_1E13_52deg_T0C' in args.outFolder):
+if ('HPK_1E13_LYSOtype2_52deg_T-40C' in args.outFolder):
+    VovsEff = { 1.27 : 1.26 ,
+                1.53 : 1.51 ,
+                1.90 : 1.86 ,
+                2.08 : 2.04 ,
+                2.50 : 2.43 }
+    goodBars[1.27] = [4]
+    goodBars[1.53] = [4,7]
+    goodBars[1.90] = [0,4,5,7,8,9,10,12]
+    goodBars[2.08] = [0,4,5,6,7,8,9,10,11,12,13]
+    goodBars[2.50] = [0,1,3,4,5,6,7,8,9,10,11,12,13]
+
+elif ('HPK_1E13_52deg_T0C' in args.outFolder):
     VovsEff = { 1.50 : 1.21 ,
                 1.65 : 1.30 ,
                 1.80 : 1.40 ,
@@ -336,6 +351,7 @@ else:
 
 
 print 'bars:', bars
+print 'good bars:', goodBars
 print 'Vovs:',Vovs
 print 'thresholds:', thresholds
 

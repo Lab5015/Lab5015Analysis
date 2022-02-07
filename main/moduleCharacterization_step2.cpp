@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <algorithm>
+#include <iterator>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -115,6 +117,7 @@ void GetEnergyBins(TH1F *h, std::vector<float> *r, std::map<int, float> & b){
 int main(int argc, char** argv)
 {
   setTDRStyle();
+  float cpu[2]{0}, mem[2]={0}, vsz[2]={0}, rss[2]={0};
 
   gErrorIgnoreLevel = kError;
   
@@ -366,6 +369,9 @@ int main(int argc, char** argv)
 
   for(auto stepLabel : stepLabels) {
     
+
+    TrackProcess(cpu, mem, vsz, rss);
+    
     float Vov = map_Vovs[stepLabel];
     float vth1 = map_ths[stepLabel];
     std::string VovLabel(Form("Vov%.2f",Vov));
@@ -383,10 +389,18 @@ int main(int argc, char** argv)
 	histo -> SetLineColor(kRed);                                                                                                                                              
 	histo -> SetLineWidth(2);                                                                                                                                                 
 	histo -> Draw();  
-      
+	
+	TF1 *ftemp = histo->GetFunction( ((histo->GetListOfFunctions()->FirstLink())->GetObject())->GetName() );
+	if (ftemp != NULL){
+	  ftemp->SetNpx(1000);
+	  ftemp->SetLineWidth(2);
+	  ftemp->SetLineColor(1);
+	  ftemp->Draw("same");
+	}
 	c -> Print(Form("%s/energy/c_energy_external__Vov%.2f_th%02.0f.png",plotDir.c_str(), Vov, vth1));
 	c -> Print(Form("%s/energy/c_energy_external__Vov%.2f_th%02.0f.pdf",plotDir.c_str(), Vov, vth1));
 	delete c;
+	delete ftemp;
       }
     
     //--------------------------------------------------------
@@ -417,26 +431,6 @@ int main(int argc, char** argv)
         // -- qfine and tot only per L, R
         if (LRLabel == "R" || LRLabel == "L") {
 
-          /*histo = (TH1F*)( inFile->Get(Form("h1_qfine_%s",label.c_str())) );
-          if( !histo ) continue;
-          if( histo->GetEntries() < 100 ) continue;
-          
-          c = new TCanvas(Form("c_qfine_%s",label.c_str()),Form("c_qfine_%s",label.c_str()));
-          gPad -> SetLogy();
-                  
-          histo -> SetTitle(";Q_{fine} [ADC];entries");
-          histo -> SetLineColor(kRed);
-          histo -> Draw();
-          histo -> GetXaxis() -> SetRangeUser(0.,600.);
-          // TLine* line_qfineAcc1 = new TLine(cut_qfineAcc[chID][Vov],histo->GetMinimum(),cut_qfineAcc[chID][Vov],histo->GetMaximum());
-          // line_qfineAcc1 -> SetLineColor(kBlack);
-          // line_qfineAcc1 -> Draw("same");
-          latex -> Draw("same");      
-          histo -> Write();
-          c -> Print(Form("%s/qfine/c_qfine__%s.png",plotDir.c_str(),label.c_str()));
-          c -> Print(Form("%s/qfine/c_qfine__%s.pdf",plotDir.c_str(),label.c_str()));
-          delete c;*/
-        
 	  // -- draw ToT
           c = new TCanvas(Form("c_tot_%s",label.c_str()),Form("c_tot_%s",label.c_str()));
           gPad -> SetLogy();
@@ -667,6 +661,7 @@ int main(int argc, char** argv)
 	c -> Print(Form("%s/energy/c_energy__%s.png",plotDir.c_str(),label.c_str()));
 	c -> Print(Form("%s/energy/c_energy__%s.pdf",plotDir.c_str(),label.c_str()));
 	delete c;
+	delete latex;
 	
       }// end loop over L, R, L-R labels
       
@@ -692,7 +687,11 @@ int main(int argc, char** argv)
       int nEntries = mapIt.second->GetEntries();
       for(int entry = 0; entry < nEntries; ++entry)
 	{
-	  if( entry%100000 == 0 ) std::cout << ">>> 2nd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	  if( entry%100000 == 0 ) {
+	    std::cout << ">>> 2nd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	      TrackProcess(cpu, mem, vsz, rss);
+	  }
+	  
 	  mapIt.second -> GetEntry(entry);
 	  
 	  bool barFound = std::find(barList.begin(), barList.end(), anEvent->barID) != barList.end() ;
@@ -825,6 +824,7 @@ int main(int argc, char** argv)
 	      
 	      c -> Print(Form("%s/energyRatio/c_energyRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/energyRatio/c_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      delete latex;
 	      delete c;
 
 
@@ -857,6 +857,7 @@ int main(int argc, char** argv)
 	      
 	      c -> Print(Form("%s/totRatio/c_totRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/totRatio/c_totRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      delete latex;
 	      delete c;
 	      
 
@@ -880,8 +881,13 @@ int main(int argc, char** argv)
 	      
 	      c -> Print(Form("%s/t1fine/c_t1fineMean__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/t1fine/c_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      delete latex;
 	      delete c;
 	      
+
+
+	      delete h1_energyRatio[index2];
+	      delete h1_totRatio[index2];
 	      
 	    } // --- end loop over energy bins
 	}// --- end loop ober bars
@@ -899,7 +905,10 @@ int main(int argc, char** argv)
       int nEntries = mapIt.second->GetEntries();
       for(int entry = 0; entry < nEntries; ++entry)
 	{
-	  if( entry%100000 == 0 ) std::cout << ">>> 3rd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	  if( entry%100000 == 0 ){
+	    std::cout << ">>> 3rd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	    TrackProcess(cpu, mem, vsz, rss);
+	  }
 	  mapIt.second -> GetEntry(entry);
 	  
 	  bool barFound = std::find(barList.begin(), barList.end(), anEvent->barID) != barList.end() ;
@@ -1038,6 +1047,7 @@ int main(int argc, char** argv)
 	    
 	    c -> Print(Form("%s/energyRatioCorr/c_deltaT_vs_energyRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	    c -> Print(Form("%s/energyRatioCorr/c_deltaT_vs_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	    delete latex;
 	    delete c;
 
 
@@ -1070,6 +1080,7 @@ int main(int argc, char** argv)
 	    c -> Print(Form("%s/totRatioCorr/c_deltaT_vs_totRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	    c -> Print(Form("%s/totRatioCorr/c_deltaT_vs_totRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	    delete c;
+	    delete latex;
 	  }
       }
     }
@@ -1364,6 +1375,7 @@ int main(int argc, char** argv)
 	      c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_energyRatioCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c2;
 
+	      delete latex;
 
 	      // -- draw deltaT vs t1fine
 	      if(!p1_deltaT_energyRatioCorr_vs_t1fineMean[index2]) continue;
@@ -1384,6 +1396,7 @@ int main(int argc, char** argv)
 	      c -> Print(Form("%s/phaseCorr/c_deltaT_energyRatioCorr_vs_t1fineMean__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/phaseCorr/c_deltaT_energyRatioCorr_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
+	      delete latex;
 
 	      // -- draw deltaT vs t1fine
 	      if(!p1_deltaT_totRatioCorr_vs_t1fineMean[index2]) continue;
@@ -1404,7 +1417,7 @@ int main(int argc, char** argv)
 	      c -> Print(Form("%s/phaseCorr/c_deltaT_totRatioCorr_vs_t1fineMean__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/phaseCorr/c_deltaT_totRatioCorr_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
-	      
+	      delete latex;	      
 	    }
 	}
     }
@@ -1626,7 +1639,7 @@ int main(int argc, char** argv)
 	      c -> Print(Form("%s/CTR_energyRatioPhaseCorr/c_deltaT_energyRatioPhaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/CTR_energyRatioPhaseCorr/c_deltaT_energyRatioPhaseCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
-
+	      delete latex;
 
 
               // -- tot and phase corr deltaT
@@ -1731,7 +1744,7 @@ int main(int argc, char** argv)
 	      c -> Print(Form("%s/CTR_totRatioPhaseCorr/c_deltaT_totRatioPhaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/CTR_totRatioPhaseCorr/c_deltaT_totRatioPhaseCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
-
+	      delete latex;
 
 	      // -- draw deltaT vs position
 	      if (useTrackInfo) {
@@ -1759,7 +1772,7 @@ int main(int argc, char** argv)
 		c -> Print(Form("%s/positionCorr/c_deltaT_energyRatioCorr_vs_posX__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 		c -> Print(Form("%s/positionCorr/c_deltaT_energyRatioCorr_vs_posX_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
-
+		delete latex;
 
 
 		
@@ -1787,6 +1800,8 @@ int main(int argc, char** argv)
 		c -> Print(Form("%s/positionCorr/c_deltaT_totRatioCorr_vs_posX__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 		c -> Print(Form("%s/positionCorr/c_deltaT_totRatioCorr_vs_posX_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
+		delete latex;
+
 	      }
 	    }
 	}
@@ -1953,7 +1968,7 @@ int main(int argc, char** argv)
 		c -> Print(Form("%s/CTR_energyRatioPhasePosCorr/c_deltaT_energyRatioPhasePosCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
 		delete fitFunc;
-		
+		delete latex;
 
 
 
@@ -2006,6 +2021,8 @@ int main(int argc, char** argv)
 		c -> Print(Form("%s/CTR_totRatioPhasePosCorr/c_deltaT_totRatioPhasePosCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 		c -> Print(Form("%s/CTR_totRatioPhasePosCorr/c_deltaT_totRatioPhasePosCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
+		delete fitFunc;
+		delete latex;
 
 	    }
 
