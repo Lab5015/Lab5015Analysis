@@ -181,7 +181,7 @@ for it,run in enumerate(sorted(runs_dict)):
                 SR += fitSR.GetParameter(1) * 1./errX/errX
                 SR_errSum += 1./errX/errX
 
-                SRsingleCh.append(SR)
+                SRsingleCh.append(fitSR.GetParameter(1))
                 thresh += int(round(graph.GetPointY(index_cen)/dac_to_uA[ithMode]))
 
             g_SRch2_vs_SRch1.SetPoint(it, SRsingleCh[0], SRsingleCh[1])
@@ -260,12 +260,12 @@ for Vov in VovList:
     fit[Vov] = ROOT.TF1('fit%d'%laserTune,'sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
     fit[Vov].SetLineColor(colors[it])
     fit[Vov].SetLineWidth(1)
-    fit[Vov].SetParameters(12, 500)
+    fit[Vov].SetParameters(12, 50)
     g_tRes_vs_SR[Vov].Fit(fit[Vov],'QRNS')
     fit[Vov].Draw('same')
 
     legY = 0.89 - it*0.04
-    latexes[Vov] = ROOT.TLatex(0.55,legY,'V_{OV} = %.1f V:   #sigma_{t} = %.02f #muA / (dV/dt) #oplus %.01f ps'%(Vov,fit[Vov].GetParameter(1)/1000.,fit[Vov].GetParameter(0)))
+    latexes[Vov] = ROOT.TLatex(0.50,legY,'V_{OV} = %.1f V:   #sigma_{t} = %.02f nA / (dV/dt) #oplus %.01f ps'%(Vov,fit[Vov].GetParameter(1),fit[Vov].GetParameter(0)))
     latexes[Vov].SetNDC()
     latexes[Vov].SetTextFont(42)
     latexes[Vov].SetTextSize(0.035)
@@ -280,11 +280,11 @@ for Vov in VovList:
 fitAll = ROOT.TF1('fitAll','sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
 fitAll.SetLineColor(ROOT.kBlack)
 fitAll.SetLineStyle(2)
-fitAll.SetParameters(12, 500)
+fitAll.SetParameters(12, 50)
 g_tRes_vs_SR_all.Fit(fitAll,'SR')
 fitAll.Draw('same')
 
-latex = ROOT.TLatex(0.55,0.89,'#sigma_{t} = %.02f #pm %.02f #muA / (dV/dt) #oplus %.01f #pm %.01f ps'%(fitAll.GetParameter(1)/1000., fitAll.GetParError(1)/1000., fitAll.GetParameter(0), fitAll.GetParError(0)))
+latex = ROOT.TLatex(0.50,0.89,'#sigma_{t} = %.02f #pm %.02f nA / (dV/dt) #oplus %.01f #pm %.01f ps'%(fitAll.GetParameter(1), fitAll.GetParError(1), fitAll.GetParameter(0), fitAll.GetParError(0)))
 latex.SetNDC()
 latex.SetTextFont(42)
 latex.SetTextSize(0.04)
