@@ -108,7 +108,7 @@ def get_list(input_list):
 
 #---------------------------
 # -- compute SR vs threshold
-npoints = 15
+npoints = 25
 nintervals = 4
 pngLabel = ""
 

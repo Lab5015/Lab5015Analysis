@@ -93,7 +93,7 @@ int main(int argc, char** argv)
   float energyMinExt = opts.GetOpt<float>("Cuts.energyMinExt");
   float energyMaxExt = opts.GetOpt<float>("Cuts.energyMaxExt");
   
-  int npoints = 15;
+  int npoints = 25;
   int nintervals = 4;
    
 
