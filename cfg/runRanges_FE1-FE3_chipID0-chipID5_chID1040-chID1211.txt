@@ -3,7 +3,7 @@
 ch1 1040
 ch2 1211
 
-pngName tRes_vs_SR_FE1-FE3_chipID0-chipID5_ch1040-ch1211.png
+pngName FE1-FE3_chipID0-chipID5_ch1040-ch1211.png
 
 #runRange	thr	tune	OV
 10073-10196	ith2_0	0.05	0.7,1.0,3.0,5.0
