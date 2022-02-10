@@ -93,7 +93,7 @@ int main(int argc, char** argv)
   float energyMinExt = opts.GetOpt<float>("Cuts.energyMinExt");
   float energyMaxExt = opts.GetOpt<float>("Cuts.energyMaxExt");
   
-  int npoints = 25;
+  int npoints = 21;
   int nintervals = 4;
    
 
@@ -135,7 +135,7 @@ int main(int argc, char** argv)
 
 
 
-  float step1, step2;
+  float step1, step2, acquisitionTime;
   int channelIdx[2048];
   std::vector<float>* tot = 0;
   std::vector<float>* energy = 0;
@@ -143,6 +143,7 @@ int main(int argc, char** argv)
   data -> SetBranchStatus("*",0);
   data -> SetBranchStatus("step1",     1); data -> SetBranchAddress("step1",          &step1);
   data -> SetBranchStatus("step2",     1); data -> SetBranchAddress("step2",          &step2);
+  data -> SetBranchStatus("acquisitionTime",1); data -> SetBranchAddress("acquisitionTime",          &acquisitionTime);
   data -> SetBranchStatus("channelIdx",1); data -> SetBranchAddress("channelIdx", channelIdx);
   data -> SetBranchStatus("tot",       1); data -> SetBranchAddress("tot",              &tot);
   data -> SetBranchStatus("energy",    1); data -> SetBranchAddress("energy",        &energy);
@@ -159,8 +160,10 @@ int main(int argc, char** argv)
   //------------------
   // define histograms
   std::map<float, std::map<int,TH1F*> > h1_tot_ch1;
+  std::map<float, std::map<int,TH1F*> > h1_acquisitionTime_ch1;
   std::map<float, std::map<int,TH1F*> > h1_energy_ch1;
   std::map<float, std::map<int,TH1F*> > h1_tot_ch2;
+  std::map<float, std::map<int,TH1F*> > h1_acquisitionTime_ch2;
   std::map<float, std::map<int,TH1F*> > h1_energy_ch2;
   
   std::map<float, std::map<int,TH1F*> > h1_tot_totSel_ch1;
@@ -361,6 +364,7 @@ int main(int argc, char** argv)
       if( ch == ch1 && !h1_tot_ch1[Vov][ith] )
 	{
         h1_tot_ch1[Vov][ith]    = new TH1F(Form("h1_tot_ch1_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
+        h1_acquisitionTime_ch1[Vov][ith]    = new TH1F(Form("h1_acquisitionTime_ch1_Vov%.1f_ith%02d",Vov,ith),"",36000,0.,3600.);
         h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
         
         h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
@@ -374,6 +378,7 @@ int main(int argc, char** argv)
       if( ch == ch2 && !h1_tot_ch2[Vov][ith] )
       {
         h1_tot_ch2[Vov][ith]    = new TH1F(Form("h1_tot_ch2_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
+        h1_acquisitionTime_ch2[Vov][ith]    = new TH1F(Form("h1_acquisitionTime_ch2_Vov%.1f_ith%02d",Vov,ith),"",36000,0.,3600.);
         h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
         
         h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
@@ -384,14 +389,19 @@ int main(int argc, char** argv)
       
       if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
       
+
       if( ch == ch1 )
       {
         h1_tot_ch1[Vov][ith] -> Fill( (*tot)[channelIdx[ch1]]/1000. );
+        if(acquisitionTime > -1.) 
+	  h1_acquisitionTime_ch1[Vov][ith] -> Fill( acquisitionTime );
         h1_energy_ch1[Vov][ith] -> Fill( (*energy)[channelIdx[ch1]] );
       }
       if( ch == ch2 )
       {
         h1_tot_ch2[Vov][ith] -> Fill( (*tot)[channelIdx[ch2]]/1000. );
+	if(acquisitionTime > -1.)
+	  h1_acquisitionTime_ch2[Vov][ith] -> Fill( acquisitionTime );
         h1_energy_ch2[Vov][ith] -> Fill( (*energy)[channelIdx[ch2]] );
       }
       
@@ -491,7 +501,7 @@ int main(int argc, char** argv)
   std::map<float, TGraphErrors*> g_ps_totSel_ch2;
   
   std::map<float, TGraphErrors*> g_ps_totSel_deltaT;
-  
+
   for(auto mapIt : h1_tot_ch1)
     {
       float Vov = mapIt.first;
@@ -499,10 +509,10 @@ int main(int argc, char** argv)
 	{
 	  int ith = mapIt2.first;
 	  TH1F* histo = mapIt2.second;
-	  
+
 	  if( !g_N_ch1[Vov] ) g_N_ch1[Vov] = new TGraphErrors();
-	  g_N_ch1[Vov] -> SetPoint(g_N_ch1[Vov]->GetN(),ith,histo->Integral());
-          g_N_ch1[Vov] -> SetPointError(g_N_ch1[Vov]->GetN()-1,0,sqrt(histo->Integral()));
+	  g_N_ch1[Vov] -> SetPoint(g_N_ch1[Vov]->GetN(),ith,histo->Integral() / h1_acquisitionTime_ch1[Vov][ith]->GetMean());
+          g_N_ch1[Vov] -> SetPointError(g_N_ch1[Vov]->GetN()-1,0,sqrt(histo->Integral()) / h1_acquisitionTime_ch1[Vov][ith]->GetMean());
 	  
 	  if( !g_tot_ch1[Vov] ) g_tot_ch1[Vov] = new TGraphErrors();
 	  g_tot_ch1[Vov] -> SetPoint(g_tot_ch1[Vov]->GetN(),ith,histo->GetMean());
@@ -514,7 +524,9 @@ int main(int argc, char** argv)
 	  if( histo->Integral() <= 0. ) continue;
 	  
 	  if( !g_N_totSel_ch1[Vov] ) g_N_totSel_ch1[Vov] = new TGraphErrors();
-	  g_N_totSel_ch1[Vov] -> SetPoint(g_N_totSel_ch1[Vov]->GetN(),ith,histo->Integral());
+	  
+	  if(h1_acquisitionTime_ch1[Vov][ith]->Integral() > 0)
+	    g_N_totSel_ch1[Vov] -> SetPoint(g_N_totSel_ch1[Vov]->GetN(),ith,h1_acquisitionTime_ch1[Vov][ith]->Integral() / h1_acquisitionTime_ch1[Vov][ith]->GetMean());
 	  
 	  if( !g_tot_totSel_ch1[Vov] ) g_tot_totSel_ch1[Vov] = new TGraphErrors();
 	  g_tot_totSel_ch1[Vov] -> SetPoint(g_tot_totSel_ch1[Vov]->GetN(),ith,histo->GetMean());
@@ -532,7 +544,8 @@ int main(int argc, char** argv)
 	  TH1F* histo = mapIt2.second;
 	  
 	  if( !g_N_ch2[Vov] ) g_N_ch2[Vov] = new TGraphErrors();
-	  g_N_ch2[Vov] -> SetPoint(g_N_ch2[Vov]->GetN(),ith,histo->Integral());
+	  g_N_ch2[Vov] -> SetPoint(g_N_ch2[Vov]->GetN(),ith,histo->Integral() / h1_acquisitionTime_ch2[Vov][ith]->GetMean());
+          g_N_ch2[Vov] -> SetPointError(g_N_ch2[Vov]->GetN()-1,0,sqrt(histo->Integral()) / h1_acquisitionTime_ch2[Vov][ith]->GetMean());
 	  
 	  if( !g_tot_ch2[Vov] ) g_tot_ch2[Vov] = new TGraphErrors();
 	  g_tot_ch2[Vov] -> SetPoint(g_tot_ch2[Vov]->GetN(),ith,histo->GetMean());
@@ -544,7 +557,8 @@ int main(int argc, char** argv)
 	  if( histo->Integral() <= 0. ) continue;
 	  
 	  if( !g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] = new TGraphErrors();
-	  g_N_totSel_ch2[Vov] -> SetPoint(g_N_totSel_ch2[Vov]->GetN(),ith,histo->Integral());
+	  if(h1_acquisitionTime_ch1[Vov][ith]->Integral() > 0)
+	    g_N_totSel_ch2[Vov] -> SetPoint(g_N_totSel_ch2[Vov]->GetN(),ith,h1_acquisitionTime_ch2[Vov][ith]->Integral() / h1_acquisitionTime_ch2[Vov][ith]->GetMean());
 	  
 	  if( !g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] = new TGraphErrors();
 	  g_tot_totSel_ch2[Vov] -> SetPoint(g_tot_totSel_ch2[Vov]->GetN(),ith,histo->GetMean());
@@ -711,7 +725,8 @@ int main(int argc, char** argv)
       
       c = new TCanvas("c","c");
       //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[10]*1.5) );
+      //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[10]*1.5) );
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, 15000.));
       hPad -> SetTitle(Form(";%s [DAC]; number of hits",ithMode.c_str()));
       hPad -> Draw();
       g_N_totSel_ch1[Vov] -> SetMarkerColor(kRed);
@@ -1034,6 +1049,15 @@ int main(int argc, char** argv)
   for (auto mapIt:  g_N_ch2)
   {
     mapIt.second -> Write(Form("g_N_ch2_Vov%.1f",mapIt.first));
+  } 
+  for (auto mapIt:  g_N_totSel_ch1)
+  {
+    mapIt.second -> Write(Form("g_N_totSel_ch1_Vov%.1f",mapIt.first));
+  } 
+
+  for (auto mapIt:  g_N_totSel_ch2)
+  {
+    mapIt.second -> Write(Form("g_N_totSel_ch2_Vov%.1f",mapIt.first));
   } 
   
   

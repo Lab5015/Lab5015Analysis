@@ -49,7 +49,7 @@ cfgFile = open(baseFolder+'/'+args.rangeFile)
 lines = cfgFile.readlines()
 
 for line in lines:
-   if "#" in line:
+   if line[0] == "#":
       continue
 
    line = line.strip()
@@ -108,7 +108,7 @@ def get_list(input_list):
 
 #---------------------------
 # -- compute SR vs threshold
-npoints = 25
+npoints = 21
 nintervals = 4
 pngLabel = ""
 
