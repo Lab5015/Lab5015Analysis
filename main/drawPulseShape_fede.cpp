@@ -725,8 +725,8 @@ int main(int argc, char** argv)
       
       c = new TCanvas("c","c");
       //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
-      //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[10]*1.5) );
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, 15000.));
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[0]*1.5) );
+      //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, 15000.));
       hPad -> SetTitle(Form(";%s [DAC]; number of hits",ithMode.c_str()));
       hPad -> Draw();
       g_N_totSel_ch1[Vov] -> SetMarkerColor(kRed);
