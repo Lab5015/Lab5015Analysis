@@ -365,10 +365,10 @@ int main(int argc, char** argv)
 	{
         h1_tot_ch1[Vov][ith]    = new TH1F(Form("h1_tot_ch1_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
         h1_acquisitionTime_ch1[Vov][ith]    = new TH1F(Form("h1_acquisitionTime_ch1_Vov%.1f_ith%02d",Vov,ith),"",36000,0.,3600.);
-        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
+        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-100.5,9999.5);
         
         h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
+        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",3000,-100.5,9999.5);
         h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-10.,timeOffset[Vov][ch1]+10.);
         h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch1]-10.,timeOffset[Vov][ch1]+10.);
         
@@ -379,10 +379,10 @@ int main(int argc, char** argv)
       {
         h1_tot_ch2[Vov][ith]    = new TH1F(Form("h1_tot_ch2_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
         h1_acquisitionTime_ch2[Vov][ith]    = new TH1F(Form("h1_acquisitionTime_ch2_Vov%.1f_ith%02d",Vov,ith),"",36000,0.,3600.);
-        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
+        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-10.5,9999.5);
         
         h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-0.5,9999.5);
+        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",3000,-100.5,9999.5);
         h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-10.,timeOffset[Vov][ch2]+10.);
         h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",50000,timeOffset[Vov][ch2]-10.,timeOffset[Vov][ch2]+10.);
       }
@@ -614,6 +614,8 @@ int main(int argc, char** argv)
 	  if( !g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] = new TGraphErrors();
 	  g_energy_totSel_ch2[Vov] -> SetPoint(g_energy_totSel_ch2[Vov]->GetN(),ith,histo->GetMean());
 	  g_energy_totSel_ch2[Vov] -> SetPointError(g_energy_totSel_ch2[Vov]->GetN()-1,0.,histo->GetRMS());
+
+	  histo -> Write();
 	}
     }
   
@@ -816,7 +818,7 @@ int main(int argc, char** argv)
   for(auto mapIt : h1_energy_ch1)
   {  
     float Vov = mapIt.first;
-    
+
     c = new TCanvas("c","c");
     hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,1023.5) );
     hPad -> SetTitle(Form(";%s [DAC]; energy [ADC]",ithMode.c_str()));

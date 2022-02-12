@@ -184,7 +184,7 @@ for it,run in enumerate(sorted(runs_dict)):
                 SRsingleCh.append(fitSR.GetParameter(1))
                 thresh += int(round(graph.GetPointY(index_cen)/dac_to_uA[ithMode]))
 
-            g_SRch2_vs_SRch1.SetPoint(it, SRsingleCh[0], SRsingleCh[1])
+            g_SRch2_vs_SRch1.SetPoint(g_SRch2_vs_SRch1.GetN(), SRsingleCh[0], SRsingleCh[1])
         
             SR /= SR_errSum
             thresh /= 2.
@@ -231,11 +231,12 @@ bPad.Draw();
 ROOT.gPad.SetGridx();
 ROOT.gPad.SetGridy();
 g_SRch2_vs_SRch1.Draw("psame")
-
+outFile.cd()
+g_SRch2_vs_SRch1.Write("g_SRch2_vs_SRch1")
 
 
 c = ROOT.TCanvas('c_tRes_vs_SR','c_tRes_vs_SR',1200,700)
-hPad = ROOT.gPad.DrawFrame(0.,0.,300.,100.)
+hPad = ROOT.gPad.DrawFrame(0.,0.,300.,120.)
 hPad.SetTitle(";slew rate [#muA/ns];#sigma_{t}^{single} [ps]");
 hPad.Draw();
 ROOT.gPad.SetGridx();
