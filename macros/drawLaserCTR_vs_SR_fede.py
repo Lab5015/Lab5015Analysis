@@ -108,7 +108,8 @@ def get_list(input_list):
 
 #---------------------------
 # -- compute SR vs threshold
-npoints = 21
+#npoints = 21
+npoints = 15
 nintervals = 4
 pngLabel = ""
 
@@ -261,7 +262,7 @@ for Vov in VovList:
     fit[Vov] = ROOT.TF1('fit%d'%laserTune,'sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
     fit[Vov].SetLineColor(colors[it])
     fit[Vov].SetLineWidth(1)
-    fit[Vov].SetParameters(12, 50)
+    fit[Vov].SetParameters(12, 300)
     g_tRes_vs_SR[Vov].Fit(fit[Vov],'QRNS')
     fit[Vov].Draw('same')
 
@@ -281,7 +282,7 @@ for Vov in VovList:
 fitAll = ROOT.TF1('fitAll','sqrt([0]*[0] + [1]*[1]/x/x )', 0, 1000)
 fitAll.SetLineColor(ROOT.kBlack)
 fitAll.SetLineStyle(2)
-fitAll.SetParameters(12, 50)
+fitAll.SetParameters(12, 300)
 g_tRes_vs_SR_all.Fit(fitAll,'SR')
 fitAll.Draw('same')
 
