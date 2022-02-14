@@ -442,7 +442,7 @@ int main(int argc, char** argv)
           latex -> Draw("same");      
           histo -> Write();
           c -> Print(Form("%s/tot/c_tot__%s.png",plotDir.c_str(),label.c_str()));
-          c -> Print(Form("%s/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
+          //c -> Print(Form("%s/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
           delete c;
         }
 
@@ -654,7 +654,7 @@ int main(int argc, char** argv)
 	outFile -> cd();
 	histo->Write();     
 	c -> Print(Form("%s/energy/c_energy__%s.png",plotDir.c_str(),label.c_str()));
-	c -> Print(Form("%s/energy/c_energy__%s.pdf",plotDir.c_str(),label.c_str()));
+	//c -> Print(Form("%s/energy/c_energy__%s.pdf",plotDir.c_str(),label.c_str()));
 	delete c;
 	
       }// end loop over L, R, L-R labels
@@ -862,7 +862,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      
 	      c -> Print(Form("%s/energyRatio/c_energyRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	      c -> Print(Form("%s/energyRatio/c_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/energyRatio/c_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
 
@@ -894,7 +894,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      
 	      c -> Print(Form("%s/totRatio/c_totRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	      c -> Print(Form("%s/totRatio/c_totRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/totRatio/c_totRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 	      
 
@@ -917,7 +917,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      
 	      c -> Print(Form("%s/t1fine/c_t1fineMean__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	      c -> Print(Form("%s/t1fine/c_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/t1fine/c_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 	      
 	      
@@ -1078,7 +1078,7 @@ int main(int argc, char** argv)
 	    fitFunc_energyRatioCorr[index2] -> Draw("same");
 	    
 	    c -> Print(Form("%s/energyRatioCorr/c_deltaT_vs_energyRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	    c -> Print(Form("%s/energyRatioCorr/c_deltaT_vs_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	    //c -> Print(Form("%s/energyRatioCorr/c_deltaT_vs_energyRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	    delete c;
 
 
@@ -1109,7 +1109,7 @@ int main(int argc, char** argv)
 	    fitFunc_totRatioCorr[index2] -> Draw("same");
 	    
 	    c -> Print(Form("%s/totRatioCorr/c_deltaT_vs_totRatio__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	    c -> Print(Form("%s/totRatioCorr/c_deltaT_vs_totRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	    //c -> Print(Form("%s/totRatioCorr/c_deltaT_vs_totRatio__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	    delete c;
 	  }
       }
@@ -1416,11 +1416,11 @@ int main(int argc, char** argv)
 	      outFile -> cd();
 	      histo -> Write();
 
-	      c -> Print(Form("%s/CTR_energyRatioCorr/c_deltaT_energyRatioCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/CTR_energyRatioCorr/c_deltaT_energyRatioCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/CTR_energyRatioCorr/c_deltaT_energyRatioCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
-	      c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_totRatioCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_totRatioCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c2 -> Print(Form("%s/CTR_totRatioCorr/c_deltaT_totRatioCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c2;
 
@@ -1442,7 +1442,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      
 	      c -> Print(Form("%s/phaseCorr/c_deltaT_energyRatioCorr_vs_t1fineMean__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	      c -> Print(Form("%s/phaseCorr/c_deltaT_energyRatioCorr_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/phaseCorr/c_deltaT_energyRatioCorr_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
 	      // -- draw deltaT vs t1fine
@@ -1462,7 +1462,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      
 	      c -> Print(Form("%s/phaseCorr/c_deltaT_totRatioCorr_vs_t1fineMean__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	      c -> Print(Form("%s/phaseCorr/c_deltaT_totRatioCorr_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/phaseCorr/c_deltaT_totRatioCorr_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
 	      // -- draw deltaT vs t1fine
@@ -1482,7 +1482,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      
 	      c -> Print(Form("%s/phaseCorr/c_deltaT_vs_t1fineMean__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-	      c -> Print(Form("%s/phaseCorr/c_deltaT_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/phaseCorr/c_deltaT_vs_t1fineMean__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 	      
 	    }
@@ -1734,7 +1734,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      	      
 	      
-	      c -> Print(Form("%s/CTR_energyRatioPhaseCorr/c_deltaT_energyRatioPhaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/CTR_energyRatioPhaseCorr/c_deltaT_energyRatioPhaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/CTR_energyRatioPhaseCorr/c_deltaT_energyRatioPhaseCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
@@ -1838,7 +1838,7 @@ int main(int argc, char** argv)
 	      latex -> Draw("same");
 	      	      
 	      
-	      c -> Print(Form("%s/CTR_totRatioPhaseCorr/c_deltaT_totRatioPhaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/CTR_totRatioPhaseCorr/c_deltaT_totRatioPhaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/CTR_totRatioPhaseCorr/c_deltaT_totRatioPhaseCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
@@ -1899,7 +1899,7 @@ int main(int argc, char** argv)
 	      latex -> SetTextColor(kGreen+2);
 	      latex -> Draw("same");
 
-	      c -> Print(Form("%s/CTR_phaseCorr/c_deltaT_phaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+	      //c -> Print(Form("%s/CTR_phaseCorr/c_deltaT_phaseCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      c -> Print(Form("%s/CTR_phaseCorr/c_deltaT_phaseCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 	      delete c;
 
@@ -1928,7 +1928,7 @@ int main(int argc, char** argv)
 		fitFunc1_posCorr[index2] -> Draw("same");
 		
 		c -> Print(Form("%s/positionCorr/c_deltaT_energyRatioCorr_vs_posX__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-		c -> Print(Form("%s/positionCorr/c_deltaT_energyRatioCorr_vs_posX_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+		//c -> Print(Form("%s/positionCorr/c_deltaT_energyRatioCorr_vs_posX_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
 
 
@@ -1956,7 +1956,7 @@ int main(int argc, char** argv)
 		fitFunc2_posCorr[index2] -> Draw("same");
 		
 		c -> Print(Form("%s/positionCorr/c_deltaT_totRatioCorr_vs_posX__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
-		c -> Print(Form("%s/positionCorr/c_deltaT_totRatioCorr_vs_posX_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+		//c -> Print(Form("%s/positionCorr/c_deltaT_totRatioCorr_vs_posX_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
 	      }
 	    }
@@ -2119,7 +2119,7 @@ int main(int argc, char** argv)
 		latex -> SetTextColor(kMagenta);
 		latex -> Draw("same");
 
-		c -> Print(Form("%s/CTR_energyRatioPhasePosCorr/c_deltaT_energyRatioPhasePosCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+		//c -> Print(Form("%s/CTR_energyRatioPhasePosCorr/c_deltaT_energyRatioPhasePosCorr__%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
 		c -> Print(Form("%s/CTR_energyRatioPhasePosCorr/c_deltaT_energyRatioPhasePosCorr__%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
 		delete c;
 
