@@ -93,7 +93,7 @@ int main(int argc, char** argv)
   float energyMinExt = opts.GetOpt<float>("Cuts.energyMinExt");
   float energyMaxExt = opts.GetOpt<float>("Cuts.energyMaxExt");
   
-  int npoints = 21;
+  int npoints = 15;
   int nintervals = 4;
    
 
@@ -525,8 +525,8 @@ int main(int argc, char** argv)
 	  
 	  if( !g_N_totSel_ch1[Vov] ) g_N_totSel_ch1[Vov] = new TGraphErrors();
 	  
-	  if(h1_acquisitionTime_ch1[Vov][ith]->Integral() > 0)
-	    g_N_totSel_ch1[Vov] -> SetPoint(g_N_totSel_ch1[Vov]->GetN(),ith,h1_acquisitionTime_ch1[Vov][ith]->Integral() / h1_acquisitionTime_ch1[Vov][ith]->GetMean());
+	  //if(h1_acquisitionTime_ch1[Vov][ith]->Integral() > 0)
+	  g_N_totSel_ch1[Vov] -> SetPoint(g_N_totSel_ch1[Vov]->GetN(),ith,h1_acquisitionTime_ch1[Vov][ith]->Integral() / h1_acquisitionTime_ch1[Vov][ith]->GetMean());
 	  
 	  if( !g_tot_totSel_ch1[Vov] ) g_tot_totSel_ch1[Vov] = new TGraphErrors();
 	  g_tot_totSel_ch1[Vov] -> SetPoint(g_tot_totSel_ch1[Vov]->GetN(),ith,histo->GetMean());
@@ -557,8 +557,8 @@ int main(int argc, char** argv)
 	  if( histo->Integral() <= 0. ) continue;
 	  
 	  if( !g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] = new TGraphErrors();
-	  if(h1_acquisitionTime_ch1[Vov][ith]->Integral() > 0)
-	    g_N_totSel_ch2[Vov] -> SetPoint(g_N_totSel_ch2[Vov]->GetN(),ith,h1_acquisitionTime_ch2[Vov][ith]->Integral() / h1_acquisitionTime_ch2[Vov][ith]->GetMean());
+	  //if(h1_acquisitionTime_ch1[Vov][ith]->Integral() > 0)
+	  g_N_totSel_ch2[Vov] -> SetPoint(g_N_totSel_ch2[Vov]->GetN(),ith,h1_acquisitionTime_ch2[Vov][ith]->Integral() / h1_acquisitionTime_ch2[Vov][ith]->GetMean());
 	  
 	  if( !g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] = new TGraphErrors();
 	  g_tot_totSel_ch2[Vov] -> SetPoint(g_tot_totSel_ch2[Vov]->GetN(),ith,histo->GetMean());
@@ -722,13 +722,17 @@ int main(int argc, char** argv)
   TF1* f_sigmoid_ch2;
   
   for(auto mapIt : h1_tot_ch1)
-    {  
+    {
       float Vov = mapIt.first;
       
       c = new TCanvas("c","c");
       //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[0]*1.5) );
       //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, 15000.));
+
+      float yMax = 15000.;
+      if(g_N_totSel_ch1[Vov])
+	yMax = g_N_totSel_ch1[Vov] -> GetY()[0]*1.5;
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, yMax) );
       hPad -> SetTitle(Form(";%s [DAC]; number of hits",ithMode.c_str()));
       hPad -> Draw();
       g_N_totSel_ch1[Vov] -> SetMarkerColor(kRed);
@@ -786,7 +790,7 @@ int main(int argc, char** argv)
       latex_ch2 -> SetTextAlign(11);
       latex_ch2 -> SetTextColor(kBlue);
       latex_ch2 -> Draw("same");
-      
+
       c -> Print(Form("%s/g_N_Vov%.1f_ch1_%d_ch2_%d.png",plotDir.c_str(),Vov, ch1, ch2));
       
       delete c;
