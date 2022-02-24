@@ -72,7 +72,7 @@ int main(int argc, char** argv)
       std::istringstream ss(line);
       ss >> bar >> ov >> value; 
       minE[std::make_pair(bar,ov)] = value; 
-      //std::cout<< bar <<  "   " << ov << "  " << minE[std::make_pair(bar,ov)] <<std::endl;
+      std::cout<< bar <<  "   " << ov << "  " << minE[std::make_pair(bar,ov)] <<std::endl;
     }
   }
   //else{
@@ -339,7 +339,7 @@ int main(int argc, char** argv)
       energyMins[index] = minE[std::make_pair(iBar,Vov)];
       energyMaxs[index] = 940;
     }
-    //std::cout << Vov << "  th = " << ith  << "   bar = "  << iBar <<  "   minEnergy = " << energyMins[index] <<std::endl;
+    std::cout << Vov << "  th = " << ith  << "   bar = "  << iBar <<  "   minEnergy = " << energyMins[index] <<  "  " <<  f_landau->GetParameter(1)  << "  " << minE[std::make_pair(iBar,Vov)] <<std::endl;
     histo->Write();      
   }
 

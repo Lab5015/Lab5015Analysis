@@ -38,14 +38,14 @@ source = 'TB'
 #tResMax = 120
 #tResMaxTh = 200
 #vovMax = 6
-tResMin = 0
-tResMax = 200
-tResMaxTh = 240
-vovMax = 5 
 #tResMin = 0
 #tResMax = 200
-#tResMaxTh = 300
-#vovMax = 2.5
+#tResMaxTh = 240
+#vovMax = 5 
+tResMin = 0
+tResMax = 200
+tResMaxTh = 300
+vovMax = 2.5
 
 # create files list
 label_list = (args.inputLabels.split(','))
@@ -228,11 +228,12 @@ elif ('FBK_2E14_52deg_T-32C' in args.outFolder):
     goodBars[3.70] = [0,1,2,6,8,9,10,11,12,13]
 
 elif ('FBK_2E14_52deg_T-40C' in args.outFolder):
-    VovsEff = { 1.70 : 1.57 ,
-                2.00 : 1.78 ,
-                2.50 : 2.06 , 
-                3.00 : 2.27 , 
-                3.50 : 2.40 }
+    dV = -0.6
+    VovsEff = { 1.70 : 1.57+dV ,
+                2.00 : 1.78+dV ,
+                2.50 : 2.06+dV , 
+                3.00 : 2.27+dV , 
+                3.50 : 2.40+dV }
     goodBars[1.70] = [10,12]
     goodBars[2.00] = [0,1,2,8,9,10,12]
     goodBars[2.50] = [0,1,2,6,8,9,10,12]
