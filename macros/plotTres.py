@@ -417,9 +417,15 @@ for sipm in sipmTypes:
             leg[sipm].AddEntry(g[sipm][bar], 'data', 'PL')
             leg[sipm].AddEntry(g_Noise_vs_Vov[sipm][bar], 'noise', 'PL')
             leg[sipm].AddEntry(g_Stoch_vs_Vov[sipm][bar], 'stoch', 'PL')
-            leg[sipm].AddEntry(g_Tot_vs_Vov[sipm][bar], 'stoch (+) noise', 'PL')
+            leg[sipm].AddEntry(g_Tot_vs_Vov[sipm][bar], 'stoch #oplus noise', 'PL')
         leg[sipm].Draw('same')
+        latex = ROOT.TLatex(0.15,0.83,'%s'%(sipm.replace('_unirr_','+')))
+        latex.SetNDC()
+        latex.SetTextSize(0.035)
+        latex.SetTextFont(42)
+        latex.Draw('same')
         c1[sipm][bar].SaveAs(outdir+'/'+c1[sipm][bar].GetName()+'.png')
+        c1[sipm][bar].SaveAs(outdir+'/'+c1[sipm][bar].GetName()+'.pdf')
 
         # vs npe
         c2[sipm][bar] =  ROOT.TCanvas('c_timeResolution_vs_Npe_%s_bar%02d'%(sipm,bar),'c_timeResolution_vs_Npe_%s_bar%02d'%(sipm,bar),600,600)
@@ -441,6 +447,7 @@ for sipm in sipmTypes:
         g_Stoch_vs_Npe[sipm][bar].Fit(fitFun,'QRS+')
         if (fitFun.GetNDF()>0): h[sipm].Fill(fitFun.GetParameter(1))
         c2[sipm][bar].SaveAs(outdir+'/'+c2[sipm][bar].GetName()+'.png')
+        c2[sipm][bar].SaveAs(outdir+'/'+c2[sipm][bar].GetName()+'.pdf')
 
     ROOT.gStyle.SetOptStat(1111)
     cc =  ROOT.TCanvas('c_coeff_%s'%(sipm),'c_coeff_%s'%(sipm),600,600)
@@ -480,6 +487,7 @@ for i,bar in enumerate(bars[sipm]):
         g_SR_vs_Vov[sipm][bar].Draw('psame')
     leg2.Draw()
     c3[bar].SaveAs(outdir+'/'+c3[bar].GetName()+'.png')
+    c3[bar].SaveAs(outdir+'/'+c3[bar].GetName()+'.pdf')
     c3[bar].Delete()
     hdummy3[bar].Delete() 
 
@@ -497,6 +505,7 @@ for i,bar in enumerate(bars[sipm]):
         g_SR_vs_GainNpe[sipm][bar].Draw('psame')
     leg2.Draw()
     c3[bar].SaveAs(outdir+'/'+c3[bar].GetName()+'.png')
+    c3[bar].SaveAs(outdir+'/'+c3[bar].GetName()+'.pdf')
     
     c4[bar] = ROOT.TCanvas('c_bestTh_vs_Vov_bar%02d'%(bar),'c_bestTh_vs_Vov_bar%02d'%(bar),600,600)
     c4[bar].SetGridy()
@@ -512,6 +521,7 @@ for i,bar in enumerate(bars[sipm]):
         g_bestTh_vs_Vov[sipm][bar].SetLineColor(cols[sipm])
         g_bestTh_vs_Vov[sipm][bar].Draw('plsame')
     c4[bar].SaveAs(outdir+'/'+c4[bar].GetName()+'.png')
+    c4[bar].SaveAs(outdir+'/'+c4[bar].GetName()+'.pdf')
 
 
 
@@ -542,7 +552,13 @@ for ov in Vovs[sipm]:
         g_SR_vs_bar[sipm][ov].SetLineColor(cols[sipm])
         g_SR_vs_bar[sipm][ov].Draw('psame')
     leg2.Draw()
+    latex = ROOT.TLatex(0.65,0.82,'V_{OV} = %.02f V'%ov)
+    latex.SetNDC()
+    latex.SetTextSize(0.035)
+    latex.SetTextFont(42)
+    latex.Draw('same')
     c5[ov].SaveAs(outdir+'/'+c5[ov].GetName()+'.png')
+    c5[ov].SaveAs(outdir+'/'+c5[ov].GetName()+'.pdf')
 
     c6[ov] = ROOT.TCanvas('c_bestTh_vs_bar_Vov%.2f'%(ov),'c_bestTh_vs_bar_Vov%.2f'%(ov),600,600)
     c6[ov].SetGridy()
@@ -559,6 +575,7 @@ for ov in Vovs[sipm]:
         g_bestTh_vs_bar[sipm][ov].Draw('plsame')
     leg2.Draw()        
     c6[ov].SaveAs(outdir+'/'+c6[ov].GetName()+'.png')
+    c6[ov].SaveAs(outdir+'/'+c6[ov].GetName()+'.pdf')
 
     c7[ov] = ROOT.TCanvas('c_noise_vs_bar_Vov%.2f'%(ov),'c_noise_vs_bar_Vov%.2f'%(ov),600,600)
     c7[ov].SetGridy()
@@ -574,7 +591,13 @@ for ov in Vovs[sipm]:
         g_Noise_vs_bar[sipm][ov].SetLineColor(cols[sipm])
         g_Noise_vs_bar[sipm][ov].Draw('psame')
     leg2.Draw()        
+    latex = ROOT.TLatex(0.65,0.82,'V_{OV} = %.02f V'%ov)
+    latex.SetNDC()
+    latex.SetTextSize(0.035)
+    latex.SetTextFont(42)
+    latex.Draw('same')
     c7[ov].SaveAs(outdir+'/'+c7[ov].GetName()+'.png')
+    c7[ov].SaveAs(outdir+'/'+c7[ov].GetName()+'.pdf')
 
     c8[ov] = ROOT.TCanvas('c_stoch_vs_bar_Vov%.2f'%(ov),'c_stoch_vs_bar_Vov%.2f'%(ov),600,600)
     c8[ov].SetGridy()
@@ -591,6 +614,7 @@ for ov in Vovs[sipm]:
         g_Stoch_vs_bar[sipm][ov].Draw('psame')
     leg2.Draw()        
     c8[ov].SaveAs(outdir+'/'+c8[ov].GetName()+'.png')
+    c8[ov].SaveAs(outdir+'/'+c8[ov].GetName()+'.pdf')
     
 # ratio of photo-stat. terms:
 for i,g in enumerate([g_ratio_stoch1, g_ratio_stoch2, g_ratio_stoch3]):
@@ -638,6 +662,7 @@ for i,g in enumerate([g_ratio_stoch1, g_ratio_stoch2, g_ratio_stoch3]):
     print 'ratio of stoch. terms expected from sqrt(LO/tau)  = ', expRatioLOTau
     print 'ratio of stoch. terms measured at 3.5 V           = ', fitFun.GetParameter(0)
     cc.SaveAs(outdir+'/'+cc.GetName()+'.png')                        
+    cc.SaveAs(outdir+'/'+cc.GetName()+'.pdf')                        
     hdummy.Delete()
 
 for ov in Vovs[sipm]:
