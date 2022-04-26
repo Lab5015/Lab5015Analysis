@@ -19,8 +19,8 @@ outdir = '/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/'
 
 
 #irr = 'unirr'
-#irr = '1E13'
-irr = '2E14'
+irr = '1E13'
+#irr = '2E14'
 sipmTypes = ['HPK_%s_T0'%irr,'FBK_%s_T0'%irr]
 if (irr == '2E14'):
     #sipmTypes = ['HPK_%s_T-40'%irr,'FBK_%s_T-40'%irr, 'FBK_%s_T-32'%irr, 'FBK_%s_T-22'%irr]
@@ -121,8 +121,8 @@ for sipm in sipmTypes:
         gg.Fit(fitFun,'QR')
         print sipm, VovsEff[sipm][vov], fitFun.GetParameter(0)
         g[sipm].SetPoint(g[sipm].GetN(), VovsEff[sipm][vov], fitFun.GetParameter(0))
-        g[sipm].SetPointError(g[sipm].GetN()-1, 0, fitFun.GetParError(0))
-        #g[sipm].SetPointError( g[sipm].GetN()-1, 0, gg.GetRMS(2) )
+        #g[sipm].SetPointError(g[sipm].GetN()-1, 0, fitFun.GetParError(0))
+        g[sipm].SetPointError( g[sipm].GetN()-1, 0, gg.GetRMS(2) )# use RMS as error on the points
         #g[sipm].SetPoint(g[sipm].GetN(), VovsEff[sipm][vov], gg.GetMean(2))
         #g[sipm].SetPointError(g[sipm].GetN()-1, 0, gg.GetRMS(2)/math.sqrt(gg.GetN()))
         gMax[sipm].SetPoint(gMax[sipm].GetN(), VovsEff[sipm][vov], max(gg.GetY()))
@@ -153,12 +153,12 @@ for i,sipm in enumerate(sipmTypes):
     g[sipm].SetMarkerColor(2+i*2)
     g[sipm].SetLineColor(2+i*2)
     g[sipm].SetLineStyle(1)
-    g[sipm].SetLineWidth(2)
+    g[sipm].SetLineWidth(1)
     g[sipm].Draw('plsame')
     gMax[sipm].SetLineColor(2+i*2)
     gMax[sipm].SetLineStyle(2)
     gMin[sipm].SetLineColor(2+i*2)
-    gMin[sipm].SetLineStyle(2)
+    gMin[sipm].SetLineStyle(1)
     if (irr != 'unirr'):
         #gMax[sipm].Draw('lsame')
         #gMin[sipm].Draw('lsame')

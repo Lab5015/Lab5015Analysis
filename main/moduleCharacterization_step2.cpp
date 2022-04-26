@@ -352,6 +352,7 @@ int main(int argc, char** argv)
   TLatex* latex;
   TH1F* histo;
   TProfile* prof;
+  TH2F* h2;
 
   
   //------------------
@@ -636,11 +637,8 @@ int main(int argc, char** argv)
 	  if ( LRLabel=="L-R" && int(vth1)==10) std::cout << iBar << "  " << Vov  << "  " << ranges[LRLabel][index] ->at(0) <<std::endl;
 
 	  
-	  //ranges[LRLabel][index] -> push_back( f_landau[index]->GetParameter(1)* 2.);
-	  ranges[LRLabel][index] -> push_back( 940 );
-	  //ranges[LRLabel][index] -> push_back( 1024 );
-
-
+	  //ranges[LRLabel][index] -> push_back( std::min(f_landau[index]->GetParameter(1)*2.0, 940.)); // tight selection around the MIP peak
+	  ranges[LRLabel][index] -> push_back( 940 ); // use the entire mip spectrum
           
 	  for(auto range: (*ranges[LRLabel][index])){
 	    TLine* line = new TLine(range,0.,range, histo->GetMaximum());
@@ -704,6 +702,20 @@ int main(int argc, char** argv)
 	  
 	  if(!ranges["L-R"][index1] ) continue;
 	  
+	  // ****  test selection on phase:
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 300 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 350 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 350 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 400 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 400 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 450 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 450 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 500 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 500 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 550 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 550 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 600 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 600 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 650 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 650 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 700 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 700 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 750 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 750 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 800 ) continue;
+	  //if ( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) < 300 || 0.5 * (anEvent->t1fineR + anEvent->t1fineL) > 800 ) continue;
+	  // ****
+
 	  int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
 	  
 	  if( energyBinAverage < 1 ) continue;
@@ -1161,7 +1173,7 @@ int main(int argc, char** argv)
 
 	  if (fabs(deltaT - energyRatioCorr)<10000 ) {
 	    h1_deltaT_energyRatioCorr[index2] -> Fill( deltaT  - energyRatioCorr );
-	    if (fabs(deltaT - energyRatioCorr)< 3*h1_deltaT[index2]->GetRMS() ){
+	    if (fabs(deltaT - energyRatioCorr - h1_deltaT[index2]->GetMean() )< 3*h1_deltaT[index2]->GetRMS() ){
 	      p1_deltaT_energyRatioCorr_vs_t1fineMean[index2] -> Fill( t1fineMean, deltaT - energyRatioCorr );
 	      h2_deltaT_energyRatioCorr_vs_t1fineMean[index2] -> Fill( t1fineMean, deltaT - energyRatioCorr );
 	      p1_deltaT_energyRatioCorr_vs_totRatio[index2] -> Fill( anEvent->totR/anEvent->totL, deltaT - energyRatioCorr );
@@ -1172,7 +1184,7 @@ int main(int argc, char** argv)
 	  if (fabs(deltaT - totRatioCorr)<10000 ) {
 	    h1_deltaT_totRatioCorr[index2] -> Fill( deltaT  - totRatioCorr );
 	    h2_deltaT_totRatioCorr_vs_totRatio[index2] -> Fill( anEvent->totR/anEvent->totL, deltaT  - totRatioCorr );
-	    if (fabs(deltaT - totRatioCorr)< 3*h1_deltaT[index2]->GetRMS() ){ 
+	    if (fabs(deltaT - totRatioCorr - h1_deltaT[index2]->GetMean()) < 3.*h1_deltaT[index2]->GetRMS() ){ 
 	      p1_deltaT_totRatioCorr_vs_t1fineMean[index2] -> Fill( t1fineMean, deltaT - totRatioCorr );
 	      h2_deltaT_totRatioCorr_vs_t1fineMean[index2] -> Fill( t1fineMean, deltaT - totRatioCorr );   
 	    }
@@ -1381,10 +1393,13 @@ int main(int argc, char** argv)
 	      if(!p1_deltaT_energyRatioCorr_vs_t1fineMean[index2]) continue;
 	      c = new TCanvas(Form("c_deltaT_energyRatioCorr__vs_t1fineMean_%s",labelLR_energyBin.c_str()),Form("c_deltaT_energyRatioCorr_vs_t1fineMean_%s",labelLR_energyBin.c_str()));
 	      
+	      h2 = h2_deltaT_energyRatioCorr_vs_t1fineMean[index2];
+              h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) -500., h2 -> GetMean(2)+500);
+              h2 -> SetTitle(Form(";t1fineMean;#Deltat [ps]"));
+              h2 -> Draw("colz");
 	      prof = p1_deltaT_energyRatioCorr_vs_t1fineMean[index2];
-	      prof -> SetTitle(Form(";t1fineMean [ps];#Deltat [ps]"));
-	      prof -> GetYaxis()->SetRangeUser(prof -> GetMean(2) -500., prof -> GetMean(2)+500);
-	      prof -> Draw("pl");
+	      prof -> SetTitle(Form(";t1fineMean;#Deltat [ps]"));
+	      prof -> Draw("plsame");
 	      
 	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	      latex -> SetNDC();
@@ -1401,12 +1416,16 @@ int main(int argc, char** argv)
 	      // -- draw deltaT vs t1fine
 	      if(!p1_deltaT_totRatioCorr_vs_t1fineMean[index2]) continue;
 	      c = new TCanvas(Form("c_deltaT_totRatioCorr__vs_t1fineMean_%s",labelLR_energyBin.c_str()),Form("c_deltaT_totRatioCorr_vs_t1fineMean_%s",labelLR_energyBin.c_str()));
-	      
+	      c -> SetGridy();
+
+	      h2 = h2_deltaT_totRatioCorr_vs_t1fineMean[index2]; 
+	      h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) -500., h2 -> GetMean(2)+500);
+	      h2 -> SetTitle(Form(";t1fineMean;#Deltat [ps]"));
+	      h2 -> Draw("colz");
 	      prof = p1_deltaT_totRatioCorr_vs_t1fineMean[index2];
-	      prof -> GetYaxis()->SetRangeUser(prof -> GetMean(2) -500., prof -> GetMean(2)+500);
-	      prof -> SetTitle(Form(";t1fineMean [ps];#Deltat [ps]"));
-	      prof -> Draw("pl");
-	      
+	      //prof -> Draw("pl");
+	      prof -> Draw("plsame");
+ 
 	      latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 	      latex -> SetNDC();
 	      latex -> SetTextFont(42);

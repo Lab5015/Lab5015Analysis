@@ -333,11 +333,13 @@ int main(int argc, char** argv)
 	  energyMins[index] =  f_landau->GetParameter(1) - 2.0 * std::abs(f_landau->GetParameter(2));
 	  //(f_landau->GetParameter(1)*0.80) >= minE[std::make_pair(iBar, Vov)] && (f_landau->GetParameter(1) * 0.80) < 940) {
 	  //energyMins[index] =  f_landau->GetParameter(1)*0.80;
-	  energyMaxs[index] = 940;
+	  // energy max
+	  energyMaxs[index] = 940; // take full mip spectrum
+	  //energyMaxs[index] = std::min(f_landau->GetParameter(1)*2.0, 940.); // select around mip spectrum
     }
     else {
       energyMins[index] = minE[std::make_pair(iBar,Vov)];
-      energyMaxs[index] = 940;
+      energyMaxs[index] = 940;// take full mip spectrum
     }
     std::cout << Vov << "  th = " << ith  << "   bar = "  << iBar <<  "   minEnergy = " << energyMins[index] <<  "  " <<  f_landau->GetParameter(1)  << "  " << minE[std::make_pair(iBar,Vov)] <<std::endl;
     histo->Write();      
