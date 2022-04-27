@@ -27,10 +27,15 @@
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK528_unirr_52deg_T10C_Vov5.00.cfg
 
 
+# HPK 1E13 52deg, T = -40C
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype2_52deg_T-40C_Vov1.27.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype2_52deg_T-40C_Vov1.53.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype2_52deg_T-40C_Vov1.90.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype2_52deg_T-40C_Vov2.08.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype2_52deg_T-40C_Vov2.50.cfg
 
 # HPK 1E13 52deg, T = 0C 
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_52deg_T0C_Vov1.50.cfg
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_52deg_T0C_Vov1.65.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_52deg_T0C_Vov1.80.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_52deg_T0C_Vov2.00.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_52deg_T0C_Vov2.30.cfg
@@ -72,15 +77,6 @@
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_FBK_2E14_52deg_T-22C_Vov2.70.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_FBK_2E14_52deg_T-22C_Vov3.00.cfg
 
-# HPK 1E13 52deg, LYSO type1, T = -6C,  
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60.cfg
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80.cfg
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00.cfg
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40.cfg
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60.cfg
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80.cfg
-#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00.cfg
-
 # HPK 1E13 52deg, LYSO type1, T = 0C,  
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T0C_Vov1.60.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T0C_Vov1.80.cfg
@@ -89,6 +85,16 @@
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T0C_Vov2.60.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T0C_Vov2.80.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T0C_Vov3.00.cfg
+
+
+# HPK 1E13 52deg, LYSO type1, T = -6C,  
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.60.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov1.80.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.00.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.40.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.60.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov2.80.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-6C_Vov3.00.cfg
 
 
 # HPK 1E13 52deg, LYSO type1, T = -20C,  
@@ -103,9 +109,9 @@
 # HPK 1E13 52deg, LYSO type1, T = -40C,  
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov1.20.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov1.50.cfg
-./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov1.75.cfg
-./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov2.00.cfg
-./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov2.50.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov1.75.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov2.00.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov2.50.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov3.50.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_1E13_LYSOtype1_58deg_T-40C_Vov5.00.cfg
 
@@ -139,3 +145,12 @@
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov1.80_coincBar12.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov1.80_coincBar13.cfg
 #./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov1.80_coincBar14.cfg
+
+
+
+# HPK 2E14 52deg, T = -40C
+./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov1.60_mipPeak.cfg
+./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov1.70_mipPeak.cfg
+#./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov1.80_mipPeak.cfg
+./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov1.90_mipPeak.cfg
+./bin/moduleCharacterization_step2.exe cfg/moduleCharacterization_HPK_2E14_52deg_T-40C_Vov2.00_mipPeak.cfg   
