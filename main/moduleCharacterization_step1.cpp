@@ -297,7 +297,7 @@ int main(int argc, char** argv)
 	    float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
 	    float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
 	    float totR_iext    = 0.001*(*tot)[channelIdx[chR_iext]]; 
-	    if ( totL_iext > 0 && totL_iext < 100 && totR_iext > 0 && totR_iext < 100   ){
+	    if ( totL_iext > -10 && totL_iext < 100 && totR_iext > -10 && totR_iext < 100   ){
 	      float energyMean=(energyL_iext+energyR_iext)/2;
 	      if (energyMean>0){
 		energySumArray+=energyMean;
@@ -305,8 +305,8 @@ int main(int argc, char** argv)
 	      }
 	    }
 	  }
-	  if (nActiveBarsArray > 5 ) continue;
-	  //if (nActiveBarsArray > 3 ) continue;
+	  //if (nActiveBarsArray > 5 ) continue;
+	  if (nActiveBarsArray > 3 ) continue;
 	}
 	
 	energyL_ext = (*energy)[channelIdx[chL_ext]];
@@ -467,8 +467,8 @@ int main(int argc, char** argv)
 	{
 	  qfineL[iBar]=-10;
 	  qfineR[iBar]=-10;
-	  totL[iBar]=-10;
-	  totR[iBar]=-10;
+	  totL[iBar]=-9999;
+	  totR[iBar]=-9999;
 	  energyL[iBar]=-10;
 	  energyR[iBar]=-10;
 	  timeL[iBar]=-10;
@@ -489,7 +489,7 @@ int main(int argc, char** argv)
       {
 	nBarsVeto[iBar] = 0;
 	
-	if (totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100)
+	if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100)
 	  {
 	  
 	    float energyMean=(energyL[iBar]+energyR[iBar])/2;
@@ -504,8 +504,8 @@ int main(int argc, char** argv)
 	    for (int jBar = int(iBar) - 2; jBar < int(iBar) + 3; ++jBar){
 	      if (jBar == int(iBar)) continue;
 	      if (jBar < 0 || jBar > 15 ) continue;
-	      if (totL[jBar]<0 || totL[jBar]>100) continue;
-	      if (totR[jBar]<0 || totR[jBar]>100) continue;
+	      if (totL[jBar]<-10 || totL[jBar]>100) continue;
+	      if (totR[jBar]<-10 || totR[jBar]>100) continue;
 	      float en = (energyL[jBar]+energyR[jBar])/2;
 	      //if ( en > minE[std::make_pair(jBar, Vov)] && en<1024 ){
 	      if ( en > minE[std::make_pair(jBar, Vov)] && minE[std::make_pair(jBar, Vov)]>1 && en<1024 ){
@@ -525,7 +525,7 @@ int main(int argc, char** argv)
     
     for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)                                                                                                                                  
       {
-        if (totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100){  
+        if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100){  
     
 	int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
 	
@@ -536,8 +536,8 @@ int main(int argc, char** argv)
 	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  
-	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,50.);
-	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,50.);
+	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,-10.,40.);
+	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,-10.,40.);
 	  
 	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
@@ -556,7 +556,7 @@ int main(int argc, char** argv)
 	    )
 	  {
 	  
-	  if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
+	  if( totL[iBar] <= -10. || totR[iBar] <= -10. ) continue;
 	  if( totL[iBar] >= 50. ||  totR[iBar] >= 50.) continue;
 	  if( ( thrZero.GetThresholdZero(chL[iBar],vthMode) + vth) > 63. ) continue;
           if( ( thrZero.GetThresholdZero(chR[iBar],vthMode) + vth) > 63. ) continue;
@@ -566,7 +566,7 @@ int main(int argc, char** argv)
 	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 5)) continue; // to remove showering events
 	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 3)) continue; // to remove showering events
 	  int maxActiveBars = 3;
-	  if (Vov > 4.00) maxActiveBars = 5; // forse meglio, altrimenti si rimuovono molti piu' eventi...
+	  //if (Vov > 4.00) maxActiveBars = 5; // forse meglio, altrimenti si rimuovono molti piu' eventi...
 	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > maxActiveBars)) continue; // to remove showering events
 	  
 
@@ -616,7 +616,7 @@ int main(int argc, char** argv)
       {
 	int index( (10000*int(Vov*100.)) + (100*vth) + maxBar );
 	
-	if( totL[maxBar] <= 0. || totR[maxBar] <= 0. ) continue;
+	if( totL[maxBar] <= -10. || totR[maxBar] <= -10. ) continue;
 	if( totL[maxBar] >= 50. ||  totR[maxBar] >= 50.) continue;
 	if( ( thrZero.GetThresholdZero(chL[maxBar],vthMode) + vth) > 63. ) continue;
         if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;

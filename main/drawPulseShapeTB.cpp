@@ -128,7 +128,8 @@ int main(int argc, char** argv)
     
       for(int run = runMin; run <= runMax; ++run) {
 	//std::string inFileName = Form("/data/tofhir2/h8/reco/%04d/*_e.root",run); 
-	std::string inFileName = Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Oct2021/TOFHIR2/h8/reco/%04d/*_e.root",run); 
+	std::string inFileName = Form("/data1/cmsdaq/tofhir2/h8/reco/%04d/*_e.root",run);
+	//std::string inFileName = Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Oct2021/TOFHIR2/h8/reco/%04d/*_e.root",run); 
 	std::cout << ">>> Adding file " << inFileName << std::endl;
 	data -> Add(inFileName.c_str());
       }
@@ -213,15 +214,15 @@ int main(int argc, char** argv)
       int nActiveBars0 = 0;
       int nActiveBars1 = 0;
       for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){          
-        if ( channelIdx[chL[iBar]-64] > 0  &&  channelIdx[chR[iBar]-64] > 0 && (*energy)[channelIdx[chL[iBar]-64]] > 0 && (*energy)[channelIdx[chR[iBar]-64]] > 0 )
-	  nActiveBars0+=1;
         if ( channelIdx[chL[iBar]] > 0  &&  channelIdx[chR[iBar]] > 0 && (*energy)[channelIdx[chL[iBar]]] > 0 && (*energy)[channelIdx[chR[iBar]]] > 0 )
+	  nActiveBars0+=1;
+        if ( channelIdx[chL[iBar]+64] > 0  &&  channelIdx[chR[iBar]+64] > 0 && (*energy)[channelIdx[chL[iBar]+64]] > 0 && (*energy)[channelIdx[chR[iBar]+64]] > 0 )
 	  nActiveBars1+=1;
       }
       
       int maxActiveBars = 3;
-      if (Vov>4.0) maxActiveBars = 5;
-      if (nActiveBars0 > 3 || nActiveBars1 > maxActiveBars){
+      //if (Vov>4.0) maxActiveBars = 5;
+      if (nActiveBars0 > maxActiveBars || nActiveBars1 > maxActiveBars){
 	acceptEvent[entry] = false;
 	continue;
       }
@@ -726,8 +727,8 @@ int main(int argc, char** argv)
   //-----------
   // draw plots
   std::cout << "Plotting..."<<std::endl;
-  //std::string plotDir(Form("/var/www/html/TOFHIR2X/MTDTB_CERN_Oct21/pulseShapes/%s",outName.c_str()));
-  std::string plotDir(Form("/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/pulseShapes/%s",outName.c_str()));
+  std::string plotDir(Form("/var/www/html/TOFHIR2X/MTDTB_CERN_June22/pulseShapes/%s",outName.c_str()));
+  //std::string plotDir(Form("/eos/user/m/malberti/www/MTD/TOFHIR2X/MTDTB_CERN_Oct21/pulseShapes/%s",outName.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
