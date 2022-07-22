@@ -216,6 +216,8 @@ int main(int argc, char** argv)
   std::map<int,TH1F*> h1_energyR;
   std::map<int,TH1F*> h1_energyLR;
   std::map<int,TH1F*> h1_energyLR_ext;
+  std::map<int,TH2F*> h2_energyL_vs_t1fine;
+  std::map<int,TH2F*> h2_energyR_vs_t1fine;
   std::map<int,TCanvas*> c;
   std::map<int,std::vector<float>*> rangesLR;
   std::map<int,std::map<std::string,std::pair<float,float> > > peaksLR;
@@ -541,6 +543,9 @@ int main(int argc, char** argv)
 	  
 	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+
+	  h2_energyL_vs_t1fine[index] = new TH2F(Form("h2_energy_vs_t1fine_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"", 100, 0, 1000, 100, -50, 950);
+	  h2_energyR_vs_t1fine[index] = new TH2F(Form("h2_energy_vs_t1fine_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"", 100, 0, 1000, 100, -50, 950);
 	  
 	  outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth));
 	  outTrees[index] -> Branch("event",&anEvent);
@@ -573,13 +578,16 @@ int main(int argc, char** argv)
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
 	  h1_energyL[index] -> Fill( energyL[iBar] );
+	  h2_energyL_vs_t1fine[index] -> Fill( t1fineL[iBar], energyL[iBar] );     
 	  
 	  h1_qfineR[index] -> Fill( qfineR[iBar] );
 	  h1_totR[index] -> Fill( totR[iBar] );
 	  h1_energyR[index] -> Fill( energyR[iBar] );
+	  h2_energyR_vs_t1fine[index] -> Fill( t1fineR[iBar], energyR[iBar] );     
 	  
 	  h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
 	  
+
 	  anEvent.barID = iBar;
 	  anEvent.Vov = Vov;
 	  anEvent.vth1 = vth;

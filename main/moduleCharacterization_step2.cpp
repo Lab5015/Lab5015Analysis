@@ -384,6 +384,7 @@ int main(int argc, char** argv)
   float* vals = new float[6];
   TLatex* latex;
   TH1F* histo;
+  TH2F* histo2;
   TProfile* prof;
   TH2F* h2;
 
@@ -481,6 +482,23 @@ int main(int argc, char** argv)
 	    histo -> Write();
 	    c -> Print(Form("%s/tot/c_tot__%s.png",plotDir.c_str(),label.c_str()));
 	    c -> Print(Form("%s/tot/c_tot__%s.pdf",plotDir.c_str(),label.c_str()));
+	    delete c;
+	  }
+
+
+
+	  // -- energy vs t1fine
+          c = new TCanvas(Form("c_energy_vs_t1fine_%s",label.c_str()),Form("c_energy_vs_t1fine_%s",label.c_str()));
+          gPad -> SetLogz();
+        
+          histo2 = (TH2F*)( inFile->Get(Form("h2_energy_vs_t1fine_%s",label.c_str())) );
+	  if (histo2){
+	    histo2 -> SetTitle(";t1fine;energy [ADC]");
+	    histo2 -> Draw("colz");
+	    latex -> Draw("same");      
+	    histo2 -> Write();
+	    c -> Print(Form("%s/energy/c_energy_vs_t1fine__%s.png",plotDir.c_str(),label.c_str()));
+	    c -> Print(Form("%s/tot/c_energy_vs_t1fine__%s.pdf",plotDir.c_str(),label.c_str()));
 	    delete c;
 	  }
         }
