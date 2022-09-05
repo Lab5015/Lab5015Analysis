@@ -48,8 +48,10 @@ def getTimeResolution(h1_deltaT):
    fitFunc.SetLineWidth(2)
    fitFunc.SetParameters(h1_deltaT.GetMaximum(),h1_deltaT.GetMean(), h1_deltaT.GetRMS())
 
-   fitXMin = h1_deltaT.GetMean() - 3*h1_deltaT.GetRMS()
-   fitXMax = h1_deltaT.GetMean() + 3*h1_deltaT.GetRMS()
+   fitXMin = h1_deltaT.GetBinCenter(h1_deltaT.GetMaximumBin()) - 200
+   fitXMax = h1_deltaT.GetBinCenter(h1_deltaT.GetMaximumBin()) + 200.
+   #fitXMin = h1_deltaT.GetMean() - 3*h1_deltaT.GetRMS()
+   #fitXMax = h1_deltaT.GetMean() + 3*h1_deltaT.GetRMS()
    fitFunc.SetRange(fitXMin, fitXMax)
 
    h1_deltaT.Fit('fitFunc','QNRL','', fitXMin, fitXMax)
