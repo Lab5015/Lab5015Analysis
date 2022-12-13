@@ -276,7 +276,7 @@ int main(int argc, char** argv)
             if( g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())] == NULL ){
               g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())] = new TGraphErrors();
             }
-            g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())] -> SetPoint(g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())]->GetN(),vth1,fitFunc1->GetMaximumX());
+            g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())] -> SetPoint(g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())]->GetN(),vth1,fitFunc1->GetParameter(1));
             g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())] -> SetPointError(g_tot_vs_th[Form("bar%02dL_%s",iBar,VovLabel.c_str())]->GetN()-1,0,0);
             
             //g_tot_vs_Vov

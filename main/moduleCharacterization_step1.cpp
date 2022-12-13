@@ -118,7 +118,7 @@ int main(int argc, char** argv)
   
   //--- define branches
   float step1, step2;
-  int channelIdx[128];
+  int channelIdx[256];
   std::vector<unsigned short> *qfine = 0;
   std::vector<float> *tot = 0;
   std::vector<float> *energy = 0;
@@ -175,7 +175,6 @@ int main(int argc, char** argv)
   std::map<int,TH1F*> h1_energyLR_ext;
   std::map<int,TCanvas*> c;
   std::map<int,std::vector<float>*> rangesLR;
-  std::map<int,std::map<std::string,std::pair<float,float> > > peaksLR;
   std::map<int,bool> acceptEvent;
 
   // -- Coincidence pre loop
@@ -236,8 +235,11 @@ int main(int argc, char** argv)
       if (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22")){		
 	for( auto index : h1_energyLR_ext){
 	  rangesLR[index.first] = new std::vector<float>;
-	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar")) peaksLR[index.first] = Na22SpectrumAnalyzerSingleBar(index.second,rangesLR[index.first]);
-	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22")) peaksLR[index.first] = Na22SpectrumAnalyzer(index.second,rangesLR[index.first]);
+	  rangesLR[index.first]->push_back(30);
+	  rangesLR[index.first]->push_back(950);
+	  
+	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar")) Na22SpectrumAnalyzerSingleBar(index.second,rangesLR[index.first]);
+	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22")) Na22SpectrumAnalyzer(index.second,rangesLR[index.first]);
 	}
       }
       
@@ -296,7 +298,7 @@ int main(int argc, char** argv)
   //--- 1st loop over events
   
   ModuleEventClass anEvent;
-
+  
   unsigned short qfineL[16];
   unsigned short qfineR[16];    
   float totL[16];
@@ -305,6 +307,8 @@ int main(int argc, char** argv)
   long long timeR[16];
   unsigned short t1fineL[16]; 
   unsigned short t1fineR[16]; 
+  float qT1L[16]; 
+  float qT1R[16]; 
   float energyL[16];
   float energyR[16];
   
@@ -365,6 +369,8 @@ int main(int argc, char** argv)
 	  timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
 	  t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
 	  t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
+	  qT1L[iBar]=(*qT1)[channelIdx[chL[iBar]]];
+	  qT1R[iBar]=(*qT1)[channelIdx[chR[iBar]]];
 	}
 	else
 	  {
@@ -378,6 +384,8 @@ int main(int argc, char** argv)
 	    timeR[iBar]=-10;
 	    t1fineL[iBar]=-10;
 	    t1fineR[iBar]=-10;
+	    qT1L[iBar]=-10;
+	    qT1R[iBar]=-10;
 	  }     
       }
     
@@ -389,7 +397,7 @@ int main(int argc, char** argv)
     
     for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)
       {
-	if (totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100){
+	if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100){
 	  float energyMean=(energyL[iBar]+energyR[iBar])/2;
 	  energySumArray+=energyMean;
 	  nBarsArray+=1;
@@ -409,8 +417,8 @@ int main(int argc, char** argv)
 	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  
-	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
-	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
+	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",400,-5.,35.);
+	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",400,-5.,35.);
 	  
 	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
@@ -428,8 +436,8 @@ int main(int argc, char** argv)
 	    !opts.GetOpt<std::string>("Input.sourceName").compare("TB")
 	    )
 	{
-	  if( totL[iBar] <=  0. || totR[iBar] <=   0. ) continue;
-	  if( totL[iBar] >= 50. ||  totR[iBar] >= 50. ) continue;
+	  if( totL[iBar] <= -10. || totR[iBar] <= -10. ) continue;
+	  if( totL[iBar] >= 100. || totR[iBar] >= 100. ) continue;
 	  if( ( thrZero.GetThresholdZero(chL[iBar],vthMode) + vth) > 63. ) continue;
 	  if( ( thrZero.GetThresholdZero(chR[iBar],vthMode) + vth) > 63. ) continue;
 	  
@@ -457,6 +465,8 @@ int main(int argc, char** argv)
 	  anEvent.timeR = timeR[iBar];
 	  anEvent.t1fineL = t1fineL[iBar];
 	  anEvent.t1fineR = t1fineR[iBar];
+	  anEvent.qT1L = qT1L[iBar];
+	  anEvent.qT1R = qT1R[iBar];
 	  outTrees[index] -> Fill();
 	}
       }// -- end loop over bars
@@ -469,10 +479,14 @@ int main(int argc, char** argv)
       {
 	int index( (10000*int(Vov*100.)) + (100*vth) + maxBar );
 	
-	if( totL[maxBar] <= 0. || totR[maxBar] <= 0. ) continue;
-	if( totL[maxBar] >= 50. ||  totR[maxBar] >= 50.) continue;
+
+
+	if( totL[maxBar] <= -10. || totR[maxBar] <= -10. ) continue;
+	if( totL[maxBar] >= 100. || totR[maxBar] >= 100. ) continue;
 	if( ( thrZero.GetThresholdZero(chL[maxBar],vthMode) + vth) > 63. ) continue;
 	if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;
+
+	//if (maxBar == 8 ) std::cout << maxBar << "   totL = " << totL[maxBar]  << "   totR = " << totR[maxBar] << std::endl; 
 	
 	//--- fill histograms
 	h1_qfineL[index] -> Fill( qfineL[maxBar] );
@@ -496,6 +510,8 @@ int main(int argc, char** argv)
 	anEvent.timeR = timeR[maxBar];
 	anEvent.t1fineL = t1fineL[maxBar];
 	anEvent.t1fineR = t1fineR[maxBar];
+	anEvent.qT1L = qT1L[maxBar];
+	anEvent.qT1R = qT1R[maxBar];
 	outTrees[index] -> Fill();
       }
   } // --- end loop over events
