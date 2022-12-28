@@ -10,7 +10,7 @@ import argparse
 import json
 
 
-from VovsEff import *
+#from VovsEff import *
 
 
 parser = argparse.ArgumentParser(description='Module characterization summary plots')
@@ -77,27 +77,28 @@ def getTimeResolution(h1_deltaT):
 # ====================================
 
 
-tofhir2b = False
-#tofhir2b = True
+# INPUT
+inputdir = '/data/Lab5015Analysis/moduleCharacterization/TOFHIR2B/'
 
-# import file with VovEff and DCR
-with open('/var/www/html/TOFHIR2X/MTDTB_CERN_June22/Currents/VovsEff.json', 'r') as f:
-   data = json.load(f)   
+source = 'Laser'
+#source = 'TB'
 
 
-source = 'TB'
+# OUTPUT
+outdir  = '/var/www/html/TOFHIR2B/ModuleCharacterization/'
+outdir2 = '/home/cmsdaq/Martina/Lab5015Analysis/plots/' 
+outdir=outdir+args.outFolder
+outFileName = outdir2+args.outFolder+'.root'
+print 'Saving plots in ', outdir
+outfile = ROOT.TFile(outFileName, 'RECREATE' )
+
+
+# ranges for plots
 tResMin = 0
 tResMax = 120
 tResMaxTh = 200
 vovMax = 7.5
-#tResMin = 0
-#tResMax = 180
-#tResMaxTh = 240
-#vovMax = 5 
-#tResMin = 0
-#tResMax = 200
-#tResMaxTh = 250
-#vovMax = 3.0
+
 
 # create files list
 label_list = (args.inputLabels.split(','))
@@ -107,16 +108,6 @@ print label_list
 kscale = 2.
 if (args.resMode == 0): kscale = 1
 if (args.resMode == 1): kscale = math.sqrt(2)
-
-# output
-outdir = '/var/www/html/TOFHIR2X/MTDTB_CERN_June22/ModuleCharacterization/'+args.outFolder
-outFileName = '/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_June22/Lab5015Analysis/plots/'+args.outFolder+'.root'
-if (tofhir2b):
-    outdir = '/var/www/html/TOFHIR2B/MTDTB_CERN_June22/ModuleCharacterization/'+args.outFolder
-    outFileName = '/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_June22/Lab5015Analysis/plots_tofhir2b/'+args.outFolder+'.root'
-print 'Saving plots in ', outdir
-outfile = ROOT.TFile(outFileName, 'RECREATE' )
-
 
 
 peaks = []
@@ -180,7 +171,7 @@ os.system('mkdir %s/summaryPlots/timeResolution/'%outdir)
     
 
 # -- ref threhsold
-thRef = 9
+thRef = 10
 
 # -- get list of bars, Vovs, thresholds to be analyzed
 bars = []
@@ -188,10 +179,7 @@ thresholds = []
 Vovs = [] 
 for label in label_list:
     inputFile = None
-    if (tofhir2b == False):
-        inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_June22/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
-    if (tofhir2b == True):
-        inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_June22/Lab5015Analysis/plots_tofhir2b/moduleCharacterization_step2_%s.root'%label)
+    inputFile = ROOT.TFile.Open(inputdir+'/moduleCharacterization_step2_%s.root'%label)
     listOfKeys = [key.GetName().replace('h1_deltaT_energyRatioCorr_','') for key in ROOT.gDirectory.GetListOfKeys() if key.GetName().startswith('h1_deltaT_energyRatioCorr_bar')]
     for k in listOfKeys:
         barNum = int (k.split('_')[0][3:5])
@@ -446,12 +434,7 @@ for vov in Vovs:
 for label in label_list:
    print label
    inputFile == None
-   if (tofhir2b == False):   
-      inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_June22/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label)
-   if (tofhir2b == True):
-      inputFile = ROOT.TFile.Open('/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_June22/Lab5015Analysis/plots_tofhir2b/moduleCharacterization_step2_%s.root'%label)
-
-   print '/home/cmsdaq/Lab5015Analysis_new/martina_TB_CERN_June22/Lab5015Analysis/plots/moduleCharacterization_step2_%s.root'%label
+   inputFile = ROOT.TFile.Open(inputdir+'/moduleCharacterization_step2_%s.root'%label)
 
    for bar in bars:
       for l in ['L','R','L-R']:
