@@ -9,11 +9,14 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <map>
 #include <time.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <algorithm>
+#include <iterator>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -51,8 +54,7 @@ int main(int argc, char** argv)
   int debugMode = 0;
   if( argc > 2 ) debugMode = atoi(argv[2]);
   
-  
-  
+
   //--- open files and make the tree chain
   std::string inputDir = opts.GetOpt<std::string>("Input.inputDir");
   std::string fileBaseName = opts.GetOpt<std::string>("Input.fileBaseName");
@@ -85,8 +87,8 @@ int main(int argc, char** argv)
     
     for(int run = runMin; run <= runMax; ++run) {
       std::string fileName;
-      if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run);
-      //else                fileName = Form("%s/%s%04d_*ped_e.root",inputDir.c_str(),fileBaseName.c_str(),run);
+      if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // pc-mtd-mib01
+      //if( !usePedestals ) fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01
       else                fileName = Form("%s/%04d/*ped_e.root",inputDir.c_str(),run);
       std::cout << ">>> Adding file " << fileName << std::endl;
       tree -> Add(fileName.c_str());
@@ -115,12 +117,12 @@ int main(int argc, char** argv)
       chL[iBar] = channelMapping[iBar*2+0]+64;
       chR[iBar] = channelMapping[iBar*2+1]+64;
     }
-    std::cout<<chL[iBar]<<"    "<<chR[iBar]<<std::endl;
+    std::cout << "Bar: " << iBar << "   chL: "<< chL[iBar] << "    chR: " <<chR[iBar] <<std::endl;
   }
   
   //--- define branches
   float step1, step2;
-  int channelIdx[128];
+  int channelIdx[256];
   std::vector<unsigned short> *qfine = 0;
   std::vector<float> *tot = 0;
   std::vector<float> *energy = 0;
@@ -168,7 +170,37 @@ int main(int argc, char** argv)
       map_energyMaxs[Vov[ii]] = energyMaxs[ii];
     }
   
+  //float vetoEnergyThreshold = opts.GetOpt<float>("Plots.vetoEnergyThreshold");   
+
+
+  // -- read minimum energy for each bar from file
+  int vetoOtherBars = opts.GetOpt<int>("Cuts.vetoOtherBars");
+  std::string minEnergiesFileName = opts.GetOpt<std::string>("Cuts.minEnergiesFileName");
+  std::map < std::pair<int, float>, float> minE; 
+  if (minEnergiesFileName != "") {
+    std::ifstream minEnergiesFile;
+    minEnergiesFile.open(minEnergiesFileName);
+    std::string line;
+    int bar;
+    float ov;
+    float value;
+    while ( minEnergiesFile.good() ){
+      getline(minEnergiesFile, line);
+      std::istringstream ss(line);
+      ss >> bar >> ov >> value; 
+      minE[std::make_pair(bar,ov)] = value; 
+      std::cout<< bar <<  "   " << ov << "  " << minE[std::make_pair(bar,ov)] <<std::endl;
+    }
+  }
+  else{
+    for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){
+      for(unsigned int ii = 0; ii < Vov.size(); ++ii){
+	minE[std::make_pair(iBar, Vov[ii])] = map_energyMins[Vov[ii]];
+      }
+    }
+  }
   
+
   //--- define histograms
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep1");
   TFile* outFile = TFile::Open(Form("%s",outFileName.c_str()),"RECREATE");
@@ -213,36 +245,69 @@ int main(int argc, char** argv)
       
 	float Vov = step1;
         float vth1 = float(int(step2/10000)-1);
-        float vth2 = int((step2-10000*(vth1+1))/100.)-1;
-        float vth = 0;
+        float vth2 = float(int((step2-10000*(vth1+1))/100.)-1);
+        float vth = 0.;
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
-       	
-	// --- calculate energy sum for module - useful to remove showering events
-	if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
 
-	    float energySumArray = 0.;
-	    int   nBarsArray = 0;
-	    for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {                             
-	      int chL_iext = channelMapping[iBar*2+0];// array0 for coincidence is hard coded... - to be fixed
-	      int chR_iext = channelMapping[iBar*2+1];// array0 for coincidence is hard coded... - to be fixed
-	      float energyL_iext = (*energy)[channelIdx[chL_iext]];              
-	      float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
-	      float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
-	      float totR_iext    = 0.001*(*tot)[channelIdx[chR_iext]]; 
-	      if ( totL_iext > 0 && totL_iext < 20 && totR_iext > 0 && totR_iext < 20   ){
-		float energyMean=(energyL_iext+energyR_iext)/2;
-		if (energyMean>0){
-		  energySumArray+=energyMean;
-		  nBarsArray+=1;
-		}
-	      }
-	    }
-	    if (energySumArray > 800. ) continue;
-	    if (nBarsArray > 5 ) continue;
-	}
 
 	if (channelIdx[chL_ext] <0 || channelIdx[chR_ext] <0) continue;
+	
+
+	// --- calculate energy sum/Nbars for module - useful to remove showering events/cross talk
+	if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
+
+	  auto it = std::find( channelMapping.begin(), channelMapping.end(), chL_ext);       	
+	  int thisBar = 0;
+	  if (it != channelMapping.end()) thisBar = int((it - channelMapping.begin()))/2;
+
+	  float energySumArray = 0.;
+	  int   nActiveBarsArray = 0;
+	  
+	  // check adjacent bars
+	  /*for( int iBar = thisBar - 2; iBar < thisBar+3; ++iBar) {                                                                                                                            
+	    if (iBar<0 || iBar>15 ) continue;                                                                                                                                                   
+	    if (iBar == thisBar) continue;
+	    //int chL_iext = channelMapping[iBar*2+0];// array0 for coincidence is hard coded... - to be fixed
+	    //int chR_iext = channelMapping[iBar*2+1];// array0 for coincidence is hard coded... - to be fixed
+	    int chL_iext = channelMapping[iBar*2+0]+64;// array1 for coincidence is hard coded... - to be fixed
+	    int chR_iext = channelMapping[iBar*2+1]+64;// array1 for coincidence is hard coded... - to be fixed
+	    float energyL_iext = (*energy)[channelIdx[chL_iext]];              
+	    float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
+	    float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
+	    float totR_iext    = 0.001*(*tot)[channelIdx[chR_iext]]; 
+	    if ( totL_iext > 0 && totL_iext < 100 && totR_iext > 0 && totR_iext < 100   ){
+	      float energyMean=(energyL_iext+energyR_iext)/2;
+	      if (energyMean>200 && energyMean < 1024){
+		energySumArray+=energyMean;
+		nActiveBarsArray+=1;
+	      }
+	    }
+	  }
+	  if (nActiveBarsArray > 0 ) continue; // veto signals in the adjacent bars
+	  */
+
+
+	  for(int iBar = 0; iBar < int(channelMapping.size())/2; ++iBar) {                             
+	    //int chL_iext = channelMapping[iBar*2+0];// array0 for coincidence is hard coded... - to be fixed
+	    //int chR_iext = channelMapping[iBar*2+1];// array0 for coincidence is hard coded... - to be fixed
+	    int chL_iext = channelMapping[iBar*2+0]+64;// array1 for coincidence is hard coded... - to be fixed
+	    int chR_iext = channelMapping[iBar*2+1]+64;// array1 for coincidence is hard coded... - to be fixed
+	    float energyL_iext = (*energy)[channelIdx[chL_iext]];              
+	    float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
+	    float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
+	    float totR_iext    = 0.001*(*tot)[channelIdx[chR_iext]]; 
+	    if ( totL_iext > -10 && totL_iext < 100 && totR_iext > -10 && totR_iext < 100   ){
+	      float energyMean=(energyL_iext+energyR_iext)/2;
+	      if (energyMean>0){
+		energySumArray+=energyMean;
+		nActiveBarsArray+=1;
+	      }
+	    }
+	  }
+	  //if (nActiveBarsArray > 5 ) continue;
+	  if (nActiveBarsArray > 3 ) continue;
+	}
 	
 	energyL_ext = (*energy)[channelIdx[chL_ext]];
 	energyR_ext = (*energy)[channelIdx[chR_ext]];
@@ -253,13 +318,17 @@ int main(int argc, char** argv)
 	if( h1_energyLR_ext[index] == NULL ){
 	  c[index] = new TCanvas(Form("c1_Vov%.2f_th%02.0f",Vov,vth), Form("c1_Vov%.2f_th%02.0f",Vov,vth));
 	  c[index] -> cd();
+	  c[index] ->SetLogy();
 	  h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.2f_th%02.0f",Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	}
-
+	
 	acceptEvent[entry] = true;
 	
 	h1_energyLR_ext[index] -> Fill(0.5*(energyL_ext + energyR_ext));    
+	
       }
+
+
       
       std::cout << std::endl;
       
@@ -274,46 +343,41 @@ int main(int argc, char** argv)
       if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")){
 	for( auto index : h1_energyLR_ext){
 	  rangesLR[index.first] = new std::vector<float>;
-	  
+
+
 	  float Vov = float ((int(index.first /10000))/100.);
-	  float vth1 = float(int((index.first-Vov*100000*100)/100.));
-	  float vth2 = int((step2-10000*(vth1+1))/100.)-1;
+	  float vth1 = float(int((index.first-Vov*10000*100)/100.));
+	  float vth2 = float(int((step2-10000*(vth1+1))/100.)-1);
           float vth = 0;
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 	  
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(Vov*20.,700);
+	    index.second->GetXaxis()->SetRangeUser(100,900);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    TF1 *ftemp = new TF1("ftemp","gaus",0,1000);
-	    index.second->Fit(ftemp,"QRS");
-	    //index.second->GetXaxis()->SetRangeUser(Vov*20.,700);
-	    index.second->GetXaxis()->SetRangeUser(ftemp->GetParameter(1),700);
-	    
-	    // July21 TB: runs 4184 and 4212 are at fixed OV and thr!
-	    if ( (opts.GetOpt<std::string>("Input.runs")).find("4184") != std::string::npos ||
-		 (opts.GetOpt<std::string>("Input.runs")).find("4212") != std::string::npos )
-	      { index.second->GetXaxis()->SetRangeUser(200,700);}
+	    index.second->GetXaxis()->SetRangeUser(100,900);
 	  }
 
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
-	  index.second->GetXaxis()->SetRangeUser(0,1000);
+	  index.second->GetXaxis()->SetRangeUser(0,1024);
 	  
 	  TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.2f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
-	  f_pre -> SetRange(max*0.8, max*1.5);
+	  f_pre -> SetRange(max*0.70, max*1.5);
 	  f_pre -> SetLineColor(kBlack);
           f_pre -> SetLineWidth(2);
-          f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 5*Vov);
-	  if ( (opts.GetOpt<std::string>("Input.runs")).find("4184") != std::string::npos ||  (opts.GetOpt<std::string>("Input.runs")).find("4212") != std::string::npos ) 
-	    f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 25);
-	  index.second->Fit(f_pre, "QRS");      
+          f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 0.1*max);
+	  f_pre -> SetParLimits(1, 0, 9999);
+	  f_pre -> SetParLimits(2, 0, 9999);
+	  index.second->Fit(f_pre, "QRS+");      
 	  
-	  if (f_pre->GetParameter(1)>10)
-	    rangesLR[index.first] -> push_back( 0.80*f_pre->GetParameter(1));
+	  if (f_pre->GetParameter(1)>20)
+	    rangesLR[index.first] -> push_back( 0.70*f_pre->GetParameter(1));
 	  else
 	    rangesLR[index.first] -> push_back( 20 );
-	  rangesLR[index.first] -> push_back( 700. );
+	  
+
+	  rangesLR[index.first] -> push_back( 950 );
 	  
 	  std::cout << "Vov = " << Vov << "  vth1 = " << vth1 << "   vth2 = " << vth2 
 		    << "    Coincidence bar - energy range:  " << rangesLR[index.first]->at(0) << " - " << rangesLR[index.first]->at(1)<< std::endl;
@@ -384,55 +448,86 @@ int main(int argc, char** argv)
       }
     
     
-    for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)
-      {
-	if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0){
+    for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){
+
+      if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0){
 	  
-	  qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
-	  qfineR[iBar]=(*qfine)[channelIdx[chR[iBar]]];
-	  totL[iBar]=0.001*(*tot)[channelIdx[chL[iBar]]];
-	  totR[iBar]=0.001*(*tot)[channelIdx[chR[iBar]]];
-	  energyL[iBar]=(*energy)[channelIdx[chL[iBar]]];
-	  energyR[iBar]=(*energy)[channelIdx[chR[iBar]]];
-	  timeL[iBar]=(*time)[channelIdx[chL[iBar]]];
-	  timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
-	  t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
-	  t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
+	qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
+	qfineR[iBar]=(*qfine)[channelIdx[chR[iBar]]];
+	totL[iBar]=0.001*(*tot)[channelIdx[chL[iBar]]];
+	totR[iBar]=0.001*(*tot)[channelIdx[chR[iBar]]];
+	energyL[iBar]=(*energy)[channelIdx[chL[iBar]]];
+	energyR[iBar]=(*energy)[channelIdx[chR[iBar]]];
+	timeL[iBar]=(*time)[channelIdx[chL[iBar]]];
+	timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
+	t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
+	t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
 	}
-	else
-	  {
-	    qfineL[iBar]=-10;
-	    qfineR[iBar]=-10;
-	    totL[iBar]=-10;
-	    totR[iBar]=-10;
-	    energyL[iBar]=-10;
-	    energyR[iBar]=-10;
-	    timeL[iBar]=-10;
-	    timeR[iBar]=-10;
-	    t1fineL[iBar]=-10;
-	    t1fineR[iBar]=-10;
-	  }     
-      }
+      else
+	{
+	  qfineL[iBar]=-10;
+	  qfineR[iBar]=-10;
+	  totL[iBar]=-9999;
+	  totR[iBar]=-9999;
+	  energyL[iBar]=-10;
+	  energyR[iBar]=-10;
+	  timeL[iBar]=-10;
+	  timeR[iBar]=-10;
+	  t1fineL[iBar]=-10;
+	  t1fineR[iBar]=-10;
+	}     
+    }// end loop over bars
     
     int maxEn=0;
     int maxBar=0;
-    
+
     float energySumArray = 0;
-    int   nBarsArray = 0;
-    
+    int   nActiveBarsArray = 0;
+    int nBarsVeto[16];
+	  
     for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)
       {
-	if (totL[iBar]>0 && totR[iBar]>0 && totL[iBar]<100 && totR[iBar]<100){
-	  float energyMean=(energyL[iBar]+energyR[iBar])/2;
-	  energySumArray+=energyMean;
-	  nBarsArray+=1;
-	  if(energyMean>maxEn){
-	    maxEn = energyMean;
-	    maxBar = iBar;
+	nBarsVeto[iBar] = 0;
+	
+	if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100)
+	  {
+	  
+	    float energyMean=(energyL[iBar]+energyR[iBar])/2;
+	    if (energyL[iBar]>0 && energyR[iBar]>0 && energyMean > 0){
+	      //if (energyMean > 0){
+	      energySumArray+=energyMean;
+	      nActiveBarsArray+=1;
+	    }
+	    
+
+	    // check energy in adjacent bars
+	    for (int jBar = int(iBar) - 2; jBar < int(iBar) + 3; ++jBar){
+	      if (jBar == int(iBar)) continue;
+	      if (jBar < 0 || jBar > 15 ) continue;
+	      if (totL[jBar]<-10 || totL[jBar]>100) continue;
+	      if (totR[jBar]<-10 || totR[jBar]>100) continue;
+	      float en = (energyL[jBar]+energyR[jBar])/2;
+	      //if ( en > minE[std::make_pair(jBar, Vov)] && en<1024 ){
+	      if ( en > minE[std::make_pair(jBar, Vov)] && minE[std::make_pair(jBar, Vov)]>1 && en<1024 ){
+		nBarsVeto[iBar]+=1;
+	      }
+	    }
+	    
+	    // find max bar
+	    if(energyMean>maxEn){
+	      maxEn = energyMean;
+	      maxBar = iBar;
+	    }
 	  }
-	}
+      }// end loop over bars
+
+
     
-    int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
+    for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar)                                                                                                                                  
+      {
+        if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100){  
+    
+	int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
 	
 	
 	//--- create histograms, if needed
@@ -441,8 +536,8 @@ int main(int argc, char** argv)
 	  h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  h1_qfineR[index] = new TH1F(Form("h1_qfine_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
 	  
-	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
-	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",500,0.,100.);
+	  h1_totL[index] = new TH1F(Form("h1_tot_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",400,-5.,35.);
+	  h1_totR[index] = new TH1F(Form("h1_tot_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",400,-5.,35.);
 	  
 	  h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	  h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
@@ -459,15 +554,20 @@ int main(int argc, char** argv)
 	    !opts.GetOpt<std::string>("Input.sourceName").compare("Co60SumPeak") ||
 	    !opts.GetOpt<std::string>("Input.sourceName").compare("TB")
 	    )
-	{
+	  {
 	  
-	  if( totL[iBar] <= 0. || totR[iBar] <= 0. ) continue;
+	  if( totL[iBar] <= -10. || totR[iBar] <= -10. ) continue;
 	  if( totL[iBar] >= 50. ||  totR[iBar] >= 50.) continue;
 	  if( ( thrZero.GetThresholdZero(chL[iBar],vthMode) + vth) > 63. ) continue;
           if( ( thrZero.GetThresholdZero(chR[iBar],vthMode) + vth) > 63. ) continue;
 
-	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 800 || nBarsArray > 5)) continue; // to remove showering events
-
+	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (energySumArray > 900 || nActiveBarsArray > 5)) continue; // to remove showering events
+	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nBarsVeto[iBar] > 0)) continue; // to remove showering events/ cross talk
+	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 5)) continue; // to remove showering events
+	  //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 3)) continue; // to remove showering events
+	  int maxActiveBars = 3;
+	  if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > maxActiveBars)) continue; // to remove showering events
+	  
 
 	  h1_qfineL[index] -> Fill( qfineL[iBar] );
 	  h1_totL[index] -> Fill( totL[iBar]  );
@@ -503,9 +603,9 @@ int main(int argc, char** argv)
 	  
 	  
 	  outTrees[index] -> Fill();
-	  
+	  }	  
 	}
-      }// -- end loop over bars
+	}// -- end loop over bars
     
     // --- for Na22 or Laser analysis use only the bar with max energy to remove cross-talk between adjacent bars
     if( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") |
@@ -515,7 +615,7 @@ int main(int argc, char** argv)
       {
 	int index( (10000*int(Vov*100.)) + (100*vth) + maxBar );
 	
-	if( totL[maxBar] <= 0. || totR[maxBar] <= 0. ) continue;
+	if( totL[maxBar] <= -10. || totR[maxBar] <= -10. ) continue;
 	if( totL[maxBar] >= 50. ||  totR[maxBar] >= 50.) continue;
 	if( ( thrZero.GetThresholdZero(chL[maxBar],vthMode) + vth) > 63. ) continue;
         if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;
