@@ -121,7 +121,7 @@ int main(int argc, char** argv)
   
   //--- define branches
   float step1;
-  int channelIdx[64];
+  int channelIdx[256];
   std::vector<unsigned short> *qfine = 0;
   std::vector<float> *tot = 0;
   std::vector<float> *energy = 0;
@@ -186,6 +186,7 @@ int main(int argc, char** argv)
         std::string label_L(Form("h1_energy_%s_bar%02d_L_Vov%.1f","prova",barIDMax,step1));
         std::string label_R(Form("h1_energy_%s_bar%02d_R_Vov%.1f","prova",barIDMax,step1));
         std::string label_LR(Form("h_energy_%s_bar%02d_LR_Vov%.1f","prova",barIDMax,step1));
+
         
         h1_energy_L[step1][barIDMax] = new TH1F(label_L.c_str(),"",nEnergyBins,energyMin,energyMax);
         h1_energy_R[step1][barIDMax] = new TH1F(label_R.c_str(),"",nEnergyBins,energyMin,energyMax);

@@ -81,7 +81,9 @@ public:
   unsigned short t1fineR;
   float qT1L;
   float qT1R;
-  
+  int nhits;
+  float x;
+  float y;
   ClassDef(ModuleEventClass,1);
 };
 
