@@ -105,7 +105,7 @@ int main(int argc, char** argv)
       if( runMax == -1 ) runMax = runMin;
     
       for(int run = runMin; run <= runMax; ++run) {
-	std::string inFileName = Form("/data/tofhir2/reco/run%04d*_e.root",run); 
+	std::string inFileName = Form("/data/TOFHIR2/reco/run%04d*_e.root",run); 
 	std::cout << ">>> Adding file " << inFileName << std::endl;
 	data -> Add(inFileName.c_str());
       }
@@ -666,9 +666,8 @@ int main(int argc, char** argv)
   
   //-----------
   // draw plots
-  //std::string plotDir(Form("/var/www/html/TOFHIR2X/pulseShapes/run%04d/",run));
-  //std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%04d/",run));
-  std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%s/",runs.c_str()));
+  std::string plotDir(Form("/var/www/html/TOFHIR2X/pulseShapes/run%s/",runs.c_str())); 
+  //std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%s/",runs.c_str()));
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
@@ -858,6 +857,7 @@ int main(int argc, char** argv)
         slewRate = f_temp->GetParameter(1);
         fitFunc_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
       }
+      delete g_temp;
     }
 
     TF1* fitFuncLow_ch1 = new TF1("fitFuncLow_ch1","pol1",-5.,10.);
@@ -870,29 +870,16 @@ int main(int argc, char** argv)
     f_temp->SetParameter(1,10.);
     g_temp -> Fit(f_temp,"QNRS"); 
     fitFuncLow_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+    fitFuncLow_ch1 -> SetRange(g_temp ->GetPointX(0), g_temp ->GetPointX(3));
     float slewRate_low = fitFuncLow_ch1->GetParameter(1); 
     std::cout << "Slew rate at low threshold = " << slewRate_low << std::endl;
-    // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-    //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 30. )
-    //   {
-    //     fitXMin = g_ps_totSel_ch1[Vov]->GetPointX(point);
-    //     break;
-    //   }
-    // for(int point = 0; point < g_ps_totSel_ch1[Vov]->GetN(); ++point)
-    //   if( g_ps_totSel_ch1[Vov]->GetPointY(point) > 100. )
-    //   {
-    //     fitXMax = g_ps_totSel_ch1[Vov]->GetPointX(point);
-    //     std::cout << fitXMax << std::endl;
-    //     break;
-    //   }
-    // TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",0.,7.);
-    // fitFunc_ch1 -> SetParameters(0.,250.);
-    // g_ps_totSel_ch1[Vov] -> Fit(fitFunc_ch1,"QNS+","",fitXMin,fitXMax);
+
+    // -- draw
     fitFunc_ch1 -> SetLineColor(kRed-4);
     fitFunc_ch1 -> Draw("same");
-    TLatex* latex_ch1 = new TLatex(0.40,0.80,Form("slew rate max = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
+    TLatex* latex_ch1 = new TLatex(0.30,0.80,Form("slew rate max = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
     if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1 = new TLatex(0.40,0.80,Form("slew rate max = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));     
+      latex_ch1 = new TLatex(0.30,0.80,Form("slew rate max = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));     
     }
     latex_ch1 -> SetNDC();
     latex_ch1 -> SetTextFont(82);
@@ -901,17 +888,21 @@ int main(int argc, char** argv)
     latex_ch1 -> SetTextColor(kRed-4);
     latex_ch1 -> Draw("same");
 
-    TLatex* latex_ch1_low = new TLatex(0.40,0.70,Form("slew rate = %.1f #muA/ns",fitFuncLow_ch1->GetParameter(1)));
+    fitFuncLow_ch1 -> SetLineColor(kRed+2);
+    fitFuncLow_ch1 -> Draw("same");
+    TLatex* latex_ch1_low = new TLatex(0.30,0.70,Form("slew rate timing th. = %.1f #muA/ns",fitFuncLow_ch1->GetParameter(1)));
     if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1_low = new TLatex(0.40,0.70,Form("slew rate = %.1f mV/ns",fitFuncLow_ch1->GetParameter(1)));     
+      latex_ch1_low = new TLatex(0.30,0.70,Form("slew rate timing th. = %.1f mV/ns",fitFuncLow_ch1->GetParameter(1)));     
     }
     latex_ch1_low -> SetNDC();
     latex_ch1_low -> SetTextFont(82);
     latex_ch1_low -> SetTextSize(0.04);
     latex_ch1_low -> SetTextAlign(11);
-    latex_ch1_low -> SetTextColor(kRed-4);
+    latex_ch1_low -> SetTextColor(kRed+2);
     latex_ch1_low -> Draw("same");
-    
+
+
+    // -- channel 2
     slewRate = 0.;
     TF1* fitFunc_ch2 = new TF1("fitFunc_ch","pol1",-10.,100.);
     for(int point1 = 0; point1 < g_ps_totSel_ch2[Vov]->GetN()-4; ++point1)
@@ -930,29 +921,30 @@ int main(int argc, char** argv)
         slewRate = f_temp->GetParameter(1);
         fitFunc_ch2 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
       }
+      delete g_temp;
     }
-    // if( g_ps_totSel_ch2[Vov] )
-    // {
-    //   fitXMin = 0.;
-    //   fitXMax = 999.;
-    //   for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
-    //     if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 30. )
-    //     {
-    //       fitXMin = g_ps_totSel_ch2[Vov]->GetPointX(point);
-    //       break;
-    //     }
-    //   for(int point = 0; point < g_ps_totSel_ch2[Vov]->GetN(); ++point)
-    //     if( g_ps_totSel_ch2[Vov]->GetPointY(point) > 100. )
-    //     {
-    //       fitXMax = g_ps_totSel_ch2[Vov]->GetPointX(point);
-    //       break;
-    //     }
-    // TF1* fitFunc_ch2 = new TF1("fitFunc_ch2","pol1",0.,7.);
-    // fitFunc_ch2 -> SetParameters(0.,250.);
-    // g_ps_totSel_ch2[Vov] -> Fit(fitFunc_ch2,"QNS+","",fitXMin,fitXMax);
+
+    TF1* fitFuncLow_ch2 = new TF1("fitFuncLow_ch2","pol1",-5.,10.);
+    //-- slew rate at low threshold
+    g_temp = new TGraph();
+    for(int point1 = 0; point1 < 5; ++point1){
+      g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch2[Vov]->GetPointX(point1),g_ps_totSel_ch2[Vov]->GetPointY(point1)); 
+    }
+    f_temp = new TF1("f_temp","pol1", g_temp ->GetPointX(0), g_temp ->GetPointX(3));
+    f_temp->SetParameter(1,10.);
+    g_temp -> Fit(f_temp,"QNRS"); 
+    fitFuncLow_ch2 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+    fitFuncLow_ch2 -> SetRange(g_temp ->GetPointX(0), g_temp ->GetPointX(3));
+    slewRate_low = fitFuncLow_ch2->GetParameter(1); 
+    std::cout << "ch2 - Slew rate max              = " << slewRate << std::endl;
+    std::cout << "ch2 - Slew rate at low threshold = " << slewRate_low << std::endl;
+    delete g_temp;
+
+
+
     fitFunc_ch2 -> SetLineColor(kBlue-4);
     fitFunc_ch2 -> Draw("same");
-    TLatex* latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
+    TLatex* latex_ch2 = new TLatex(0.30,0.76,Form("slew rate max = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
     if (tofhirVersion.find("2A")!= std::string::npos ){
       latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f mV/ns",fitFunc_ch2->GetParameter(1)));     
     }
@@ -962,6 +954,19 @@ int main(int argc, char** argv)
     latex_ch2 -> SetTextAlign(11);
     latex_ch2 -> SetTextColor(kBlue-4);
     latex_ch2 -> Draw("same");
+
+    fitFuncLow_ch2 -> SetLineColor(kBlue+2);
+    fitFuncLow_ch2 -> Draw("same");
+    TLatex* latex_ch2_low = new TLatex(0.30,0.66,Form("slew rate timing th. = %.1f #muA/ns",fitFuncLow_ch2->GetParameter(1)));
+    if (tofhirVersion.find("2A")!= std::string::npos ){
+      latex_ch2_low = new TLatex(0.30,0.66,Form("slew rate timing th. = %.1f mV/ns",fitFuncLow_ch2->GetParameter(1)));     
+    }
+    latex_ch2_low -> SetNDC();
+    latex_ch2_low -> SetTextFont(82);
+    latex_ch2_low -> SetTextSize(0.04);
+    latex_ch2_low -> SetTextAlign(11);
+    latex_ch2_low -> SetTextColor(kBlue+2);
+    latex_ch2_low -> Draw("same");
     
     c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.1f.png",plotDir.c_str(),Vov));
     delete c;
