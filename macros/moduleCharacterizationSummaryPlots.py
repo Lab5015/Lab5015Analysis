@@ -70,7 +70,7 @@ def getTimeResolution(h1_deltaT):
    #if (fitFunc.GetParameter(2) < 20): continue
    #if (fitFunc.GetParError(2) > 200): continue
    tRes = [ fitFunc.GetParameter(2),fitFunc.GetParError(2)]
-   print h1_deltaT.GetName(), fitFunc.GetParameter(2)
+   #print h1_deltaT.GetName(), fitFunc.GetParameter(2)
    return tRes
 
 
@@ -78,17 +78,15 @@ def getTimeResolution(h1_deltaT):
 
 
 # INPUT
-inputdir = '/data/Lab5015Analysis/moduleCharacterization/TOFHIR2B/'
-
+inputdir = '/data/Lab5015Analysis/moduleCharacterization/TOFHIR2X/'
 source = 'Laser'
 #source = 'TB'
 
 
 # OUTPUT
-outdir  = '/var/www/html/TOFHIR2B/ModuleCharacterization/'
-outdir2 = '/home/cmsdaq/Martina/Lab5015Analysis/plots/' 
+outdir  = '/var/www/html/TOFHIR2X/ModuleCharacterization/'
 outdir=outdir+args.outFolder
-outFileName = outdir2+args.outFolder+'.root'
+outFileName = outdir+args.outFolder+'.root'
 print 'Saving plots in ', outdir
 outfile = ROOT.TFile(outFileName, 'RECREATE' )
 
@@ -828,80 +826,81 @@ for bar in bars:
 
 # -- tot vs bar 
 for i, vov in enumerate(Vovs):
-    ctot3 = ROOT.TCanvas('c_tot_vs_bar_Vov%.02f'%vov)
-    hPad3 = ROOT.TH2F('hPad3','', 100, -0.5, 15.5,40, 0.,40.)
-    hPad3.SetTitle("; bar; ToT [ns]")
-    hPad3.Draw()
-    ctot3.SetGridy()
-    leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
-    leg.SetBorderSize(0)
-    leg.SetFillStyle(0)
-    for i, vov in enumerate(Vovs):
-        for l in ['L','R']:
-            g_tot_vs_bar[l, vov, thRef].Sort()
-            g_tot_vs_bar[l, vov, thRef].SetMarkerStyle(20)
-            if (l == 'R'): g_tot_vs_bar[l, vov, thRef].SetMarkerStyle(24)
-            g_tot_vs_bar[l, vov, thRef].SetMarkerColor(cols[vov])
-            g_tot_vs_bar[l, vov, thRef].SetLineColor(cols[vov])
-            g_tot_vs_bar[l, vov, thRef].Draw('plsame')
-        leg.AddEntry(g_tot_vs_bar['L', vov, thRef], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
-    leg.Draw()
-    ctot3.SaveAs(outdir+'/summaryPlots/tot/'+ctot3.GetName()+'.png')
-    ctot3.SaveAs(outdir+'/summaryPlots/tot/'+ctot3.GetName()+'.pdf')    
-    hPad3.Delete()
+   ctot3 = ROOT.TCanvas('c_tot_vs_bar_Vov%.02f'%vov)
+   hPad3 = ROOT.TH2F('hPad3','', 100, -0.5, 15.5,40, 0.,40.)
+   hPad3.SetTitle("; bar; ToT [ns]")
+   hPad3.Draw()
+   ctot3.SetGridy()
+   leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
+   leg.SetBorderSize(0)
+   leg.SetFillStyle(0)
+   #for i, vov in enumerate(Vovs):
+   for l in ['L','R']:
+      g_tot_vs_bar[l, vov, thRef].Sort()
+      g_tot_vs_bar[l, vov, thRef].SetMarkerStyle(20)
+      if (l == 'R'): g_tot_vs_bar[l, vov, thRef].SetMarkerStyle(24)
+      g_tot_vs_bar[l, vov, thRef].SetMarkerColor(cols[vov])
+      g_tot_vs_bar[l, vov, thRef].SetLineColor(cols[vov])
+      g_tot_vs_bar[l, vov, thRef].Draw('plsame')
+      leg.AddEntry(g_tot_vs_bar['L', vov, thRef], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
+   leg.Draw()
+   ctot3.SaveAs(outdir+'/summaryPlots/tot/'+ctot3.GetName()+'.png')
+   ctot3.SaveAs(outdir+'/summaryPlots/tot/'+ctot3.GetName()+'.pdf')    
+   hPad3.Delete()
 
 # -- energy vs bar
 for i, vov in enumerate(Vovs):
-    cen3 = ROOT.TCanvas('c_energy_vs_bar_Vov%.02f'%vov)
-    #hPadEn3 = ROOT.TH2F('hPadEn3','', 100, -0.5, 15.5, 40, 0.,1000.)
-    hPadEn3 = ROOT.TH2F('hPadEn3','', 100, -0.5, 15.5, 40, 0.,200.)
-    hPadEn3.SetTitle("; bar; energy")
-    hPadEn3.Draw()
-    cen3.SetGridy()
-    leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
-    leg.SetBorderSize(0)
-    leg.SetFillStyle(0)
-    for i, vov in enumerate(Vovs):
-        for l in ['L','R', 'L-R']:
-            g_energy_vs_bar[l, vov, thRef, refPeak].Sort()
-            g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerStyle(20)
-            if (l == 'R'): g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerStyle(24)
-            g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerColor(cols[vov])
-            g_energy_vs_bar[l, vov, thRef, refPeak].SetLineColor(cols[vov])
-            g_energy_vs_bar[l, vov, thRef, refPeak].Draw('plsame')
-            outfile.cd()  
-            g_energy_vs_bar[l, vov, thRef, refPeak].Write('g_energy%s_vs_bar_Vov%.02f_th%02d'%(l,vov,thRef))
-        leg.AddEntry(g_energy_vs_bar['L', vov, thRef, refPeak], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
-    leg.Draw()
-    cen3.SaveAs(outdir+'/summaryPlots/energy/'+cen3.GetName()+'.png')
-    cen3.SaveAs(outdir+'/summaryPlots/energy/'+cen3.GetName()+'.pdf')    
-    hPadEn3.Delete()
+   cen3 = ROOT.TCanvas('c_energy_vs_bar_Vov%.02f'%vov)
+   #hPadEn3 = ROOT.TH2F('hPadEn3','', 100, -0.5, 15.5, 40, 0.,1000.)
+   hPadEn3 = ROOT.TH2F('hPadEn3','', 100, -0.5, 15.5, 40, 0.,200.)
+   hPadEn3.SetTitle("; bar; energy")
+   hPadEn3.Draw()
+   cen3.SetGridy()
+   leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
+   leg.SetBorderSize(0)
+   leg.SetFillStyle(0)
+   #for i, vov in enumerate(Vovs):
+   for l in ['L','R', 'L-R']:
+      g_energy_vs_bar[l, vov, thRef, refPeak].Sort()
+      g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerStyle(20)
+      if (l == 'R'): g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerStyle(24)
+      g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerColor(cols[vov])
+      g_energy_vs_bar[l, vov, thRef, refPeak].SetLineColor(cols[vov])
+      g_energy_vs_bar[l, vov, thRef, refPeak].Draw('plsame')
+      outfile.cd()  
+      g_energy_vs_bar[l, vov, thRef, refPeak].Write('g_energy%s_vs_bar_Vov%.02f_th%02d'%(l,vov,thRef))
+      leg.AddEntry(g_energy_vs_bar['L', vov, thRef, refPeak], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
+   leg.Draw()
+   cen3.SaveAs(outdir+'/summaryPlots/energy/'+cen3.GetName()+'.png')
+   cen3.SaveAs(outdir+'/summaryPlots/energy/'+cen3.GetName()+'.pdf')    
+   hPadEn3.Delete()
 
 # -- time resolution vs bar at the ref threshold
-for enBin in enBins:
-    ctres3 = ROOT.TCanvas('c_tRes_energyRatioCorr_refTh_vs_bar_Vov%.02f_enBin%02d'%(vov,enBin))
-    hPadT3 = ROOT.TH2F('hPadT3','', 100, -0.5, 15.5,100, tResMin,tResMax)
-    hPadT3.SetTitle("; bar; #sigma_{t}[ps]")
-    hPadT3.Draw()
-    ctres3.SetGridy()
-    #leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
-    leg = ROOT.TLegend(0.70, 0.18, 0.90, 0.45)
-    leg.SetBorderSize(0)
-    leg.SetFillStyle(0)
-    for i, vov in enumerate(Vovs):
-        g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerStyle(20)
-        g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerColor(cols[vov])
-        g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetLineColor(cols[vov])
-        g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Draw('psame')
-        outfile.cd() 
-        g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Write('g_deltaT_energyRatioCorr_vs_bar__Vov%.02f_th%02d'%(vov,thRef))
-        g_deltaT_totRatioCorr_vs_bar[vov, thRef, enBin].Write('g_deltaT_totRatioCorr_vs_bar__Vov%.02f_th%02d'%(vov,thRef))
-        leg.AddEntry(g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
-    leg.Draw()
-    latex.Draw('same')
-    ctres3.SaveAs(outdir+'/summaryPlots/timeResolution/'+ctres3.GetName()+'.png')
-    ctres3.SaveAs(outdir+'/summaryPlots/timeResolution/'+ctres3.GetName()+'.pdf')    
-    hPadT3.Delete()  
+for i, vov in enumerate(Vovs):
+   for enBin in enBins:
+      ctres3 = ROOT.TCanvas('c_tRes_energyRatioCorr_refTh_vs_bar_Vov%.02f_enBin%02d'%(vov,enBin))
+      hPadT3 = ROOT.TH2F('hPadT3','', 100, -0.5, 15.5,100, tResMin,tResMax)
+      hPadT3.SetTitle("; bar; #sigma_{t}[ps]")
+      hPadT3.Draw()
+      ctres3.SetGridy()
+      #leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
+      leg = ROOT.TLegend(0.70, 0.18, 0.90, 0.45)
+      leg.SetBorderSize(0)
+      leg.SetFillStyle(0)
+      #for i, vov in enumerate(Vovs):
+      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerStyle(20)
+      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerColor(cols[vov])
+      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetLineColor(cols[vov])
+      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Draw('psame')
+      outfile.cd() 
+      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Write('g_deltaT_energyRatioCorr_vs_bar__Vov%.02f_th%02d'%(vov,thRef))
+      g_deltaT_totRatioCorr_vs_bar[vov, thRef, enBin].Write('g_deltaT_totRatioCorr_vs_bar__Vov%.02f_th%02d'%(vov,thRef))
+      leg.AddEntry(g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
+   leg.Draw()
+   latex.Draw('same')
+   ctres3.SaveAs(outdir+'/summaryPlots/timeResolution/'+ctres3.GetName()+'.png')
+   ctres3.SaveAs(outdir+'/summaryPlots/timeResolution/'+ctres3.GetName()+'.pdf')    
+   hPadT3.Delete()  
 
 # -- time resolution vs bar at the best threshold
 for enBin in enBins:
