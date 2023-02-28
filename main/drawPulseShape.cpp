@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 
   std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
   TOFHIRThresholdZero thrZero(discCalibrationFile,0);
-
+  
   int ch1   = opts.GetOpt<float>("Input.ch1");
   int ch2   = opts.GetOpt<float>("Input.ch2");
   int chRef = opts.GetOpt<float>("Input.chRef");
@@ -63,13 +63,18 @@ int main(int argc, char** argv)
   std::vector<int> channels;
   channels.push_back(ch1);
   channels.push_back(ch2);
-
-
+  
+  std::string inputDir = opts.GetOpt<std::string>("Input.inputDir");
+  std::string outputDir = opts.GetOpt<std::string>("Output.outputDir");
+  std::string plotDir = opts.GetOpt<std::string>("Output.plotDir");
+  
+  float totMin = opts.GetOpt<float>("Cuts.totMin");
+  float totMax = opts.GetOpt<float>("Cuts.totMax");
   float energyMin = opts.GetOpt<float>("Cuts.energyMin");
   float energyMax = opts.GetOpt<float>("Cuts.energyMax");
   float energyMinRef = opts.GetOpt<float>("Cuts.energyMinRef");
   float energyMaxRef = opts.GetOpt<float>("Cuts.energyMaxRef");
-
+  
   std::string coincidence = opts.GetOpt<std::string>("Cuts.coincidence");
   int ch1Ext   = opts.GetOpt<float>("Cuts.ch1Ext");
   int ch2Ext   = opts.GetOpt<float>("Cuts.ch2Ext");           
@@ -79,16 +84,8 @@ int main(int argc, char** argv)
 
   //------------------------------
   // open file and define branches
-  //std::string inFileName(Form("/data/TOFHIR2/reco/run%04d_ped_e.root",run));
-  //std::string inFileName(Form("/data/TOFHIR2/reco/run%04d_e.root",run));
-  //std::cout << "Opening file " << inFileName << std::endl;
-  //TFile* inFile = TFile::Open(inFileName.c_str(),"READ");
-  //TTree* data = (TTree*)( inFile->Get("data") );
-
   TChain* data = new TChain("data","data");
-  //std::string inFileName = Form("/data/tofhir2/h8/reco/%04d/*ped_e.root",run);
-  //data -> Add(inFileName.c_str());
-
+  
   std::stringstream ss(runs); 
   std::string token;
   while( std::getline(ss,token,',') )
@@ -105,7 +102,7 @@ int main(int argc, char** argv)
       if( runMax == -1 ) runMax = runMin;
     
       for(int run = runMin; run <= runMax; ++run) {
-	std::string inFileName = Form("/data/TOFHIR2/reco/run%04d*_e.root",run); 
+	std::string inFileName = Form("%s/run%04d*_e.root",inputDir.c_str(),run); 
 	std::cout << ">>> Adding file " << inFileName << std::endl;
 	data -> Add(inFileName.c_str());
       }
@@ -130,35 +127,24 @@ int main(int argc, char** argv)
   
   //---------------
   // define outfile
-  //TFile* outFile = new TFile(Form("./plots/pulseShape_run%04d.root",run),"RECREATE");
-  TFile* outFile = new TFile(Form("./plots/pulseShape_run%s.root",runs.c_str()),"RECREATE");
-  //  TFile* outFile = new TFile(Form("/data/Lab5015Analysis/pulseShapes/pulseShape_run%04d.root",run),"RECREATE");
+  TFile* outFile = new TFile(Form("%s/pulseShape_run%s.root",outputDir.c_str(),runs.c_str()),"RECREATE");
   
   
   //------------------
   // define histograms
-  std::map<float, std::map<int,TH1F*> > h1_tot_ch1;
-  std::map<float, std::map<int,TH1F*> > h1_energy_ch1;
-  std::map<float, std::map<int,TH1F*> > h1_tot_ch2;
-  std::map<float, std::map<int,TH1F*> > h1_energy_ch2;
+  std::map<float,int> VovMap;
   
-  std::map<float, std::map<int,TH1F*> > h1_tot_totSel_ch1;
-  std::map<float, std::map<int,TH1F*> > h1_energy_totSel_ch1;
-  std::map<float, std::map<int,TH1F*> > h1_time1_wide_ch1;
-  std::map<float, std::map<int,TH1F*> > h1_time1_totSel_ch1;
-  std::map<float, std::map<int,TH1F*> > h1_time2_totSel_ch1;
-  std::map<float, std::map<int,TH1F*> > h1_tot_totSel_ch2;
-  std::map<float, std::map<int,TH1F*> > h1_energy_totSel_ch2;
-  std::map<float, std::map<int,TH1F*> > h1_time1_wide_ch2;
-  std::map<float, std::map<int,TH1F*> > h1_time1_totSel_ch2;
-  std::map<float, std::map<int,TH1F*> > h1_time2_totSel_ch2;
-  
-  std::map<float, std::map<int,TH1F*> > h1_deltaT1_totSel;
-  std::map<float, std::map<int,TH1F*> > h1_deltaT2_totSel;
+  std::map<int, std::map<float, std::map<int,TH1F*> > > h1_tot;
+  std::map<int, std::map<float, std::map<int,TH1F*> > > h1_energy;
+  std::map<int, std::map<float, std::map<int,TH1F*> > > h1_tot_totSel;
+  std::map<int, std::map<float, std::map<int,TH1F*> > > h1_energy_totSel;
+  std::map<int, std::map<float, std::map<int,TH1F*> > > h1_time1_wide;
+  std::map<int, std::map<float, std::map<int,TH1F*> > > h1_time1_totSel;
+  std::map<int, std::map<float, std::map<int,TH1F*> > > h1_time2_totSel;
   
   
-  //-----------------
-  // pre-loop over events  
+  //---------------------
+  // pre-loop over events
   int nEntries = data -> GetEntries();
   for(int entry = 0; entry < nEntries; ++entry)
   {
@@ -179,116 +165,85 @@ int main(int argc, char** argv)
     if( ithMode.find("vth2") != std::string::npos ) ith = ith2;
     
     // -- coincidence with external bar
-    if (coincidence.find("yes") != std::string::npos){
-      if( channelIdx[ch1Ext] < 0 ) continue; 
-      if( channelIdx[ch2Ext] < 0 ) continue; 
-      if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 100. ) continue;
-      if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 100. ) continue;
-      float energyExt = 0.5 * (  (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
-      if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
-    }
-
-
-    for(int ch :  channels)
-    {
-      if( channelIdx[ch] < 0 ) continue;
-      if( ( thrZero.GetThresholdZero(ch,ithMode) + ith + 1) > 63. ) continue;
-
-      if( ch == ch1 && !h1_time1_wide_ch1[Vov][ith] )
-	{
-	  h1_time1_wide_ch1[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch1_Vov%.1f_ith%02d",Vov,ith),"",10000,-10000.,10000.);
-	}
-      if( ch == ch2 && !h1_time1_wide_ch2[Vov][ith] )
+    if (coincidence.find("yes") != std::string::npos)
       {
-        h1_time1_wide_ch2[Vov][ith]   = new TH1F(Form("h1_time1_wide_ch2_Vov%.1f_ith%02d",Vov,ith),"",10000,-10000.,10000.);
+	if( channelIdx[ch1Ext] < 0 ) continue; 
+	if( channelIdx[ch2Ext] < 0 ) continue; 
+	if( (*tot)[channelIdx[ch1Ext]]/1000. < totMin || (*tot)[channelIdx[ch1Ext]]/1000. > totMax ) continue;
+	if( (*tot)[channelIdx[ch2Ext]]/1000. < totMin || (*tot)[channelIdx[ch2Ext]]/1000. > totMax ) continue;
+	float energyExt = 0.5 * (  (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
+	if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
       }
-      
-      if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
-      
-      if( (*tot)[channelIdx[ch]]/1000. < 0. || (*tot)[channelIdx[ch]]/1000. > 100. ) continue;
-
-
-      // --  laser
-      if (frequency > -1){
-      
-	long int scale = 1000000000/(frequency);
-	
-	if( ch == ch1 )
-	  {
-	    h1_time1_wide_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. );
-	  }
-	if( ch == ch2 )
-	  {
-	    h1_time1_wide_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. );
-	  }
-      }
-
-
-      // -- ref channel
-      else {
-
-	if( channelIdx[chRef] < 0 ) continue; 
-	if( (*energy)[channelIdx[chRef]] < energyMinRef || (*energy)[channelIdx[chRef]] > energyMaxRef ) continue;     
-
-	if( ch == ch1 ) {
-	  h1_time1_wide_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[chRef]])/1000.  );
-	}
-        if( ch == ch2 ) {
-	  h1_time1_wide_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]-(*time)[channelIdx[chRef]])/1000. );
-	}
-      }
-
-    }
-  }
-  
     
-  
+    VovMap[Vov] += 1;
+    
+    int chIt = 0;
+    for(int ch :  channels)
+      {
+	++chIt;
+	if( channelIdx[ch] < 0 ) continue;
+	if( ( thrZero.GetThresholdZero(ch,ithMode) + ith + 1) > 63. ) continue;
+	
+	if( !h1_time1_wide[ch][Vov][ith] )
+	  {
+	    h1_time1_wide[ch][Vov][ith] = new TH1F(Form("h1_time1_wide_ch%d_Vov%.02f_ith%02d",chIt,Vov,ith),"",10000,-10000.,10000.);
+	  }
+	
+	if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
+	
+	if( (*tot)[channelIdx[ch]]/1000. < totMin || (*tot)[channelIdx[ch]]/1000. > totMax ) continue;
+	
+	
+	// --  laser
+	if( frequency > -1 )
+	  {
+	    long int scale = 1000000000/(frequency);
+	    h1_time1_wide[ch][Vov][ith] -> Fill( ((*time)[channelIdx[ch]]%scale)/1000. );
+	  }
+	
+	
+	// -- ref channel
+	else
+	  {
+	    if( channelIdx[chRef] < 0 ) continue; 
+	    if( (*energy)[channelIdx[chRef]] < energyMinRef || (*energy)[channelIdx[chRef]] > energyMaxRef ) continue;     
+	    
+	    h1_time1_wide[ch][Vov][ith] -> Fill( ((*time)[channelIdx[ch]]-(*time)[channelIdx[chRef]])/1000.  );
+	  }
+	
+      } // loop over channels
+    
+  } // pre-loop over entries
   std::cout << std::endl;
   
+  
+  //-------------
+  // find offsets
   std::map<float,std::map<int,int> > lowestThr;
   std::map<float,std::map<int,float> > timeOffset;
-  for(auto mapIt : h1_time1_wide_ch1)
-    {
-      float Vov = mapIt.first;
-      std::map<int,TH1F*> histos = mapIt.second;
-      
-      for(auto mapIt2 : histos)
-	{
-	  int ith = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  histo->Write();
-
-	  std::cout << "===>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
-	  if( (lowestThr[Vov][ch1] != 0 && ith < lowestThr[Vov][ch1]) || (lowestThr[Vov][ch1] == 0) )
-	    {
-	      std::cout << "=========>>> " << Vov << " " << ith << " " << histo->GetMean() << std::endl;
-
-	      timeOffset[Vov][ch1] = histo->GetBinCenter(histo->GetMaximumBin());
-	      std::cout << "timeOffset = " << timeOffset[Vov][ch1] <<std::endl;
-	      //timeOffset[Vov][ch1] = 230;
-	      lowestThr[Vov][ch1] = ith;
-	    }
-	}
-    }
-  for(auto mapIt : h1_time1_wide_ch2)
-    {
-      float Vov = mapIt.first;
-      std::map<int,TH1F*> histos = mapIt.second;
-      
-      for(auto mapIt2 : histos)
-	{
-	  int ith = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  histo->Write();
-	  
-	  if( (lowestThr[Vov][ch2] != 0 && ith < lowestThr[Vov][ch2]) || (lowestThr[Vov][ch2] == 0) )
-	    {
-	      timeOffset[Vov][ch2] = histo->GetBinCenter(histo->GetMaximumBin());
-	      //timeOffset[Vov][ch2] = 230;
-	      lowestThr[Vov][ch2] = ith;
-	    }
-	}
-    }
+  for(int ch :  channels)
+    for(auto mapIt : h1_time1_wide[ch])
+      {
+	float Vov = mapIt.first;
+	std::map<int,TH1F*> histos = mapIt.second;
+	
+	for(auto mapIt2 : histos)
+	  {
+	    int ith = mapIt2.first;
+	    TH1F* histo = mapIt2.second;
+	    histo->Write();
+	    
+	    std::cout << "===>>> ch " << ch << "   Vov " << Vov << "   ith " << ith << "   t " << histo->GetMean() << std::endl;
+	    if( (lowestThr[Vov][ch] != 0 && ith < lowestThr[Vov][ch]) || (lowestThr[Vov][ch] == 0) )
+	      {
+		std::cout << "===>>>>>> " << ith << " " << histo->GetMean();
+		
+		timeOffset[Vov][ch] = histo->GetBinCenter(histo->GetMaximumBin());
+		lowestThr[Vov][ch] = ith;
+		std::cout << "   timeOffset = " << timeOffset[Vov][ch] << std::endl;
+	      }
+	  }
+      }
   
   
   //-----------------
@@ -312,120 +267,90 @@ int main(int argc, char** argv)
     if( ithMode.find("vth1") != std::string::npos ) ith = ith1;
     if( ithMode.find("vth2") != std::string::npos ) ith = ith2;
     
-
- 
-    // -- coincidence with external bar
-    if (coincidence.find("yes") != std::string::npos){
-      if( channelIdx[ch1Ext] < 0 ) continue;
-      if( channelIdx[ch2Ext] < 0 ) continue;
-      if( (*tot)[channelIdx[ch1Ext]]/1000. < 0. || (*tot)[channelIdx[ch1Ext]]/1000. > 100. ) continue;
-      if( (*tot)[channelIdx[ch2Ext]]/1000. < 0. || (*tot)[channelIdx[ch2Ext]]/1000. > 100. ) continue;
-      float energyExt = 0.5 * (  (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
-      if ( energyExt < energyMinExt  || energyExt > energyMaxExt) continue;
-    }
-
     
-    for(int ch :  channels)
-    {
-      if( channelIdx[ch] < 0 ) continue;
-      
-      if( ( thrZero.GetThresholdZero(ch,ithMode) + ith + 1) > 63. ) continue;
-
-      if( ch == ch1 && !h1_tot_ch1[Vov][ith] )
-	{
-        h1_tot_ch1[Vov][ith]    = new TH1F(Form("h1_tot_ch1_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch1[Vov][ith] = new TH1F(Form("h1_energy_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
-        
-        h1_tot_totSel_ch1[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch1[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
-        h1_time1_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
-        h1_time2_totSel_ch1[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch1_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch1]-50.,timeOffset[Vov][ch1]+50.);
-        
-        h1_deltaT1_totSel[Vov][ith] = new TH1F(Form("h1_deltaT1_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
-        h1_deltaT2_totSel[Vov][ith] = new TH1F(Form("h1_deltaT2_totSel_Vov%.1f_ith%02d",Vov,ith),"",10000,-100.,100.);
-      }
-      if( ch == ch2 && !h1_tot_ch2[Vov][ith] )
+    // -- coincidence with external bar
+    if( coincidence.find("yes") != std::string::npos )
       {
-        h1_tot_ch2[Vov][ith]    = new TH1F(Form("h1_tot_ch2_Vov%.1f_ith%02d",Vov,ith),"",15000,-50000.,100000.);
-        h1_energy_ch2[Vov][ith] = new TH1F(Form("h1_energy_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
-        
-        h1_tot_totSel_ch2[Vov][ith]     = new TH1F(Form("h1_tot_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,0.,100.);
-        h1_energy_totSel_ch2[Vov][ith]  = new TH1F(Form("h1_energy_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",1000,-0.5,999.5);
-        h1_time1_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time1_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
-        h1_time2_totSel_ch2[Vov][ith]   = new TH1F(Form("h1_time2_totSel_ch2_Vov%.1f_ith%02d",Vov,ith),"",5000,timeOffset[Vov][ch2]-50.,timeOffset[Vov][ch2]+50.);
+	if( channelIdx[ch1Ext] < 0 ) continue;
+	if( channelIdx[ch2Ext] < 0 ) continue;
+	if( (*tot)[channelIdx[ch1Ext]]/1000. < totMin || (*tot)[channelIdx[ch1Ext]]/1000. > totMax ) continue;
+	if( (*tot)[channelIdx[ch2Ext]]/1000. < totMin || (*tot)[channelIdx[ch2Ext]]/1000. > totMax ) continue;
+	float energyExt = 0.5 * ( (*energy)[channelIdx[ch1Ext]] + (*energy)[channelIdx[ch2Ext]] );
+	if( energyExt < energyMinExt || energyExt > energyMaxExt ) continue;
       }
-      
-      if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
-      
-      if( ch == ch1 )
+    
+    
+    int chIt = 0;
+    for(int ch : channels)
       {
-        h1_tot_ch1[Vov][ith] -> Fill( (*tot)[channelIdx[ch1]]/1000. );
-        h1_energy_ch1[Vov][ith] -> Fill( (*energy)[channelIdx[ch1]] );
-      }
-      if( ch == ch2 )
-      {
-        h1_tot_ch2[Vov][ith] -> Fill( (*tot)[channelIdx[ch2]]/1000. );
-        h1_energy_ch2[Vov][ith] -> Fill( (*energy)[channelIdx[ch2]] );
-      }
-      
-      if( (*tot)[channelIdx[ch]]/1000. < 0. || (*tot)[channelIdx[ch]]/1000. > 100. ) continue;
-      
-
-      // -- laser 
-      if (frequency > -1) {
-
-	long int scale = 1000000000/(frequency);
-      
-	if( ch == ch1 )
+	++chIt;
+	
+	if( channelIdx[ch] < 0 ) continue;
+	
+	if( ( thrZero.GetThresholdZero(ch,ithMode) + ith + 1) > 63. ) continue;
+	
+	if( !h1_tot[ch][Vov][ith] )
 	  {
-	    h1_tot_totSel_ch1[Vov][ith] -> Fill( (*tot)[channelIdx[ch1]]/1000. );
-	    h1_energy_totSel_ch1[Vov][ith] -> Fill( (*energy)[channelIdx[ch1]] );
-	    h1_time1_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. );
-	    h1_time2_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]%scale)/1000. + (*tot)[channelIdx[ch1]]/1000. );
+	    h1_tot[ch][Vov][ith]    = new TH1F(Form("h1_tot_ch%d_Vov%.02f_ith%02d",chIt,Vov,ith),"",15000,-50000.,100000.);
+	    h1_energy[ch][Vov][ith] = new TH1F(Form("h1_energy_ch%d_Vov%.02f_ith%02d",chIt,Vov,ith),"",1000,-0.5,999.5);
+	    
+	    h1_tot_totSel[ch][Vov][ith]    = new TH1F(Form("h1_tot_totSel_ch%d_Vov%.02f_ith%02d",chIt,Vov,ith),"",1000,0.,100.);
+	    h1_energy_totSel[ch][Vov][ith] = new TH1F(Form("h1_energy_totSel_ch%d_Vov%.02f_ith%02d",chIt,Vov,ith),"",1000,-0.5,999.5);
+	    h1_time1_totSel[ch][Vov][ith]  = new TH1F(Form("h1_time1_totSel_ch%d_Vov%.02f_ith%02d",chIt,Vov,ith),"",5000,timeOffset[Vov][ch]-50.,timeOffset[Vov][ch]+50.);
+	    h1_time2_totSel[ch][Vov][ith]  = new TH1F(Form("h1_time2_totSel_ch%d_Vov%.02f_ith%02d",chIt,Vov,ith),"",5000,timeOffset[Vov][ch]-50.,timeOffset[Vov][ch]+50.);
 	  }
-	if( ch == ch2 )
+	
+	if( (*energy)[channelIdx[ch]] < energyMin || (*energy)[channelIdx[ch]] > energyMax ) continue;
+	
+	h1_tot[ch][Vov][ith] -> Fill( (*tot)[channelIdx[ch]]/1000. );
+	h1_energy[ch][Vov][ith] -> Fill( (*energy)[channelIdx[ch]] );
+	
+	if( (*tot)[channelIdx[ch]]/1000. < 0. || (*tot)[channelIdx[ch]]/1000. > 100. ) continue;
+	
+	
+	// -- laser 
+	if( frequency > -1 )
 	  {
-	    h1_tot_totSel_ch2[Vov][ith] -> Fill( (*tot)[channelIdx[ch2]]/1000. );
-	    h1_energy_totSel_ch2[Vov][ith] -> Fill( (*energy)[channelIdx[ch2]] );
-	    h1_time1_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. );
-	    h1_time2_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]%scale)/1000. + (*tot)[channelIdx[ch2]]/1000. );
+	    long int scale = 1000000000/(frequency);
+	    
+	    int bin1 = h1_time1_totSel[ch][Vov][ith] -> Fill( ((*time)[channelIdx[ch]]%scale)/1000. );
+	    int bin2 = h1_time2_totSel[ch][Vov][ith] -> Fill( ((*time)[channelIdx[ch]]%scale)/1000. + (*tot)[channelIdx[ch]]/1000. );
+	    
+	    if( bin1 >= 0 && bin1 < h1_time1_totSel[ch][Vov][ith]->GetNbinsX() && 
+		bin2 >= 0 && bin2 < h1_time2_totSel[ch][Vov][ith]->GetNbinsX() )
+	      {
+		h1_tot_totSel[ch][Vov][ith] -> Fill( (*tot)[channelIdx[ch]]/1000. );
+		h1_energy_totSel[ch][Vov][ith] -> Fill( (*energy)[channelIdx[ch]] );
+	      }
 	  }
-      }
-      
-      // -- ch ref
-      else {
-       if( channelIdx[chRef] < 0 ) continue;
-       if( (*energy)[channelIdx[chRef]] < energyMinRef || (*energy)[channelIdx[chRef]] > energyMaxRef ) continue;     
-
-       if( ch == ch1 )
-	 {
-	   h1_tot_totSel_ch1[Vov][ith] -> Fill( (*tot)[channelIdx[ch1]]/1000. );
-	   h1_energy_totSel_ch1[Vov][ith] -> Fill( (*energy)[channelIdx[ch1]] );
-	   h1_time1_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[chRef]])/1000. );
-	   h1_time2_totSel_ch1[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[chRef]])/1000. + (*tot)[channelIdx[ch1]]/1000. );
-	 }
-
-       if( ch == ch2 )
-	 {
-	   h1_tot_totSel_ch2[Vov][ith] -> Fill( (*tot)[channelIdx[ch2]]/1000. );
-	   h1_energy_totSel_ch2[Vov][ith] -> Fill( (*energy)[channelIdx[ch2]] );
-	   h1_time1_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]-(*time)[channelIdx[chRef]])/1000. );
-	   h1_time2_totSel_ch2[Vov][ith] -> Fill( ((*time)[channelIdx[ch2]]-(*time)[channelIdx[chRef]])/1000. + (*tot)[channelIdx[ch2]]/1000. );
-	 }
-
-     }
-      //std::cout << time[ch1] << " - " << time[ch2] << " - " << scale << " - " << time[ch1] << " - " << (time[ch1]%scale)/1000. << " - " << time[ch2] << " - " << (time[ch2]%scale)/1000. << std::endl;
-      
-      // h1_deltaT1_totSel[Vov][ith] -> Fill( ((*time)[channelIdx[ch1]]-(*time)[channelIdx[ch2]])/1000. );
-      // h1_deltaT2_totSel[Vov][ith] -> Fill( (float((*time)[channelIdx[ch1]]-(*time)[channelIdx[ch2]])+(*tot)[channelIdx[ch1]])/1000. );
-    }
-  }
+	
+	// -- ch ref
+	else
+	  {
+	    if( channelIdx[chRef] < 0 ) continue;
+	    if( (*energy)[channelIdx[chRef]] < energyMinRef || (*energy)[channelIdx[chRef]] > energyMaxRef ) continue;     
+	    
+	    int bin1 = h1_time1_totSel[ch][Vov][ith] -> Fill( ((*time)[channelIdx[ch]]-(*time)[channelIdx[chRef]])/1000. );
+	    int bin2 = h1_time2_totSel[ch][Vov][ith] -> Fill( ((*time)[channelIdx[ch]]-(*time)[channelIdx[chRef]])/1000. + (*tot)[channelIdx[ch]]/1000. );
+	    
+	    if( bin1 >= 0 && bin1 < h1_time1_totSel[ch][Vov][ith]->GetNbinsX() && 
+		bin2 >= 0 && bin2 < h1_time2_totSel[ch][Vov][ith]->GetNbinsX() )
+	      {
+		h1_tot_totSel[ch][Vov][ith] -> Fill( (*tot)[channelIdx[ch]]/1000. );
+		h1_energy_totSel[ch][Vov][ith] -> Fill( (*energy)[channelIdx[ch]] );
+	      }
+	  }
+	
+	//std::cout << time[ch1] << " - " << time[ch2] << " - " << scale << " - " << time[ch1] << " - " << (time[ch1]%scale)/1000. << " - " << time[ch2] << " - " << (time[ch2]%scale)/1000. << std::endl;
+	
+      } // loop over channels
+    
+  } // loop over entries
   std::cout << std::endl;
   
   
-  
-  //-----------------
-  // draw pulse shape
+  //------------
+  // fill graphs
   float dac_to_uA = -1.;
   if( ithMode == "ith2_3" ) dac_to_uA = 1.250;
   if( ithMode == "ith2_2" ) dac_to_uA = 0.940;
@@ -436,567 +361,445 @@ int main(int argc, char** argv)
   if( ithMode == "ith1_1" ) dac_to_uA = 0.313;
   if( ithMode == "ith1_0" ) dac_to_uA = 0.156;
   
-  if (tofhirVersion.find("2A")!= std::string::npos ){
-    if( ithMode == "vth2" ) dac_to_uA = 8.;
-    if( ithMode == "vth1_4" ) dac_to_uA = 4.;
-    if( ithMode == "vth1_3" ) dac_to_uA = 2.;
-    if( ithMode == "vth1_1" ) dac_to_uA = 1.;
-    if( ithMode == "vth1_0" ) dac_to_uA = 0.5;
-  }
-
+  if( tofhirVersion.find("2A")!= std::string::npos )
+    {
+      if( ithMode == "vth2" ) dac_to_uA = 8.;
+      if( ithMode == "vth1_4" ) dac_to_uA = 4.;
+      if( ithMode == "vth1_3" ) dac_to_uA = 2.;
+      if( ithMode == "vth1_1" ) dac_to_uA = 1.;
+      if( ithMode == "vth1_0" ) dac_to_uA = 0.5;
+    }
+  
   std::cout << " vth mode " << ithMode << "   dac_to_mV = " << dac_to_uA <<std::endl;
-
   
-  std::map<float, TGraphErrors*> g_N_ch1;
-  std::map<float, TGraphErrors*> g_tot_ch1;
-  std::map<float, TGraphErrors*> g_energy_ch1;
-  std::map<float, TGraphErrors*> g_N_ch2;
-  std::map<float, TGraphErrors*> g_tot_ch2;
-  std::map<float, TGraphErrors*> g_energy_ch2;
   
-  std::map<float, TGraphErrors*> g_N_totSel_ch1;
-  std::map<float, TGraphErrors*> g_tot_totSel_ch1;
-  std::map<float, TGraphErrors*> g_energy_totSel_ch1;
-  std::map<float, TGraphErrors*> g_ps_totSel_ch1;
-  std::map<float, TGraphErrors*> g_N_totSel_ch2;
-  std::map<float, TGraphErrors*> g_tot_totSel_ch2;
-  std::map<float, TGraphErrors*> g_energy_totSel_ch2;
-  std::map<float, TGraphErrors*> g_ps_totSel_ch2;
+  std::map<int, std::map<float, TGraphErrors*> > g_tot;
+  std::map<int, std::map<float, TGraphErrors*> > g_energy;
+  std::map<int, std::map<float, TGraphErrors*> > g_N_totSel;
+  std::map<int, std::map<float, TGraphErrors*> > g_tot_totSel;
+  std::map<int, std::map<float, TGraphErrors*> > g_energy_totSel;
+  std::map<int, std::map<float, TGraphErrors*> > g_ps_totSel;
+  std::map<int, std::map<float, TGraphErrors*> > g_SR_totSel;
   
-  std::map<float, TGraphErrors*> g_ps_totSel_deltaT;
+  for(int ch : channels)
+    for(auto mapIt : h1_time1_totSel[ch])
+      {
+	float Vov = mapIt.first;
+	for(auto mapIt2 : mapIt.second)
+	  {
+	    int ith = mapIt2.first;
+	    TH1F* histo = mapIt2.second;
+	    if( histo->Integral() <= 0. ) continue;
+	    
+	    if( !g_N_totSel[ch][Vov] ) g_N_totSel[ch][Vov] = new TGraphErrors();
+	    g_N_totSel[ch][Vov] -> SetPoint(g_N_totSel[ch][Vov]->GetN(),ith,histo->Integral());
+	    
+	    histo = h1_tot[ch][Vov][ith];
+	    if( histo->Integral() <= 0. ) continue;
+	    
+	    if( !g_tot[ch][Vov] ) g_tot[ch][Vov] = new TGraphErrors();
+	    g_tot[ch][Vov] -> SetPoint(g_tot[ch][Vov]->GetN(),ith,histo->GetMean());
+	    g_tot[ch][Vov] -> SetPointError(g_tot[ch][Vov]->GetN()-1,0.,histo->GetRMS());
+	    
+	    histo -> Write();
+	    
+	    histo = h1_tot_totSel[ch][Vov][ith];
+	    if( histo->Integral() <= 0. ) continue;
+	    
+	    if( !g_tot_totSel[ch][Vov] ) g_tot_totSel[ch][Vov] = new TGraphErrors();
+	    g_tot_totSel[ch][Vov] -> SetPoint(g_tot_totSel[ch][Vov]->GetN(),ith,histo->GetMean());
+	    g_tot_totSel[ch][Vov] -> SetPointError(g_tot_totSel[ch][Vov]->GetN()-1,0.,histo->GetRMS());
+	    
+	    histo -> Write();
+	  }
+      }
   
-  for(auto mapIt : h1_tot_ch1)
-    {
-      float Vov = mapIt.first;
-      for(auto mapIt2 : mapIt.second)
-	{
-	  int ith = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  
-	  if( !g_N_ch1[Vov] ) g_N_ch1[Vov] = new TGraphErrors();
-	  g_N_ch1[Vov] -> SetPoint(g_N_ch1[Vov]->GetN(),ith,histo->Integral());
-          g_N_ch1[Vov] -> SetPointError(g_N_ch1[Vov]->GetN()-1,0,sqrt(histo->Integral()));
-	  
-	  if( !g_tot_ch1[Vov] ) g_tot_ch1[Vov] = new TGraphErrors();
-	  g_tot_ch1[Vov] -> SetPoint(g_tot_ch1[Vov]->GetN(),ith,histo->GetMean());
-	  g_tot_ch1[Vov] -> SetPointError(g_tot_ch1[Vov]->GetN()-1,0.,histo->GetRMS());
-	  
-	  histo -> Write();
-	  
-	  histo = h1_tot_totSel_ch1[Vov][ith];
-	  if( histo->Integral() <= 0. ) continue;
-	  
-	  if( !g_N_totSel_ch1[Vov] ) g_N_totSel_ch1[Vov] = new TGraphErrors();
-	  g_N_totSel_ch1[Vov] -> SetPoint(g_N_totSel_ch1[Vov]->GetN(),ith,histo->Integral());
-	  
-	  if( !g_tot_totSel_ch1[Vov] ) g_tot_totSel_ch1[Vov] = new TGraphErrors();
-	  g_tot_totSel_ch1[Vov] -> SetPoint(g_tot_totSel_ch1[Vov]->GetN(),ith,histo->GetMean());
-	  g_tot_totSel_ch1[Vov] -> SetPointError(g_tot_totSel_ch1[Vov]->GetN()-1,0.,histo->GetRMS());
-	  
-	  histo -> Write();
-	}
-    }
-  for(auto mapIt : h1_tot_ch2)
-    {
-      float Vov = mapIt.first;
-      for(auto mapIt2 : mapIt.second)
-	{
-	  int ith = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  
-	  if( !g_N_ch2[Vov] ) g_N_ch2[Vov] = new TGraphErrors();
-	  g_N_ch2[Vov] -> SetPoint(g_N_ch2[Vov]->GetN(),ith,histo->Integral());
-	  
-	  if( !g_tot_ch2[Vov] ) g_tot_ch2[Vov] = new TGraphErrors();
-	  g_tot_ch2[Vov] -> SetPoint(g_tot_ch2[Vov]->GetN(),ith,histo->GetMean());
-	  g_tot_ch2[Vov] -> SetPointError(g_tot_ch2[Vov]->GetN()-1,0.,histo->GetRMS());
-	  
-	  histo -> Write();
-	  
-	  histo = h1_tot_totSel_ch2[Vov][ith];
-	  if( histo->Integral() <= 0. ) continue;
-	  
-	  if( !g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] = new TGraphErrors();
-	  g_N_totSel_ch2[Vov] -> SetPoint(g_N_totSel_ch2[Vov]->GetN(),ith,histo->Integral());
-	  
-	  if( !g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] = new TGraphErrors();
-	  g_tot_totSel_ch2[Vov] -> SetPoint(g_tot_totSel_ch2[Vov]->GetN(),ith,histo->GetMean());
-	  g_tot_totSel_ch2[Vov] -> SetPointError(g_tot_totSel_ch2[Vov]->GetN()-1,0.,histo->GetRMS());
-	  
-	  histo -> Write();
-	}
-    }
+  for(int ch : channels)
+    for(auto mapIt : h1_energy[ch])
+      {
+	float Vov = mapIt.first;
+	for(auto mapIt2 : mapIt.second)
+	  {
+	    int ith = mapIt2.first;
+	    TH1F* histo = mapIt2.second;
+	    if( histo->Integral() <= 0. ) continue;
+	    
+	    if( !g_energy[ch][Vov] ) g_energy[ch][Vov] = new TGraphErrors();
+	    g_energy[ch][Vov] -> SetPoint(g_energy[ch][Vov]->GetN(),ith,histo->GetMean());
+	    g_energy[ch][Vov] -> SetPointError(g_energy[ch][Vov]->GetN()-1,0.,histo->GetRMS());
+	    
+	    histo -> Write();
+	    
+	    histo = h1_energy_totSel[ch][Vov][ith];
+	    if( histo->Integral() <= 0. ) continue;
+	    
+	    if( !g_energy_totSel[ch][Vov] ) g_energy_totSel[ch][Vov] = new TGraphErrors();
+	    g_energy_totSel[ch][Vov] -> SetPoint(g_energy_totSel[ch][Vov]->GetN(),ith,histo->GetMean());
+	    g_energy_totSel[ch][Vov] -> SetPointError(g_energy_totSel[ch][Vov]->GetN()-1,0.,histo->GetRMS());
+	    
+	    histo -> Write();
+	  }
+      }
   
-  for(auto mapIt : h1_energy_ch1)
-    {
-      float Vov = mapIt.first;
-      for(auto mapIt2 : mapIt.second)
-	{
-	  int ith = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  if( histo->Integral() <= 0. ) continue;
-	  
-	  if( !g_energy_ch1[Vov] ) g_energy_ch1[Vov] = new TGraphErrors();
-	  g_energy_ch1[Vov] -> SetPoint(g_energy_ch1[Vov]->GetN(),ith,histo->GetMean());
-	  g_energy_ch1[Vov] -> SetPointError(g_energy_ch1[Vov]->GetN()-1,0.,histo->GetRMS());
-	  
-	  histo -> Write();
-	  
-	  histo = h1_energy_totSel_ch1[Vov][ith];
-	  if( histo->Integral() <= 0. ) continue;
-      
-	  if( !g_energy_totSel_ch1[Vov] ) g_energy_totSel_ch1[Vov] = new TGraphErrors();
-	  g_energy_totSel_ch1[Vov] -> SetPoint(g_energy_totSel_ch1[Vov]->GetN(),ith,histo->GetMean());
-	  g_energy_totSel_ch1[Vov] -> SetPointError(g_energy_totSel_ch1[Vov]->GetN()-1,0.,histo->GetRMS());
-	  
-	  histo -> Write();
-	}
-    }
-  for(auto mapIt : h1_energy_ch2)
-    {
-      float Vov = mapIt.first;
-      for(auto mapIt2 : mapIt.second)
-	{
-	  int ith = mapIt2.first;
-	  TH1F* histo = mapIt2.second;
-	  if( histo->Integral() <= 0. ) continue;
-      
-	  if( !g_energy_ch2[Vov] ) g_energy_ch2[Vov] = new TGraphErrors();
-	  g_energy_ch2[Vov] -> SetPoint(g_energy_ch2[Vov]->GetN(),ith,histo->GetMean());
-	  g_energy_ch2[Vov] -> SetPointError(g_energy_ch2[Vov]->GetN()-1,0.,histo->GetRMS());
-	  
-	  histo -> Write();
-	  
-	  histo = h1_energy_totSel_ch2[Vov][ith];
-	  if( histo->Integral() <= 0. ) continue;
-      
-	  if( !g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] = new TGraphErrors();
-	  g_energy_totSel_ch2[Vov] -> SetPoint(g_energy_totSel_ch2[Vov]->GetN(),ith,histo->GetMean());
-	  g_energy_totSel_ch2[Vov] -> SetPointError(g_energy_totSel_ch2[Vov]->GetN()-1,0.,histo->GetRMS());
-	}
-    }
+  for(int ch : channels)
+    for(auto mapIt : h1_time1_totSel[ch])
+      {
+	float Vov = mapIt.first;
+	for(auto mapIt2 : mapIt.second)
+	  {
+	    int ith = mapIt2.first;
+	    TH1F* histo = mapIt2.second;
+	    histo -> Write();
+	    
+	    std::cout << "+++>>> ch: " << ch << "   ith: " << ith << "    time 1 integral: " << histo->Integral() << std::endl;
+	    if( histo->Integral() <= 0.8*h1_time1_totSel[ch][Vov][lowestThr[Vov][ch]]->Integral() ) continue;
+	    if( histo->Integral() < 10 ) continue;
+	    
+	    if( !g_ps_totSel[ch][Vov] ) g_ps_totSel[ch][Vov] = new TGraphErrors();
+	    g_ps_totSel[ch][Vov] -> SetPoint(g_ps_totSel[ch][Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch],ith*dac_to_uA);
+	    g_ps_totSel[ch][Vov] -> SetPointError(g_ps_totSel[ch][Vov]->GetN()-1,histo->GetMeanError(),0.);
+	    
+	  }
+	for(auto mapIt2 : mapIt.second)
+	  {
+	    int ith = mapIt2.first;
+	    TH1F* histo = h1_time2_totSel[ch][Vov][ith];
+	    
+	    std::cout << "+++>>> ch: " << ch << "   ith: " << ith << "   time 2 integral: " << histo->Integral() << std::endl;
+	    if( histo->Integral() <= 0.8*h1_time2_totSel[ch][Vov][lowestThr[Vov][ch]]->Integral() ) continue;
+	    if( histo->Integral() < 10 ) continue;  
+	    
+	    g_ps_totSel[ch][Vov] -> SetPoint(g_ps_totSel[ch][Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch],ith*dac_to_uA);
+	    g_ps_totSel[ch][Vov] -> SetPointError(g_ps_totSel[ch][Vov]->GetN()-1,histo->GetMeanError(),0.);
+	    
+	    histo -> Write();
+	  }
+      }
   
-  // for(auto mapIt : h1_deltaT1_totSel)
-  //   {
-  //     float Vov = mapIt.first;
-  //     for(auto mapIt2 : mapIt.second)
-  // 	{
-  // 	  int ith = mapIt2.first;
-  // 	  TH1F* histo = mapIt2.second;
-  // 	  if( histo->Integral() <= 0. ) continue;
-	  
-  // 	  if( !g_ps_totSel_deltaT[Vov] ) g_ps_totSel_deltaT[Vov] = new TGraphErrors();
-  // 	  g_ps_totSel_deltaT[Vov] -> SetPoint(g_ps_totSel_deltaT[Vov]->GetN(),histo->GetMean(),ith*dac_to_uA);
-  // 	  g_ps_totSel_deltaT[Vov] -> SetPointError(g_ps_totSel_deltaT[Vov]->GetN()-1,histo->GetMeanError(),0.);
-	  
-  // 	  histo -> Write();
-	  
-  // 	  histo = h1_deltaT2_totSel[Vov][ith];
-  // 	  if( histo->Integral() <= 0. ) continue;
-	  
-  // 	  g_ps_totSel_deltaT[Vov] -> SetPoint(g_ps_totSel_deltaT[Vov]->GetN(),histo->GetMean(),ith*dac_to_uA);
-  // 	  g_ps_totSel_deltaT[Vov] -> SetPointError(g_ps_totSel_deltaT[Vov]->GetN()-1,histo->GetMeanError(),0.);
-	  
-  // 	  histo -> Write();
-  // 	}
-  //   }
+  for(int ch : channels)
+    for(auto mapIt : VovMap)
+      {
+	float Vov = mapIt.first;
+	
+	if( !g_SR_totSel[ch][Vov] ) g_SR_totSel[ch][Vov] = new TGraphErrors();
 
-  for(auto mapIt : h1_time1_totSel_ch1)
-  {
-    float Vov = mapIt.first;
-    for(auto mapIt2 : mapIt.second)
-    {
-      int ith = mapIt2.first;
-      TH1F* histo = mapIt2.second;
-      histo -> Write();
-
-      std::cout << "+++++>>>> " << ith << " " << histo->Integral() << std::endl;
-      //if( histo->Integral() <= 0.8*h1_time1_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
-      if( histo->Integral() < 10) continue;
-
-      if( !g_ps_totSel_ch1[Vov] ) g_ps_totSel_ch1[Vov] = new TGraphErrors();
-      g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch1],ith*dac_to_uA);
-      g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
-      
-    }
-    for(auto mapIt2 : mapIt.second)
-    {
-      int ith = mapIt2.first;
-      TH1F* histo = h1_time2_totSel_ch1[Vov][ith];
-
-      std::cout << "+++++++++++>>>> " << ith << " " << histo->Integral() << std::endl;
-      //if( histo->Integral() <= 0.8*h1_time2_totSel_ch1[Vov][lowestThr[Vov][ch1]]->Integral() ) continue;
-      if( histo->Integral() < 10) continue;  
-
-      g_ps_totSel_ch1[Vov] -> SetPoint(g_ps_totSel_ch1[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch1],ith*dac_to_uA);
-      g_ps_totSel_ch1[Vov] -> SetPointError(g_ps_totSel_ch1[Vov]->GetN()-1,histo->GetMeanError(),0.);
-      
-      histo -> Write();
-    }
-  }
-  for(auto mapIt : h1_time1_totSel_ch2)
-  {
-    float Vov = mapIt.first;
-    for(auto mapIt2 : mapIt.second)
-    {
-      int ith = mapIt2.first;
-      TH1F* histo = mapIt2.second;
-      histo -> Write();
-      //if( histo->Integral() <= 0.9*h1_time1_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
-      if( histo->Integral() < 10 ) continue;
-
-      if( !g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] = new TGraphErrors();
-      g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch2],ith*dac_to_uA);
-      g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
-    }
-    for(auto mapIt2 : mapIt.second)
-    {
-      int ith = mapIt2.first;
-      TH1F* histo = h1_time2_totSel_ch2[Vov][ith];
-      //if( histo->Integral() <= 0.9*h1_time2_totSel_ch2[Vov][lowestThr[Vov][ch2]]->Integral() ) continue;
-      if( histo->Integral() < 10 ) continue; 
-
-      g_ps_totSel_ch2[Vov] -> SetPoint(g_ps_totSel_ch2[Vov]->GetN(),histo->GetMean()-timeOffset[Vov][ch2],ith*dac_to_uA);
-      g_ps_totSel_ch2[Vov] -> SetPointError(g_ps_totSel_ch2[Vov]->GetN()-1,histo->GetMeanError(),0.);
-      
-      histo -> Write();
-    }
-  }
+	for(int point1 = 0; point1 < 0.5*g_ps_totSel[ch][Vov]->GetN()-3; ++point1)
+	  {
+	    int point2 = point1+3;
+	    float SR =
+	      ( g_ps_totSel[ch][Vov]->GetPointY(point2) - g_ps_totSel[ch][Vov]->GetPointY(point1) ) / 
+	      ( g_ps_totSel[ch][Vov]->GetPointX(point2) - g_ps_totSel[ch][Vov]->GetPointX(point1) );
+	    g_SR_totSel[ch][Vov] -> SetPoint(g_SR_totSel[ch][Vov]->GetN(),g_ps_totSel[ch][Vov]->GetPointY(point1)/dac_to_uA,SR);
+	  }
+      }
   
   
   //-----------
   // draw plots
-  std::string plotDir(Form("/var/www/html/TOFHIR2X/pulseShapes/run%s/",runs.c_str())); 
-  //std::string plotDir(Form("/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/pulseShapes/run%s/",runs.c_str()));
+  plotDir += Form("/run%s/",runs.c_str());
   system(Form("mkdir -p %s",plotDir.c_str()));
   
   TCanvas* c;
   TH1F* hPad;
+  TH1F* hPad2;
+  
+  std::vector<int> colors;
+  colors.push_back(kBlack);
+  colors.push_back(kRed);
+  colors.push_back(kBlue);
+  
+  for(auto mapIt : VovMap)
+    {
+      float Vov = mapIt.first;
+      
+      c = new TCanvas("c","c");
+      float yMax = std::max(g_N_totSel[ch1][Vov]->GetPointY(0),g_N_totSel[ch2][Vov]->GetPointY(0));
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,1.5*yMax) );
+      hPad -> SetTitle(Form(";%s [DAC]; number of hits",ithMode.c_str()));
+      hPad -> Draw();
+      
+      int chIt = 0;
+      for(int ch : channels)
+	{
+	  ++chIt;
+	  
+	  g_N_totSel[ch][Vov] -> SetMarkerColor(colors[chIt]);
+	  g_N_totSel[ch][Vov] -> SetLineColor(colors[chIt]);
+	  g_N_totSel[ch][Vov] -> SetMarkerStyle(20);
+	  g_N_totSel[ch][Vov] -> SetMarkerSize(0.7);
+	  g_N_totSel[ch][Vov] -> Draw("P,same");
+	  
+	  TF1* f_sigmoid = new TF1(Form("f_sigmoid_ch%d",chIt),"[0]*(1-0.5*(1.+TMath::Erf((x-[1])/[2])))",0.,64.);
+	  f_sigmoid -> SetNpx(10000);
+	  f_sigmoid -> SetLineWidth(2);
+	  f_sigmoid -> SetLineColor(colors[chIt]);
+	  
+	  // find middle point of the sigmoid
+	  int index = 0;
+	  for(int j = 0; j < g_N_totSel[ch][Vov] -> GetN(); ++j)
+	    {
+	      if( g_N_totSel[ch][Vov]->GetPointY(j) < g_N_totSel[ch][Vov]->GetPointY(0)/2.)
+		{
+		  index = j;
+		  break;
+		} 
+	    }
+	  f_sigmoid -> SetParameters(g_N_totSel[ch][Vov]->GetPointY(0),g_N_totSel[ch][Vov]->GetPointX(index),3.);
+	  g_N_totSel[ch][Vov] -> Fit(f_sigmoid,"QRS");
+	  f_sigmoid -> Draw("same");
+	  
+	  TLatex* latex = new TLatex(0.40,0.90-0.05*chIt,Form("amplitude = %.1f #muA",dac_to_uA*f_sigmoid->GetParameter(1)));
+	  latex -> SetNDC();
+	  latex -> SetTextFont(82);
+	  latex -> SetTextSize(0.04);
+	  latex -> SetTextAlign(11);
+	  latex -> SetTextColor(colors[chIt]);
+	  latex -> Draw("same");
+	}
+      
+      c -> Print(Form("%s/g_N_totSel_Vov%.02f.png",plotDir.c_str(),Vov));
+      delete c;
+    }
   
   
-  TF1* f_sigmoid_ch1;
-  TF1* f_sigmoid_ch2;
-  
-  for(auto mapIt : h1_tot_ch1)
+  for(auto mapIt : VovMap)
     {  
       float Vov = mapIt.first;
       
       c = new TCanvas("c","c");
-      //hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,12000*frequency/10.) );
-      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5, g_N_totSel_ch1[Vov] -> GetY()[0]*1.5) );
-      hPad -> SetTitle(Form(";%s [DAC]; number of hits",ithMode.c_str()));
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,20.) );
+      hPad -> SetTitle(Form(";%s [DAC]; ToT [ns]",ithMode.c_str()));
       hPad -> Draw();
-      g_N_totSel_ch1[Vov] -> SetMarkerColor(kRed);
-      g_N_totSel_ch1[Vov] -> SetMarkerStyle(26);
-      g_N_totSel_ch1[Vov] -> Draw("P,same");
-      if( g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] -> SetMarkerColor(kBlue);
-      if( g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] -> SetMarkerStyle(32);
-      if( g_N_totSel_ch2[Vov] ) g_N_totSel_ch2[Vov] -> Draw("P,same");
       
-      f_sigmoid_ch1 = new TF1("f_sigmoid_ch1","[0]*(1-0.5*(1.+TMath::Erf((x-[1])/[2])))",0.,64.);
-      f_sigmoid_ch1 -> SetNpx(10000);
-      f_sigmoid_ch1 -> SetLineWidth(2);
-      f_sigmoid_ch1 -> SetLineColor(kRed);
-      int index = 0;
-      for (int j = 0; j < g_N_ch1[Vov] -> GetN(); j++ ){
-        if ( g_N_ch1[Vov]->GetPointY(j) < g_N_ch1[Vov]->GetPointY(0)/2){
-          index = j;
-          break;
-        } 
-      }
-      //f_sigmoid_ch1 -> SetParameters(g_N_ch1[Vov]->GetPointY(0),12.,3.);
-      f_sigmoid_ch1 -> SetParameters(g_N_ch1[Vov]->GetPointY(0), g_N_ch1[Vov]->GetPointX(index),3.);
-      g_N_ch1[Vov] -> Fit(f_sigmoid_ch1,"QRS");
-      f_sigmoid_ch1->Draw("same");
+      int chIt = 0;
+      for(int ch : channels)
+	{
+	  ++chIt;
+	  
+	  g_tot[ch][Vov] -> SetMarkerColor(colors[chIt]);
+	  g_tot[ch][Vov] -> SetLineColor(colors[chIt]);
+	  g_tot[ch][Vov] -> SetLineStyle(2);
+	  g_tot[ch][Vov] -> SetMarkerStyle(24);
+	  g_tot[ch][Vov] -> SetMarkerSize(0.7);
+	  g_tot[ch][Vov] -> Draw("PL,same");
+	  
+	  g_tot_totSel[ch][Vov] -> SetMarkerColor(colors[chIt]);
+	  g_tot_totSel[ch][Vov] -> SetLineColor(colors[chIt]);
+	  g_tot_totSel[ch][Vov] -> SetMarkerStyle(20);
+	  g_tot_totSel[ch][Vov] -> SetMarkerSize(0.7);
+	  g_tot_totSel[ch][Vov] -> Draw("PL,same");
+	}
       
-      TLatex* latex_ch1 = new TLatex(0.40,0.90,Form("amplitude = %.1f #muA",dac_to_uA*f_sigmoid_ch1->GetParameter(1)));
-      latex_ch1 -> SetNDC();
-      latex_ch1 -> SetTextFont(82);
-      latex_ch1 -> SetTextSize(0.04);
-      latex_ch1 -> SetTextAlign(11);
-      latex_ch1 -> SetTextColor(kRed);
-      latex_ch1 -> Draw("same");
-      
-      f_sigmoid_ch2 = new TF1("f_sigmoid_ch2","[0]*(1-0.5*(1.+TMath::Erf((x-[1])/[2])))",0.,64.);
-      f_sigmoid_ch2 -> SetNpx(10000);
-      f_sigmoid_ch2 -> SetLineWidth(2);
-      f_sigmoid_ch2 -> SetLineColor(kBlue);
-      index = 0;
-      for (int j = 0; j < g_N_ch2[Vov] -> GetN(); j++ ){
-        if ( g_N_ch2[Vov]->GetPointY(j) < g_N_ch2[Vov]->GetPointY(0)/2){
-          index = j;
-          break;
-        } 
-      }
-      //f_sigmoid_ch2 -> SetParameters(g_N_ch2[Vov]->GetPointY(0),12.,3.);
-      f_sigmoid_ch2 -> SetParameters(g_N_ch2[Vov]->GetPointY(0), g_N_ch2[Vov]->GetPointX(index),3.);
-      g_N_ch2[Vov] -> Fit(f_sigmoid_ch2,"QRS");
-      f_sigmoid_ch2->Draw("same");
-      
-      TLatex* latex_ch2 = new TLatex(0.40,0.85,Form("amplitude = %.1f #muA",dac_to_uA*f_sigmoid_ch2->GetParameter(1)));
-      latex_ch2 -> SetNDC();
-      latex_ch2 -> SetTextFont(82);
-      latex_ch2 -> SetTextSize(0.04);
-      latex_ch2 -> SetTextAlign(11);
-      latex_ch2 -> SetTextColor(kBlue);
-      latex_ch2 -> Draw("same");
-      
-      c -> Print(Form("%s/g_N_Vov%.1f.png",plotDir.c_str(),Vov));
-      
+      c -> Print(Form("%s/g_tot_Vov%.02f.png",plotDir.c_str(),Vov));
       delete c;
     }
   
-  for(auto mapIt : h1_tot_ch1)
-  {  
-    float Vov = mapIt.first;
-    
-    c = new TCanvas("c","c");
-    hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,20.) );
-    hPad -> SetTitle(Form(";%s [DAC]; ToT [ns]",ithMode.c_str()));
-    hPad -> Draw();
-    g_tot_ch1[Vov] -> SetMarkerColor(kRed);
-    g_tot_ch1[Vov] -> SetMarkerStyle(22);
-    g_tot_ch1[Vov] -> Draw("PL,same");
-    if( g_tot_ch2[Vov] ) g_tot_ch2[Vov] -> SetMarkerColor(kBlue);
-    if( g_tot_ch2[Vov] ) g_tot_ch2[Vov] -> SetMarkerStyle(23);
-    if( g_tot_ch2[Vov] ) g_tot_ch2[Vov] -> Draw("PL,same");
-    g_tot_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
-    g_tot_totSel_ch1[Vov] -> SetMarkerStyle(26);
-    g_tot_totSel_ch1[Vov] -> Draw("PL,same");
-    if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-    if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> SetMarkerStyle(32);
-    if( g_tot_totSel_ch2[Vov] ) g_tot_totSel_ch2[Vov] -> Draw("PL,same");
-    c -> Print(Form("%s/g_tot_Vov%.1f.png",plotDir.c_str(),Vov));
-    delete c;
-  }
   
-  for(auto mapIt : h1_energy_ch1)
-  {  
-    float Vov = mapIt.first;
-    
-    c = new TCanvas("c","c");
-    hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,1023.5) );
-    hPad -> SetTitle(Form(";%s [DAC]; energy [ADC]",ithMode.c_str()));
-    hPad -> Draw();
-    g_energy_ch1[Vov] -> SetMarkerColor(kRed);
-    g_energy_ch1[Vov] -> SetMarkerStyle(22);
-    g_energy_ch1[Vov] -> Draw("PL,same");
-    if( g_energy_ch2[Vov] ) g_energy_ch2[Vov] -> SetMarkerColor(kBlue);
-    if( g_energy_ch2[Vov] )g_energy_ch2[Vov] -> SetMarkerStyle(23);
-    if( g_energy_ch2[Vov] )g_energy_ch2[Vov] -> Draw("PL,same");
-    g_energy_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
-    g_energy_totSel_ch1[Vov] -> SetMarkerStyle(26);
-    g_energy_totSel_ch1[Vov] -> Draw("PL,same");
-    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> SetMarkerStyle(32);
-    if( g_energy_totSel_ch2[Vov] ) g_energy_totSel_ch2[Vov] -> Draw("PL,same");
-    c -> Print(Form("%s/g_energy_Vov%.1f.png",plotDir.c_str(),Vov));
-    delete c;
-  }
+  for(auto mapIt : VovMap)
+    {  
+      float Vov = mapIt.first;  
+      
+      c = new TCanvas("c","c");
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,-10.,63.5,1023.5) );
+      hPad -> SetTitle(Form(";%s [DAC]; energy [ADC]",ithMode.c_str()));
+      hPad -> Draw();
+      
+      int chIt = 0;
+      for(int ch : channels)
+	{
+	  ++chIt;
+	  
+	  g_energy[ch][Vov] -> SetMarkerColor(colors[chIt]);
+	  g_energy[ch][Vov] -> SetLineColor(colors[chIt]);
+	  g_energy[ch][Vov] -> SetLineStyle(2);
+	  g_energy[ch][Vov] -> SetMarkerStyle(24);
+	  g_energy[ch][Vov] -> SetMarkerSize(0.7);
+	  g_energy[ch][Vov] -> Draw("PL,same");
+	  
+	  g_energy_totSel[ch][Vov] -> SetMarkerColor(colors[chIt]);
+	  g_energy_totSel[ch][Vov] -> SetLineColor(colors[chIt]);
+	  g_energy_totSel[ch][Vov] -> SetMarkerStyle(20);
+	  g_energy_totSel[ch][Vov] -> SetMarkerSize(0.7);
+	  g_energy_totSel[ch][Vov] -> Draw("PL,same");
+	}
+      
+      c -> Print(Form("%s/g_energy_Vov%.02f.png",plotDir.c_str(),Vov));
+      delete c;
+    }
   
   
-  // for(auto mapIt : h1_tot_ch1)
-  //   {  
-  //     float Vov = mapIt.first;
+  std::map<int,float> slewRateMax;
+  for(auto mapIt : VovMap)
+    {  
+      float Vov = mapIt.first;
       
-  //     c = new TCanvas("c","c");
-  //     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,40.) );
-  //     //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,100.) );
-  //     hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,200.) );
-  //     hPad -> SetTitle(Form(";time [ns]; pulse shape [mV]"));
-  //     hPad -> Draw();
-  //     g_ps_totSel_deltaT[Vov] -> SetMarkerColor(kGray+2);
-  //     g_ps_totSel_deltaT[Vov] -> SetLineColor(kGray+2);
-  //     g_ps_totSel_deltaT[Vov] -> SetMarkerStyle(22);
-  //     g_ps_totSel_deltaT[Vov] -> Draw("P,same");
-  //     c -> Print(Form("%s/g_ps_deltaT_Vov%.1f.png",plotDir.c_str(),Vov));
-  //     delete c;
-  //   }
-  
-  
-  for(auto mapIt : h1_time1_totSel_ch1)
-  {  
-
-    float Vov = mapIt.first;
-    
-    float fitXMin = 0.;
-    float fitXMax = 999.;
-    
-    c = new TCanvas("c","c");
-    //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,40.) );
-    //hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,100.) );
-    hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,65*dac_to_uA) );
-    hPad -> SetTitle(Form(";time [ns]; pulse shape [#muA]"));
-    if (tofhirVersion.find("2A")!= std::string::npos ){ hPad -> SetTitle(Form(";time [ns]; pulse shape [mV]"));  }
-    hPad -> Draw();
-    g_ps_totSel_ch1[Vov] -> SetLineColor(kRed-4);
-    g_ps_totSel_ch1[Vov] -> SetMarkerColor(kRed-4);
-    g_ps_totSel_ch1[Vov] -> SetMarkerStyle(26);
-    g_ps_totSel_ch1[Vov] -> Draw("P,same");
-    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> SetMarkerColor(kBlue-4);
-    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> SetLineColor(kBlue-4);
-    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> SetMarkerStyle(32);
-    if( g_ps_totSel_ch2[Vov] ) g_ps_totSel_ch2[Vov] -> Draw("P,same");
-
-    float slewRate = 0.;
-    TF1* fitFunc_ch1 = new TF1("fitFunc_ch1","pol1",-5.,10.);
-    //-- slew rate max 
-    for(int point1 = 0; point1 < g_ps_totSel_ch1[Vov]->GetN()-4; ++point1)
-    {
-      TGraph* g_temp = new TGraph();
-      for(int point2 = point1; point2 < point1+4; ++point2)
-      {
-        g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch1[Vov]->GetPointX(point2),g_ps_totSel_ch1[Vov]->GetPointY(point2));
-      }
+      float fitXMin = 0.;
+      float fitXMax = 999.;
       
-      TF1* f_temp = new TF1("f_temp","pol1",-10.,100.);
-      g_temp -> Fit(f_temp,"QNRS");
+      c = new TCanvas("c","c",1400,700);
+      c -> Divide(2,1);
+      c -> cd(1);
+      hPad = (TH1F*)( gPad->DrawFrame(-2.,0.,20.,65*dac_to_uA) );
+      hPad -> SetTitle(Form(";time [ns]; pulse shape [#muA]"));
+      if( tofhirVersion.find("2A")!= std::string::npos ) hPad -> SetTitle(Form(";time [ns]; pulse shape [mV]"));
+      hPad -> Draw();
+      c -> cd(2);
+      hPad2 = (TH1F*)( gPad->DrawFrame(-2.,0.,2.,65*dac_to_uA) );
+      hPad2 -> SetTitle(Form(";time [ns]; pulse shape [#muA]"));
+      if( tofhirVersion.find("2A")!= std::string::npos ) hPad2 -> SetTitle(Form(";time [ns]; pulse shape [mV]"));
+      hPad2 -> Draw();
       
-      if( f_temp->GetParameter(1) > slewRate )
-      {
-        slewRate = f_temp->GetParameter(1);
-        fitFunc_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
-      }
-      delete g_temp;
-    }
-
-    TF1* fitFuncLow_ch1 = new TF1("fitFuncLow_ch1","pol1",-5.,10.);
-    //-- slew rate at low threshold
-    TGraph* g_temp = new TGraph();
-    for(int point1 = 0; point1 < 4; ++point1){
-      g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch1[Vov]->GetPointX(point1),g_ps_totSel_ch1[Vov]->GetPointY(point1)); 
-    }
-    TF1* f_temp = new TF1("f_temp","pol1", g_temp ->GetPointX(0), g_temp ->GetPointX(3));
-    f_temp->SetParameter(1,10.);
-    g_temp -> Fit(f_temp,"QNRS"); 
-    fitFuncLow_ch1 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
-    fitFuncLow_ch1 -> SetRange(g_temp ->GetPointX(0), g_temp ->GetPointX(3));
-    float slewRate_low = fitFuncLow_ch1->GetParameter(1); 
-    std::cout << "Slew rate at low threshold = " << slewRate_low << std::endl;
-
-    // -- draw
-    fitFunc_ch1 -> SetLineColor(kRed-4);
-    fitFunc_ch1 -> Draw("same");
-    TLatex* latex_ch1 = new TLatex(0.30,0.80,Form("slew rate max = %.1f #muA/ns",fitFunc_ch1->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1 = new TLatex(0.30,0.80,Form("slew rate max = %.1f mV/ns",fitFunc_ch1->GetParameter(1)));     
-    }
-    latex_ch1 -> SetNDC();
-    latex_ch1 -> SetTextFont(82);
-    latex_ch1 -> SetTextSize(0.04);
-    latex_ch1 -> SetTextAlign(11);
-    latex_ch1 -> SetTextColor(kRed-4);
-    latex_ch1 -> Draw("same");
-
-    fitFuncLow_ch1 -> SetLineColor(kRed+2);
-    fitFuncLow_ch1 -> Draw("same");
-    TLatex* latex_ch1_low = new TLatex(0.30,0.70,Form("slew rate timing th. = %.1f #muA/ns",fitFuncLow_ch1->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch1_low = new TLatex(0.30,0.70,Form("slew rate timing th. = %.1f mV/ns",fitFuncLow_ch1->GetParameter(1)));     
-    }
-    latex_ch1_low -> SetNDC();
-    latex_ch1_low -> SetTextFont(82);
-    latex_ch1_low -> SetTextSize(0.04);
-    latex_ch1_low -> SetTextAlign(11);
-    latex_ch1_low -> SetTextColor(kRed+2);
-    latex_ch1_low -> Draw("same");
-
-
-    // -- channel 2
-    slewRate = 0.;
-    TF1* fitFunc_ch2 = new TF1("fitFunc_ch","pol1",-10.,100.);
-    for(int point1 = 0; point1 < g_ps_totSel_ch2[Vov]->GetN()-4; ++point1)
-    {
-      TGraph* g_temp = new TGraph();
-      for(int point2 = point1; point2 < point1+4; ++point2)
-      {
-        g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch2[Vov]->GetPointX(point2),g_ps_totSel_ch2[Vov]->GetPointY(point2));
-      }
+      int chIt = 0;
+      for(int ch : channels)
+	{
+	  ++chIt;
+	  
+	  g_ps_totSel[ch][Vov] -> SetLineColor(colors[chIt]);
+	  g_ps_totSel[ch][Vov] -> SetMarkerColor(colors[chIt]);
+	  g_ps_totSel[ch][Vov] -> SetMarkerStyle(20);
+	  g_ps_totSel[ch][Vov] -> SetMarkerSize(0.7);
+	  c -> cd(1);
+	  g_ps_totSel[ch][Vov] -> Draw("P,same");
+	  c -> cd(2);
+	  g_ps_totSel[ch][Vov] -> Draw("P,same");
+	  
+	  // slew rate max 
+	  int nPoints_SRMax = 5;
+	  TF1* fitFunc_SRMax = new TF1(Form("fitFunc_SRMax_ch%d",chIt),"pol1",-5.,10.);
+	  for(int point1 = 0; point1 < g_ps_totSel[ch][Vov]->GetN()-nPoints_SRMax; ++point1)
+	    {
+	      TGraph* g_temp = new TGraph();
+	      for(int point2 = point1; point2 < point1+nPoints_SRMax; ++point2)
+		{
+		  g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel[ch][Vov]->GetPointX(point2),g_ps_totSel[ch][Vov]->GetPointY(point2));
+		}
+	      
+	      TF1* f_temp = new TF1("f_temp","pol1",-10.,100.);
+	      g_temp -> Fit(f_temp,"QNRS");
+	      
+	      if( f_temp->GetParameter(1) > slewRateMax[ch] )
+		{
+		  slewRateMax[ch] = f_temp->GetParameter(1);
+		  fitFunc_SRMax -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
+		  //fitFunc_SRMax -> SetRange(g_temp->GetPointX(0),g_temp->GetPointX(g_temp->GetN()-1));
+		}
+	      delete g_temp;
+	      delete f_temp;
+	    }
+	  
+	  // slew rate at low threshold
+	  float lowTh = opts.GetOpt<float>("Input.lowTh");
+	  int nPoints_SRLow = opts.GetOpt<int>("Input.nPointsLow");
+	  int pointLow = -1;
+	  float slewRateLow = 0.;
+	  TF1* fitFunc_SRLow = new TF1(Form("fitFunc_SRLow_ch%d",chIt),"pol1",-5.,10.);
+	  
+	  for(int point1 = 0; point1 < 0.5*g_ps_totSel[ch][Vov]->GetN(); ++point1)
+	    {
+	      if( g_ps_totSel[ch][Vov]->GetPointY(point1) > lowTh )
+		{
+		  pointLow = point1;
+	   	  break;
+	   	}
+	    }
+	  TGraph* g_temp = new TGraph();
+	  if( pointLow >= 0 )
+	    {
+	      for(int point1 = pointLow-0.5*nPoints_SRLow; point1 < pointLow+0.5*nPoints_SRLow; ++point1)
+		{
+		  g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel[ch][Vov]->GetPointX(point1),g_ps_totSel[ch][Vov]->GetPointY(point1)); 
+		}
+	      g_temp -> Fit(fitFunc_SRLow,"QNRS"); 
+	      fitFunc_SRLow -> SetRange(g_temp->GetPointX(0),g_temp->GetPointX(g_temp->GetN()-1));
+	      slewRateLow = fitFunc_SRLow->GetParameter(1); 
+	    }
+	  
+	  // draw
+	  fitFunc_SRMax -> SetLineColor(colors[chIt]);
+	  fitFunc_SRMax -> SetLineWidth(1);
+	  fitFunc_SRMax -> SetLineStyle(2);
+	  c -> cd(1);
+	  fitFunc_SRMax -> Draw("same");
+	  
+	  TLatex* latex_SRMax = new TLatex(0.30,0.90-0.05*chIt,Form("slope_{max.} = %.1f #muA/ns",fitFunc_SRMax->GetParameter(1)));
+	  if( tofhirVersion.find("2A") != std::string::npos )
+	    latex_SRMax = new TLatex(0.30,0.90-0.05*chIt,Form("slope_{max.} = %.1f mV/ns",fitFunc_SRMax->GetParameter(1)));
+	  latex_SRMax -> SetNDC();
+	  latex_SRMax -> SetTextFont(82);
+	  latex_SRMax -> SetTextSize(0.04);
+	  latex_SRMax -> SetTextAlign(11);
+	  latex_SRMax -> SetTextColor(colors[chIt]);
+	  c -> cd(1);
+	  latex_SRMax -> Draw("same");
+	  
+	  fitFunc_SRLow -> SetLineColor(colors[chIt]-2);
+	  fitFunc_SRLow -> SetLineWidth(1);
+	  fitFunc_SRLow -> SetLineWidth(4);
+	  c -> cd(2);
+	  fitFunc_SRLow -> Draw("same");
+	  
+	  TLatex* latex_SRLow = new TLatex(0.30,0.90-0.05*chIt,Form("slope_{%.1f uA} = %.1f #muA/ns",lowTh,fitFunc_SRLow->GetParameter(1)));
+	  if( tofhirVersion.find("2A") != std::string::npos )
+	    latex_SRLow = new TLatex(0.30,0.90-0.05*chIt,Form("slope_{%.1f mV} = %.1f mV/ns",lowTh,fitFunc_SRLow->GetParameter(1)));
+	  latex_SRLow -> SetNDC();
+	  latex_SRLow -> SetTextFont(82);
+	  latex_SRLow -> SetTextSize(0.04);
+	  latex_SRLow -> SetTextAlign(11);
+	  latex_SRLow -> SetTextColor(colors[chIt]-2);
+	  c -> cd(2);
+	  latex_SRLow -> Draw("same");
+	}
       
-      TF1* f_temp = new TF1("f_temp","pol1",-10.,100.);
-      g_temp -> Fit(f_temp,"QNRS");
+      c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.02f.png",plotDir.c_str(),Vov));
+      delete c;
+    }
+
+  for(auto mapIt : VovMap)
+    {  
+      float Vov = mapIt.first;  
       
-      if( f_temp->GetParameter(1) > slewRate )
-      {
-        slewRate = f_temp->GetParameter(1);
-        fitFunc_ch2 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
-      }
-      delete g_temp;
+      c = new TCanvas("c","c");
+      hPad = (TH1F*)( gPad->DrawFrame(-0.5,0.,63.5,1.5*std::max(slewRateMax[channels[0]],slewRateMax[channels[1]])) );
+      hPad -> SetTitle(Form(";%s [DAC]; slope [#muA/ns]",ithMode.c_str()));
+      hPad -> Draw();
+      
+      int chIt = 0;
+      for(int ch : channels)
+	{
+	  ++chIt;
+
+	  g_SR_totSel[ch][Vov] -> SetMarkerColor(colors[chIt]);
+	  g_SR_totSel[ch][Vov] -> SetLineColor(colors[chIt]);
+	  g_SR_totSel[ch][Vov] -> SetMarkerStyle(20);
+	  g_SR_totSel[ch][Vov] -> SetMarkerSize(0.7);
+	  g_SR_totSel[ch][Vov] -> Draw("PL,same");
+	}
+      
+      c -> Print(Form("%s/g_SR_Vov%.02f.png",plotDir.c_str(),Vov));
+      delete c;
     }
-
-    TF1* fitFuncLow_ch2 = new TF1("fitFuncLow_ch2","pol1",-5.,10.);
-    //-- slew rate at low threshold
-    g_temp = new TGraph();
-    for(int point1 = 0; point1 < 5; ++point1){
-      g_temp -> SetPoint(g_temp->GetN(),g_ps_totSel_ch2[Vov]->GetPointX(point1),g_ps_totSel_ch2[Vov]->GetPointY(point1)); 
-    }
-    f_temp = new TF1("f_temp","pol1", g_temp ->GetPointX(0), g_temp ->GetPointX(3));
-    f_temp->SetParameter(1,10.);
-    g_temp -> Fit(f_temp,"QNRS"); 
-    fitFuncLow_ch2 -> SetParameters(f_temp->GetParameter(0),f_temp->GetParameter(1));
-    fitFuncLow_ch2 -> SetRange(g_temp ->GetPointX(0), g_temp ->GetPointX(3));
-    slewRate_low = fitFuncLow_ch2->GetParameter(1); 
-    std::cout << "ch2 - Slew rate max              = " << slewRate << std::endl;
-    std::cout << "ch2 - Slew rate at low threshold = " << slewRate_low << std::endl;
-    delete g_temp;
-
-
-
-    fitFunc_ch2 -> SetLineColor(kBlue-4);
-    fitFunc_ch2 -> Draw("same");
-    TLatex* latex_ch2 = new TLatex(0.30,0.76,Form("slew rate max = %.1f #muA/ns",fitFunc_ch2->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch2 = new TLatex(0.40,0.76,Form("slew rate = %.1f mV/ns",fitFunc_ch2->GetParameter(1)));     
-    }
-    latex_ch2 -> SetNDC();
-    latex_ch2 -> SetTextFont(82);
-    latex_ch2 -> SetTextSize(0.04);
-    latex_ch2 -> SetTextAlign(11);
-    latex_ch2 -> SetTextColor(kBlue-4);
-    latex_ch2 -> Draw("same");
-
-    fitFuncLow_ch2 -> SetLineColor(kBlue+2);
-    fitFuncLow_ch2 -> Draw("same");
-    TLatex* latex_ch2_low = new TLatex(0.30,0.66,Form("slew rate timing th. = %.1f #muA/ns",fitFuncLow_ch2->GetParameter(1)));
-    if (tofhirVersion.find("2A")!= std::string::npos ){
-      latex_ch2_low = new TLatex(0.30,0.66,Form("slew rate timing th. = %.1f mV/ns",fitFuncLow_ch2->GetParameter(1)));     
-    }
-    latex_ch2_low -> SetNDC();
-    latex_ch2_low -> SetTextFont(82);
-    latex_ch2_low -> SetTextSize(0.04);
-    latex_ch2_low -> SetTextAlign(11);
-    latex_ch2_low -> SetTextColor(kBlue+2);
-    latex_ch2_low -> Draw("same");
-    
-    c -> Print(Form("%s/g_ps_ch1_ch2_Vov%.1f.png",plotDir.c_str(),Vov));
-    delete c;
-  }
   
   
   //-----------
   // save plots
   
-  for(auto mapIt : g_ps_totSel_ch1)
+  int chIt = 0;
+  for(auto mapIt : g_ps_totSel)
   {
-    mapIt.second -> Write(Form("g_ps_totSel_ch1_Vov%.1f",mapIt.first));
-  }
-  for(auto mapIt : g_ps_totSel_ch2)
-  {
-    mapIt.second -> Write(Form("g_ps_totSel_ch2_Vov%.1f",mapIt.first));
+    ++chIt;
+    
+    for(auto mapIt2 : g_ps_totSel[mapIt.first])
+      mapIt2.second -> Write(Form("g_ps_totSel_ch%d_Vov%.02f",chIt,mapIt2.first));
   }
 
-  for (auto mapIt:  g_N_ch1)
+  chIt = 0;
+  for(auto mapIt : g_N_totSel)
   {
-    mapIt.second -> Write(Form("g_N_ch1_Vov%.1f",mapIt.first));
-  } 
-
-  for (auto mapIt:  g_N_ch2)
-  {
-    mapIt.second -> Write(Form("g_N_ch2_Vov%.1f",mapIt.first));
-  } 
-  
-  
-  //gApplication->Terminate(); 
+    ++chIt;
+    
+    for(auto mapIt2 : g_N_totSel[mapIt.first])
+      mapIt2.second -> Write(Form("g_N_totSel_ch%d_Vov%.02f",chIt,mapIt2.first));
+  }
   
   outFile -> Close();
 }
