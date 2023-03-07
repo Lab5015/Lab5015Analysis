@@ -193,7 +193,6 @@ int main(int argc, char** argv)
 	
 	if( (*tot)[channelIdx[ch]]/1000. < totMin || (*tot)[channelIdx[ch]]/1000. > totMax ) continue;
 	
-	
 	// --  laser
 	if( frequency > -1 )
 	  {
@@ -799,6 +798,17 @@ int main(int argc, char** argv)
     
     for(auto mapIt2 : g_N_totSel[mapIt.first])
       mapIt2.second -> Write(Form("g_N_totSel_ch%d_Vov%.02f",chIt,mapIt2.first));
+  }
+
+
+
+  chIt = 0;
+  for(auto mapIt : g_SR_totSel)
+  {
+    ++chIt;
+    
+    for(auto mapIt2 : g_SR_totSel[mapIt.first])
+      mapIt2.second -> Write(Form("g_SR_totSel_ch%d_Vov%.02f",chIt,mapIt2.first));
   }
   
   outFile -> Close();
