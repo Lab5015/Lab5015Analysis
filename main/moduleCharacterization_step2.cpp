@@ -197,6 +197,7 @@ int main(int argc, char** argv)
   system(Form("mkdir -p %s/energy/",plotDir.c_str()));
   system(Form("mkdir -p %s/energyRatio/",plotDir.c_str()));
   system(Form("mkdir -p %s/t1fine/",plotDir.c_str()));
+  system(Form("mkdir -p %s/qT1/",plotDir.c_str()));
   system(Form("mkdir -p %s/energyRatioCorr/",plotDir.c_str()));
   system(Form("mkdir -p %s/energyRatioCorr_totRatioCorr/",plotDir.c_str()));
   system(Form("mkdir -p %s/totRatioCorr/",plotDir.c_str()));
@@ -575,10 +576,13 @@ int main(int argc, char** argv)
 	      
 	      // -- questa condizione er solo per il laser... puo' andare bene tenerla anche per 60Co?
 	      //if ((fitFunc->GetParameter(1) - fitFunc->GetParameter(2)*5)>0) 
-	      ranges[LRLabel][index] -> push_back( fitFunc->GetParameter(1) - fitFunc->GetParameter(2)*5);
+	      
+	      //ranges[LRLabel][index] -> push_back( fitFunc->GetParameter(1) - fitFunc->GetParameter(2)*5);
+	      ranges[LRLabel][index] -> push_back( fitFunc->GetParameter(1) - std::max(fitFunc->GetParameter(2)*5, histo->GetBinWidth(1)));
 	      // else 
 	      //   ranges[LRLabel][index] -> push_back(0);
-	      ranges[LRLabel][index] -> push_back( fitFunc->GetParameter(1) + fitFunc->GetParameter(2)*5);
+	      //ranges[LRLabel][index] -> push_back( fitFunc->GetParameter(1) + fitFunc->GetParameter(2)*5);
+	      ranges[LRLabel][index] -> push_back( fitFunc->GetParameter(1) + std::max(fitFunc->GetParameter(2)*5, histo->GetBinWidth(1)));
 	      
 	      for(auto range: (*ranges[LRLabel][index])){
 		float yval = std::max(10., histo->GetBinContent(histo->FindBin(range)));
@@ -770,14 +774,18 @@ int main(int argc, char** argv)
 	  if (fabs(anEvent->timeR-anEvent->timeL)<10000)
 	    {
 	      //if ((anEvent->energyR / anEvent->energyL >0) & (anEvent->energyR / anEvent->energyL <5)){
-	      if ((anEvent->energyR / anEvent->energyL >0) & (anEvent->energyR / anEvent->energyL <9999999)){
+	      if ((anEvent->energyR / anEvent->energyL > -999) & (anEvent->energyR / anEvent->energyL <9999999)){
 		h1_energyRatio[index2] -> Fill( anEvent->energyR / anEvent->energyL );						     
 		h1_totRatio[index2] -> Fill( anEvent->totR / anEvent->totL );
 		h1_deltaT_raw[index2] -> Fill( anEvent->timeR-anEvent->timeL );
+
+		h1_t1fineMean[index2] -> Fill( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) );
+		h1_qT1Mean[index2] -> Fill( 0.5 * (anEvent->qT1R + anEvent->qT1L) );
+
 	      }
+
 	    }
 	  
-	  std::cout << std::endl;
 	} // end loop over entries
     }
       
@@ -1337,7 +1345,7 @@ int main(int argc, char** argv)
 	      c = new TCanvas(Form("c_deltaT_energyRatioCorr__vs_t1fineMean_%s",labelLR_energyBin.c_str()),Form("c_deltaT_energyRatioCorr_vs_t1fineMean_%s",labelLR_energyBin.c_str()));
 	      
 	      h2 = h2_deltaT_energyRatioCorr_vs_t1fineMean[index2];
-              h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) -500., h2 -> GetMean(2)+500);
+	      h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) - 600., h2 -> GetMean(2)+ 600);
               h2 -> SetTitle(Form(";t1fineMean;#Deltat [ps]"));
               h2 -> Draw("colz");
 	      prof = p1_deltaT_energyRatioCorr_vs_t1fineMean[index2];
@@ -1363,7 +1371,7 @@ int main(int argc, char** argv)
 	      c -> SetGridy();
 	      
 	      h2 = h2_deltaT_totRatioCorr_vs_t1fineMean[index2]; 
-	      h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) -500., h2 -> GetMean(2)+500);
+	      h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) -600., h2 -> GetMean(2)+600);
 	      h2 -> SetTitle(Form(";t1fineMean;#Deltat [ps]"));
 	      h2 -> Draw("colz");
 	      prof = p1_deltaT_totRatioCorr_vs_t1fineMean[index2];
@@ -1608,7 +1616,7 @@ int main(int argc, char** argv)
               c -> SetGridy();
 	      
               h2 = h2_deltaT_energyRatioCorr_totRatioCorr_vs_t1fineMean[index2];
-              h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) -500., h2 -> GetMean(2)+500);
+              h2 -> GetYaxis()->SetRangeUser(h2 -> GetMean(2) -600., h2 -> GetMean(2)+600);
               h2 -> SetTitle(Form(";t1fineMean;#Deltat [ps]"));
               h2 -> Draw("colz");
               prof = p1_deltaT_totRatioCorr_vs_t1fineMean[index2];
