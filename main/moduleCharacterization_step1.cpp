@@ -218,7 +218,6 @@ int main(int argc, char** argv)
   std::map<int,TH1F*> h1_energyLR_ext;
   std::map<int,TCanvas*> c;
   std::map<int,std::vector<float>*> rangesLR;
-  std::map<int,std::map<std::string,std::pair<float,float> > > peaksLR;
   std::map<int,bool> acceptEvent;
 
   // -- Coincidence pre loop
@@ -335,8 +334,11 @@ int main(int argc, char** argv)
       if (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22")){		
 	for( auto index : h1_energyLR_ext){
 	  rangesLR[index.first] = new std::vector<float>;
-	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar")) peaksLR[index.first] = Na22SpectrumAnalyzerSingleBar(index.second,rangesLR[index.first]);
-	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22")) peaksLR[index.first] = Na22SpectrumAnalyzer(index.second,rangesLR[index.first]);
+	  rangesLR[index.first]->push_back(30);
+	  rangesLR[index.first]->push_back(950);
+	  
+	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar")) Na22SpectrumAnalyzerSingleBar(index.second,rangesLR[index.first]);
+	  if(!opts.GetOpt<std::string>("Input.sourceName").compare("Na22")) Na22SpectrumAnalyzer(index.second,rangesLR[index.first]);
 	}
       }
       
@@ -391,7 +393,7 @@ int main(int argc, char** argv)
   //--- 1st loop over events
   
   ModuleEventClass anEvent;
-
+  
   unsigned short qfineL[16];
   unsigned short qfineR[16];    
   float totL[16];
@@ -400,6 +402,8 @@ int main(int argc, char** argv)
   long long timeR[16];
   unsigned short t1fineL[16]; 
   unsigned short t1fineR[16]; 
+  float qT1L[16]; 
+  float qT1R[16]; 
   float energyL[16];
   float energyR[16];
   
@@ -555,7 +559,6 @@ int main(int argc, char** argv)
 	    !opts.GetOpt<std::string>("Input.sourceName").compare("TB")
 	    )
 	  {
-	  
 	  if( totL[iBar] <= -10. || totR[iBar] <= -10. ) continue;
 	  if( totL[iBar] >= 50. ||  totR[iBar] >= 50.) continue;
 	  if( ( thrZero.GetThresholdZero(chL[iBar],vthMode) + vth) > 63. ) continue;
@@ -600,8 +603,7 @@ int main(int argc, char** argv)
 	    anEvent.x = -999.;
 	    anEvent.y = -999.;
 	  }
-	  
-	  
+
 	  outTrees[index] -> Fill();
 	  }	  
 	}
@@ -619,7 +621,7 @@ int main(int argc, char** argv)
 	if( totL[maxBar] >= 50. ||  totR[maxBar] >= 50.) continue;
 	if( ( thrZero.GetThresholdZero(chL[maxBar],vthMode) + vth) > 63. ) continue;
         if( ( thrZero.GetThresholdZero(chR[maxBar],vthMode) + vth) > 63. ) continue;
-
+	
 	//--- fill histograms
 	h1_qfineL[index] -> Fill( qfineL[maxBar] );
 	h1_totL[index] -> Fill( totL[maxBar] );
@@ -642,6 +644,7 @@ int main(int argc, char** argv)
 	anEvent.timeR = timeR[maxBar];
 	anEvent.t1fineL = t1fineL[maxBar];
 	anEvent.t1fineR = t1fineR[maxBar];
+	
 	if(useTrackInfo){
 	  anEvent.nhits = nhits;
 	  anEvent.x = x;
@@ -662,5 +665,4 @@ int main(int argc, char** argv)
   std::cout << "nr of KB written:  " << int(bytes/1024.)       << std::endl;
   std::cout << "nr of MB written:  " << int(bytes/1024./1024.) << std::endl;
   std::cout << "============================================"  << std::endl;
-  
 }

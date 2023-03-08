@@ -12,17 +12,44 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
   
   
   // use TSpectrum to localize peaks
-  histo -> GetXaxis() -> SetRangeUser(1.,40.);
+  float xMinAxis = histo -> GetXaxis() -> GetXmin();
+  float xMaxAxis = histo -> GetXaxis() -> GetXmax();
+  histo -> GetXaxis() -> SetRangeUser(ranges->at(0),ranges->at(1));
+  //  histo -> GetXaxis() -> SetRangeUser(30.,950.);
   
-  int nPeaks = 5;
+  int nPeaks = 3;
   TSpectrum* spectrum = new TSpectrum(nPeaks);
-  int nFound = spectrum -> Search(histo, 0.5, "", 0.001);		
-  double* peaks = spectrum -> GetPositionX();				
+  int nFound = spectrum -> Search(histo, 3., "nodraw", 0.1);
+  // int nFound = spectrum -> Search(histo, 7., "nodraw", 0.05);
+  double* peaks = spectrum -> GetPositionX();
   
+  float xMax = 0.;
+  for(int jj = 0; jj < nFound; ++jj)
+    if( peaks[jj] > xMax) xMax = peaks[jj];
   
+  TF1* f_gaus = new TF1("f_gaus","gaus(0)",xMax-0.2*xMax,xMax+0.3*xMax);
+  f_gaus -> SetLineColor(kBlue);
+  f_gaus -> SetLineWidth(2);
+  histo -> Fit(f_gaus,"QRS+");
+  f_gaus -> Draw("same");
+  
+  TF1* f_gaus2 = new TF1("f_gaus2","gaus(0)",f_gaus->GetParameter(1)-1.*f_gaus->GetParameter(2),f_gaus->GetParameter(1)+2.5*f_gaus->GetParameter(2));
+  f_gaus2 -> SetLineColor(kBlack);
+  f_gaus2 -> SetLineWidth(3);
+  histo -> Fit(f_gaus2,"QRS+");
+  f_gaus2 -> Draw("same");
+  
+  ranges->clear();
+  res["1.275 MeV"] = std::make_pair(f_gaus2->GetParameter(1),f_gaus2->GetParameter(2));
+  ranges->push_back(std::max(res["1.275 MeV"].first-1.5*res["1.275 MeV"].second,16.)); 
+  ranges->push_back(res["1.275 MeV"].first+1.5*res["1.275 MeV"].second); 
+  
+  histo -> GetXaxis() -> SetRangeUser(xMinAxis,xMaxAxis);
+  std::vector<double> realPeaks;
+  
+  /*
   // totalPeaks -> all found Peaks, nBins -> bin number of found Peaks, realPeaks -> 511 and 1275 
   std::vector<double> totalPeaks;
-  std::vector<double> realPeaks;
   std::vector<int> nBins;
   double maxValue = 0;
   double secondMaxValue = 0;
@@ -60,7 +87,7 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
 		}
 	}
   
-  histo -> GetXaxis() -> SetRangeUser(0.  ,40.);
+  histo -> GetXaxis() -> SetRangeUser(0.  ,1000.);
 
  
 		
@@ -266,7 +293,7 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
  
  
 
-
+  /*
 //module
 
  if ( realPeaks.size() > 0 && realPeaks.size() < 3 ){
@@ -295,22 +322,21 @@ std::map<std::string,std::pair<float,float> > Na22SpectrumAnalyzer(TH1F* histo,
 		ranges->push_back(second-0.1*second);
 		ranges->push_back(second+0.1*second);
    }
+  */
+
   
-  for(auto range: (*ranges)){
-		
-		if ( range  < 0  && realPeaks.size() == 1) { //error controll
-			std::cout << "Errore" << std::endl;
-    	res["0.511 MeV"] = std::make_pair(-9999,0);	
-		}
-	  float yval = std::max(10., histo->GetBinContent(histo->FindBin(range)));
-		TLine* line = new TLine(range,3.,range, yval);
-		line -> SetLineWidth(1);
-		line -> SetLineStyle(7);
-		line -> Draw("same");
-    
-  }
-  
+  for(auto range: (*ranges))
+    {
+      if ( range  < 0  && realPeaks.size() == 1) { //error controll
+	std::cout << "Errore" << std::endl;
+	res["0.511 MeV"] = std::make_pair(-9999,0);	
+      }
+      float yval = std::max(10., histo->GetBinContent(histo->FindBin(range)));
+      TLine* line = new TLine(range,3.,range, yval);
+      line -> SetLineWidth(1);
+      line -> SetLineStyle(7);
+      line -> Draw("same");
+    }
   
   return res;
 }
-

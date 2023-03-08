@@ -37,3 +37,6 @@
 
 # HTCondor files
 *.sub
+
+## C++ files
+*.cc

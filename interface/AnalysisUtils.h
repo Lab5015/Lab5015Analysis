@@ -79,6 +79,8 @@ public:
   long long timeR;
   unsigned short t1fineL;
   unsigned short t1fineR;
+  float qT1L;
+  float qT1R;
   int nhits;
   float x;
   float y;
