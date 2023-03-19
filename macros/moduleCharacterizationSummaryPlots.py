@@ -78,13 +78,13 @@ def getTimeResolution(h1_deltaT):
 
 
 # INPUT
-inputdir = '/data/Lab5015Analysis/moduleCharacterization/TOFHIR2X/'
-source = 'Laser'
-#source = 'TB'
+inputdir = '/uscms/home/abenagli/nobackup/Lab5015Analysis/plots/'
+#source = 'Laser'
+source = 'TB'
 
 
 # OUTPUT
-outdir  = '/var/www/html/TOFHIR2X/ModuleCharacterization/'
+outdir  = '/uscms/home/abenagli/nobackup/Lab5015Analysis/plots/'
 outdir=outdir+args.outFolder
 outFileName = outdir+args.outFolder+'.root'
 print 'Saving plots in ', outdir
@@ -204,157 +204,18 @@ goodBars = {}
 VovsEff = {}
 plots_label = ''
 
-if ('528' in args.outFolder and tofhir2b==False):
+if ('528' in args.outFolder):
     plots_label = 'HPK + LYSO528 (prod5, type2)'
     for vov in Vovs:
         VovsEff[vov] = vov 
-    goodBars[5.00] = [0,2,3,4,5,6,7,8,9,10,11,12,13,14] 
-    goodBars[3.50] = [0,2,3,4,5,6,7,8,9,10,11,12,13,14] 
-    goodBars[2.50] = [0,3,4,5,6,7,8,9,10,11,12,13,14] 
-    goodBars[1.50] = [0,3,7,8,9,10,11,13,14] 
-
-if ('528' in args.outFolder and tofhir2b):
-    plots_label = 'HPK + LYSO528 (prod5, type2)'
-    for vov in Vovs:
-        VovsEff[vov] = vov 
-    goodBars[5.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
-    goodBars[3.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
-    goodBars[2.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
-    goodBars[1.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
-
-elif ('800' in args.outFolder):
-    plots_label = 'FBK + LYSO800 (prod5, type2)'
-    for vov in Vovs:
-        VovsEff[vov] = vov 
-    goodBars[7.00] = [0,2,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[4.00] = [0,2,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[3.50] = [0,2,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[3.00] = [0,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[2.00] = [0,3,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[1.50] = [0,3,7,8,9,10,11,13,14,15] 
-
-elif ('522' in args.outFolder):
-    plots_label = 'FBK + LYSO522 (prod5, type1)'
-    for vov in Vovs:
-        VovsEff[vov] = vov 
-    goodBars[4.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[3.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[3.00] = [0,1,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[2.00] = [0,3,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[1.50] = [0,3,7,8,9,10,11,13,14,15] 
-
-elif ('524' in args.outFolder):
-    plots_label = 'FBK + LYSO524 (prod5, type3)'
-    for vov in Vovs:
-        VovsEff[vov] = vov 
-    goodBars[4.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[3.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[3.00] = [0,1,3,4,5,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[2.00] = [0,3,6,7,8,9,10,11,12,13,14,15] 
-    goodBars[1.50] = [0,3,7,8,9,10,11,13,14,15] 
-
-
-elif ('HPK_2E14_LYSO796_T-40C' in args.outFolder):
-    plots_label = 'HPK 2E14 + LYSO796 (prod10)  T=-40#circC'
-    for ov in Vovs : 
-        VovsEff[ov] = getVovEffDCR(data, 'HPK_2E14_T-40C', ('%.02f'%ov))[0] 
-        goodBars[ov] = [0,3,7,10,11,13,14,15]
-
-
-elif ('HPK_2E14_LYSO796_T-35C' in args.outFolder):
-    plots_label = 'HPK 2E14 + LYSO796 (prod10)  T=-35#circC'
-    for ov in Vovs : 
-       VovsEff[ov] = getVovEffDCR(data, 'HPK_2E14_T-35C', ('%.02f'%ov))[0] 
-       goodBars[ov] = [0,3,7,10,11,13,14,15]
-       if (tofhir2b== True): goodBars[ov] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,15] 
-
-elif ('HPK_1E14_LYSO802_T-40C' in args.outFolder):
-    plots_label = 'HPK 1E14 + LYSO802 (prod9)  T=-40#circC'
-    for ov in Vovs : 
-       VovsEff[ov]  = getVovEffDCR(data, 'HPK_1E14_T-40C', ('%.02f'%ov))[0]        
-       goodBars[ov] = [0,3,7,10,11,13,14,15]
-
-
-elif ('HPK_1E14_LYSO802_T-35C' in args.outFolder):
-    plots_label = 'HPK 1E14 + LYSO802 (prod9)  T=-35#circC'
-    VovsEff = { 1.10 : 1.04,
-                1.25 : 1.17,
-                1.40 : 1.30,
-                1.60 : 1.46,
-                1.80 : 1.61,
-                2.00 : 1.74,
-                2.40 : 1.99,
-                3.10 : 2.28}
-    for ov in Vovs : 
-       VovsEff[ov]  = getVovEffDCR(data, 'HPK_1E14_T-35C', ('%.02f'%ov))[0]        
-       goodBars[ov] = [0,3,7,10,11,13,14,15]
-
-
-#CONF 8
-elif ('FBK_1E14_LYSO803_T-35C' in args.outFolder):
-    plots_label = 'FBK 1E14 + LYSO803 (prod9)  T=-35#circC'
-    for ov in Vovs : 
-       VovsEff[ov]  = getVovEffDCR(data, 'FBK_1E14_T-35C', ('%.02f'%ov))[0]        
-    goodBars[1.10] = [7]
-    goodBars[1.25] = [7]
-    goodBars[1.40] = [0,3,7,10,13,15]
-    goodBars[1.60] = [0,3,7,10,13,14,15]
-    goodBars[1.80] = [0,3,7,10,11,13,14,15]
-    goodBars[2.00] = [0,3,7,10,11,13,14,15]
-    goodBars[2.40] = [0,3,7,8,9,10,11,13,14,15]
-    goodBars[2.80] = [0,3,7,8,9,10,11,13,14,15]
-    goodBars[3.60] = [0,3,7,8,9,10,11,13,14,15]
-
-#CONF 8.01
-elif ('FBK_1E14_LYSO803_T-40C' in args.outFolder):
-    plots_label = 'FBK 1E14 + LYSO803 (prod9)  T=-40#circC'
-    for ov in Vovs : 
-       VovsEff[ov]  = getVovEffDCR(data, 'FBK_1E14_T-40C', ('%.02f'%ov))[0]        
-    goodBars[1.10] = [7]
-    goodBars[1.25] = [7]
-    goodBars[1.40] = [0,3,7,10,13,15]
-    goodBars[1.60] = [0,3,7,10,11,13,14,15]
-    goodBars[1.80] = [0,3,7,10,11,13,14,15]
-    goodBars[2.00] = [0,3,7,10,11,13,14,15]
-    goodBars[2.40] = [0,3,7,8,9,10,11,13,14,15]
-    goodBars[2.80] = [0,3,7,8,9,10,11,13,14,15]
-    goodBars[3.60] = [0,3,7,8,9,10,11,13,14,15]
-
-
-#CONF 9.00
-elif ('FBK_2E14_LYSO797_T-35C' in args.outFolder):
-    plots_label = 'FBK 2E14 + LYSO797 (prod10)   T=-35#circC'
-    for ov in Vovs : 
-       VovsEff[ov]  = getVovEffDCR(data, 'FBK_2E14_T-35C', ('%.02f'%ov))[0]        
-    goodBars[1.20] = [7,11,15]
-    goodBars[1.40] = [0,3,7,10,11,13,15]
-    goodBars[1.60] = [0,3,7,10,11,13,14,15]
-    goodBars[1.80] = [0,3,7,10,11,13,14,15]
-    goodBars[2.00] = [0,3,7,10,11,13,14,15]
-    goodBars[2.40] = [0,3,7,10,11,13,14,15]
-    goodBars[2.80] = [0,3,7,10,11,13,14,15]
-    goodBars[3.00] = [7]
-
-
-#CONF 9.01
-elif ('FBK_2E14_LYSO797_T-40C' in args.outFolder):
-    plots_label = 'FBK 2E14 + LYSO797 (prod10)   T=-40#circC'
-    for ov in Vovs : 
-       VovsEff[ov]  = getVovEffDCR(data, 'FBK_2E14_T-40C', ('%.02f'%ov))[0]        
-    goodBars[1.20] = [7,11,15]
-    goodBars[1.60] = [0,3,7,10,11,13,14,15]
-    goodBars[1.80] = [0,3,7,10,11,13,14,15]
-    goodBars[2.00] = [0,3,7,10,11,13,14,15]
-    goodBars[2.40] = [0,3,7,10,11,13,14,15]
-    goodBars[3.00] = [0,3,7,9,10,11,13,14,15]
-
+    goodBars[3.50] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
+    goodBars[1.50] = [2,3,4,5,7,8,9,10,11,12,13]
 
 else:
     for vov in Vovs:
         VovsEff[vov] = vov
         goodBars[vov] = bars 
     print VovsEff
-
 
 
 print 'bars:', bars

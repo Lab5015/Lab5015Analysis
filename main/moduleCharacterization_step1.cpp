@@ -290,10 +290,10 @@ int main(int argc, char** argv)
 
 
 	  for(int iBar = 0; iBar < int(channelMapping.size())/2; ++iBar) {                             
-	    //int chL_iext = channelMapping[iBar*2+0];// array0 for coincidence is hard coded... - to be fixed
-	    //int chR_iext = channelMapping[iBar*2+1];// array0 for coincidence is hard coded... - to be fixed
-	    int chL_iext = channelMapping[iBar*2+0]+64;// array1 for coincidence is hard coded... - to be fixed
-	    int chR_iext = channelMapping[iBar*2+1]+64;// array1 for coincidence is hard coded... - to be fixed
+	    int chL_iext = channelMapping[iBar*2+0];// array0 for coincidence is hard coded... - to be fixed
+	    int chR_iext = channelMapping[iBar*2+1];// array0 for coincidence is hard coded... - to be fixed
+	    //int chL_iext = channelMapping[iBar*2+0]+64;// array1 for coincidence is hard coded... - to be fixed
+	    //int chR_iext = channelMapping[iBar*2+1]+64;// array1 for coincidence is hard coded... - to be fixed
 	    float energyL_iext = (*energy)[channelIdx[chL_iext]];              
 	    float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
 	    float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
@@ -357,10 +357,10 @@ int main(int argc, char** argv)
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 	  
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(100,900);
+	    index.second->GetXaxis()->SetRangeUser(50,900);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    index.second->GetXaxis()->SetRangeUser(100,900);
+	    index.second->GetXaxis()->SetRangeUser(50,900);
 	  }
 
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
