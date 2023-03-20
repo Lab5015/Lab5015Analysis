@@ -86,7 +86,8 @@ source = 'TB'
 # OUTPUT
 outdir  = '/uscms/home/abenagli/nobackup/Lab5015Analysis/plots/'
 outdir=outdir+args.outFolder
-outFileName = outdir+args.outFolder+'.root'
+#outFileName = outdir+args.outFolder+'.root'
+outFileName = outdir+'/summaryPlots_'+args.outFolder+'.root'
 print 'Saving plots in ', outdir
 outfile = ROOT.TFile(outFileName, 'RECREATE' )
 
@@ -95,7 +96,7 @@ outfile = ROOT.TFile(outFileName, 'RECREATE' )
 tResMin = 0
 tResMax = 120
 tResMaxTh = 200
-vovMax = 7.5
+vovMax = 5.5
 
 
 # create files list
@@ -127,9 +128,9 @@ if (source == 'TB'):
 
 
 # --- colors
-cols = { 0.50 : 48,  
-         0.75 : 48,  
-         0.90 : 48,  
+cols = { 0.50 : 45,  
+         0.80 : 46,  
+         0.90 : 47,  
          1.00 : 48,  
          1.10 : 49,  
          1.20 : 49,  
@@ -210,6 +211,28 @@ if ('528' in args.outFolder):
         VovsEff[vov] = vov 
     goodBars[3.50] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
     goodBars[1.50] = [2,3,4,5,7,8,9,10,11,12,13]
+
+elif ('813' in args.outFolder):
+    plots_label = 'HPK (25 #mum, type2) + LYSO813 (prod1, type2)'
+    for vov in Vovs:
+        VovsEff[vov] = vov 
+    goodBars[3.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
+
+elif ('818' in args.outFolder):
+    plots_label = 'HPK (25 #mum, type1) + LYSO818 (prod1, type1)'
+    for vov in Vovs:
+        VovsEff[vov] = vov 
+    goodBars[3.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13]
+    goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
 
 else:
     for vov in Vovs:
@@ -522,7 +545,7 @@ for bar in bars:
 
     # -- tot vs Vov
     ctot2 = ROOT.TCanvas('c_tot_vs_Vov_bar%.02d'%bar)
-    hPad2 = ROOT.TH2F('hPad2','', 10, 1., vovMax, 40, 0.,40.)
+    hPad2 = ROOT.TH2F('hPad2','', 10, 0., vovMax, 40, 0.,40.)
     hPad2.SetTitle(";V_{OV}^{eff} [V];ToT [ns]")
     hPad2.Draw()
     ctot2.SetGridy()
@@ -568,7 +591,7 @@ for bar in bars:
 
     # -- energy vs Vov
     cen2 = ROOT.TCanvas('c_energy_vs_Vov_bar%.02d'%bar)
-    hPadEn2 = ROOT.TH2F('hPadEn2','', 10, 1., vovMax,50, 0.,1000.)
+    hPadEn2 = ROOT.TH2F('hPadEn2','', 10, 0., vovMax,50, 0.,1000.)
     hPadEn2.SetTitle(";V_{OV}^{eff} [V]; energy")
     hPadEn2.Draw()
     cen2.SetGridy()
@@ -628,7 +651,7 @@ for bar in bars:
 
         # -- time resolution vs Vov
         ctres2 = ROOT.TCanvas('c_tRes_energyRatioCorr_vs_Vov_bar%.02d_enBin%02d'%(bar,enBin))
-        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0.5, vovMax, 10, tResMin,tResMax)
+        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0., vovMax, 10, tResMin,tResMax)
         hPadT2.SetTitle(";V_{OV}^{eff} [V];#sigma_{t} [ps]")
         hPadT2.Draw()
         ctres2.SetGridy()
@@ -661,7 +684,7 @@ for bar in bars:
 
         # -- time resolution vs Vov at the best Th
         ctres2 = ROOT.TCanvas('c_tRes_energyRatioCorr_bestTh_vs_Vov_bar%.02d_enBin%02d'%(bar,enBin))
-        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0.5, vovMax,10, tResMin,tResMax)
+        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0., vovMax,10, tResMin,tResMax)
         hPadT2.SetTitle(";V_{OV}^{eff} [V];#sigma_{t} [ps]")
         hPadT2.Draw()
         ctres2.SetGridy()
