@@ -88,16 +88,16 @@ int main(int argc, char** argv)
     for(int run = runMin; run <= runMax; ++run) {
       std::string fileName;
       //if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // pc-mtd-mib01
-      //if( !usePedestals ) fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb0
-      if( !usePedestals ) fileName = Form("%s/%s%05d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // cmslpc
+      if( !usePedestals ) fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01 
+      //if( !usePedestals ) fileName = Form("%s/%s%05d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // cmslpc
       else                fileName = Form("%s/%04d/*ped_e.root",inputDir.c_str(),run);
       std::cout << ">>> Adding file " << fileName << std::endl;
       tree -> Add(fileName.c_str());
       
       struct stat t_stat;
       //stat(Form("/data/TOFHIR2/raw/run%04d.rawf",run), &t_stat);
-      //stat(Form("/data/tofhir2/h8/raw/%04d/",run), &t_stat);
-      stat(Form("/eos/uscms/store/group/cmstestbeam/2023_03_cmstiming_BTL/TOFHIR/RawData/%s%05d.rawf/",fileBaseName.c_str(),run), &t_stat); // cmslpc
+      stat(Form("/data1/cmsdaq/tofhir2/h8/raw/%04d/",run), &t_stat);
+      //stat(Form("/eos/uscms/store/group/cmstestbeam/2023_03_cmstiming_BTL/TOFHIR/RawData/%s%05d.rawf/",fileBaseName.c_str(),run), &t_stat); // cmslpc
       struct tm * timeinfo = localtime(&t_stat.st_mtime);
       std::cout << "Time and date of raw file of run" << run << ": " << asctime(timeinfo);
     }

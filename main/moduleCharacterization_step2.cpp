@@ -251,7 +251,7 @@ int main(int argc, char** argv)
 	  std::istringstream ss(line);
 	  ss >> bar >> ov >> value; 
 	  minE[std::make_pair(bar,ov)] = value; 
-	  std::cout << "minEnergies:   bar " << bar <<  "   Vov " << ov << "   E " << minE[std::make_pair(bar,ov)] <<std::endl;
+	  //std::cout << "minEnergies:   bar " << bar <<  "   Vov " << ov << "   E " << minE[std::make_pair(bar,ov)] <<std::endl;
 	}
     }
   else

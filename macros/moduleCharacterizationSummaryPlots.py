@@ -78,15 +78,14 @@ def getTimeResolution(h1_deltaT):
 
 
 # INPUT
-inputdir = '/uscms/home/abenagli/nobackup/Lab5015Analysis/plots/'
+inputdir = '/data1/cmsdaq/Lab5015Analysis_new/TB_CERN_June22/Lab5015Analysis/plots/'
 #source = 'Laser'
 source = 'TB'
 
 
 # OUTPUT
-outdir  = '/uscms/home/abenagli/nobackup/Lab5015Analysis/plots/'
+outdir  = '/var/www/html/TOFHIR2X/MTDTB_CERN_May23/ModuleCharacterization/'
 outdir=outdir+args.outFolder
-#outFileName = outdir+args.outFolder+'.root'
 outFileName = outdir+'/summaryPlots_'+args.outFolder+'.root'
 print 'Saving plots in ', outdir
 outfile = ROOT.TFile(outFileName, 'RECREATE' )
@@ -176,7 +175,7 @@ os.system('mkdir %s/summaryPlots/timeResolution/'%outdir)
     
 
 # -- ref threhsold
-thRef = 10
+thRef = 5
 
 # -- get list of bars, Vovs, thresholds to be analyzed
 bars = []
@@ -721,7 +720,6 @@ for i, vov in enumerate(Vovs):
    leg = ROOT.TLegend(0.70, 0.50, 0.89, 0.89)
    leg.SetBorderSize(0)
    leg.SetFillStyle(0)
-   #for i, vov in enumerate(Vovs):
    for l in ['L','R']:
       g_tot_vs_bar[l, vov, thRef].Sort()
       g_tot_vs_bar[l, vov, thRef].SetMarkerStyle(20)
@@ -774,8 +772,7 @@ for i, vov in enumerate(Vovs):
       leg = ROOT.TLegend(0.70, 0.18, 0.90, 0.45)
       leg.SetBorderSize(0)
       leg.SetFillStyle(0)
-      #for i, vov in enumerate(Vovs):
-      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerStyle(20)
+      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerStyle(24)
       g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerColor(cols[vov])
       g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetLineColor(cols[vov])
       g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Draw('psame')
@@ -805,7 +802,7 @@ for enBin in enBins:
       leg.SetColumnSeparation(0.2);
    for i, vov in enumerate(Vovs):
       print g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetN()
-      g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(20)
+      g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(24)
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerColor(cols[vov])
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetLineColor(cols[vov])
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')
@@ -834,7 +831,7 @@ for enBin in enBins:
       leg.SetNColumns(2);
       leg.SetColumnSeparation(0.2);
    for i, vov in enumerate(Vovs):
-      g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(24)
+      g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(20)
       g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerColor(cols[vov])
       g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].SetLineColor(cols[vov])
       g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')
