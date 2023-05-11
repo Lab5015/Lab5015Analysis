@@ -46,7 +46,8 @@ int main(int argc, char** argv){
   CfgManager opts;
   opts.ParseConfigFile(argv[1]);
 
-  int run  = opts.GetOpt<int>("Inputs.run");
+  std::string inputDir = opts.GetOpt<std::string>("Input.inputDir");
+  std::string runs = opts.GetOpt<std::string>("Input.runs");    
 
   std::vector<float> Vovs = opts.GetOpt<std::vector<float> >("Plots.Vov");
   std::vector<float> energyMins = opts.GetOpt<std::vector<float> >("Plots.energyMin");
@@ -65,19 +66,37 @@ int main(int argc, char** argv){
 
   // -- choose vth1
   //int mystep2 = 211102;
-  int myvth1  = 20;
+  int myvth1  = 5;
 
   // -- max energySum
   float maxEnergySum = 800;
   int maxNbars = 3;
 
   TChain* tree = new TChain("data","data");
-  //tree->Add(Form("/data/TOFHIR2/MTDTB_CERN_Jul21/reco/%d/*_ped_e.root", run));
-  tree->Add(Form("/data/tofhir2/h8/reco/%d/*_ped_e.root", run));
+  std::stringstream ss(runs);                                                                                                                           
+  std::string token;
+  while( std::getline(ss,token,',') )
+    {
+      std::stringstream ss2(token);
+      std::string token2;
+      int runMin = -1;
+      int runMax = -1;
+      while( std::getline(ss2,token2,'-') )
+	{
+	  if( runMin != -1 && runMax == -1 ) runMax = atoi(token2.c_str());
+	  if( runMin == -1 ) runMin = atoi(token2.c_str());
+	}                                                                                                                                                    
+      if( runMax == -1 ) runMax = runMin;                                                                                                                                                         
+      for(int run = runMin; run <= runMax; ++run) { 
+	std::string fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01                                                       
+	std::cout << ">>> Adding file " << fileName << std::endl;                                                                                       
+	tree -> Add(fileName.c_str());       
+      }
+    }
 
   //--- define branches
   float step1, step2;
-  int channelIdx[128];
+  int channelIdx[256];
   std::vector<float> *tot = 0;
   std::vector<float> *energy = 0;
   
@@ -155,7 +174,7 @@ int main(int argc, char** argv){
 
 
   // -- first loop over events
-  cout << "First loop over events to find the mip peak" <<endl;
+  cout << "Start loop over events " <<endl;
   for (int entry = 0; entry < maxEntries; entry++){
     
     tree->GetEntry(entry);
@@ -188,14 +207,14 @@ int main(int argc, char** argv){
 	float totL =(*tot)[channelIdx[chL[iMod][iBar]]] / 1000. ;
 	float totR =(*tot)[channelIdx[chR[iMod][iBar]]] / 1000. ;
 	
-	if (totL < 0 || totL > 20.) continue;
-	if (totR < 0 || totR > 20.) continue;
+	if (totL < 0 || totL > 100.) continue;
+	if (totR < 0 || totR > 100.) continue;
 	
 	float enL =(*energy)[channelIdx[chL[iMod][iBar]]];
 	float enR =(*energy)[channelIdx[chR[iMod][iBar]]];
 	aveEnergy[iMod][iBar] = 0.5 * (enL+enR);
 	
-	if (aveEnergy[iMod][iBar]>0) {
+	if (aveEnergy[iMod][iBar] > 0) {
 	  energySum[iMod]+=aveEnergy[iMod][iBar]; 
 	  n[iMod]+=1;
  	  h_energyLR[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
@@ -207,15 +226,13 @@ int main(int argc, char** argv){
       h_energySum_vs_nBars[Vov][iMod] ->Fill(n[iMod], energySum[iMod]);
 
       for (int iBar = 0; iBar < 16; iBar++){
-	if ( aveEnergy[iMod][iBar] > 0) {
+	if ( aveEnergy[iMod][iBar] > 0 ) {
 	  
 	  h_energyLR_vs_energySum[Vov][iMod][iBar]->Fill(energySum[iMod], aveEnergy[iMod][iBar]);
-	  //if (n[iMod] <= maxNbars) h_energyLR_vs_energySum[Vov][iMod][iBar]->Fill(energySum[iMod], aveEnergy[iMod][iBar]);
 	  h_energyFraction_vs_energySum[Vov][iMod][iBar]->Fill(energySum[iMod], aveEnergy[iMod][iBar]/energySum[iMod]);
 	  
 	  h_energyFraction_vs_energyLR[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar], aveEnergy[iMod][iBar]/energySum[iMod]);
 	  h_energyLR_vs_nBars[Vov][iMod][iBar]->Fill(n[iMod], aveEnergy[iMod][iBar]);
-	  //if (energySum[iMod] < maxEnergySum ) h_energyLR_vs_nBars[Vov][iMod][iBar]->Fill(n[iMod], aveEnergy[iMod][iBar]);
  
 	  if (energySum[iMod] < maxEnergySum ) h_energyLR_selEnergySum[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
 	  if (energySum[iMod] < maxEnergySum && n[iMod] <= maxNbars) h_energyLR_selEnergySumNbars[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
@@ -223,19 +240,16 @@ int main(int argc, char** argv){
 	  if (aveEnergy[iMod][iBar]/energySum[iMod] > 0.9 ) h_energyLR_selEnergyFraction[Vov][iMod][iBar]->Fill(aveEnergy[iMod][iBar]);
 	  
 	  // -- showering events
-	  if (energySum[iMod] > maxEnergySum && n[iMod] > maxNbars) {
+	  if ( n[iMod] > maxNbars) {
 	    for (int jBar = 0; jBar < 16; jBar++){
 	      h_energyMap_Shower[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
 	    }
 	  }
 
 	  // -- MIP events
-	  //if (energySum[iMod] < maxEnergySum && n[iMod] < 6 && aveEnergy[iMod][iBar] > 400 && aveEnergy[iMod][iBar] < 600) {
-	  if (energySum[iMod] < maxEnergySum && n[iMod] <= maxNbars) {
+	  if (n[iMod] <= maxNbars) {
 	    for (int jBar = 0; jBar < 16; jBar++){
-	      if ( Vov == 5 && aveEnergy[iMod][iBar]> 400 && aveEnergy[iMod][iBar] < maxEnergySum) 
-		h_energyMap_MIP[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
-	      if ( Vov == 1.5 && aveEnergy[iMod][iBar]> 50 && aveEnergy[iMod][iBar] < maxEnergySum) 
+	      if ( aveEnergy[iMod][iBar]> 40 ) 
 		h_energyMap_MIP[Vov][iMod][iBar]->Fill(jBar, aveEnergy[iMod][jBar]/energySum[iMod]);
 	    }
 	  }
@@ -248,7 +262,7 @@ int main(int argc, char** argv){
 
 
   // ======  save histograms in a file
-  string foutName = Form("plots/plotEnergyArray_run%d.root",run);
+  string foutName = Form("plots/plotEnergyArray_run%s.root",runs.c_str());
 
   TFile *fout = new TFile(foutName.c_str(),"recreate");
 
@@ -308,9 +322,9 @@ int main(int argc, char** argv){
 	h_energyLR_selEnergyFraction[Vov][iMod][iBar]->Draw("same");
 	TLegend *leg = new TLegend();
 	leg->AddEntry(h_energyLR[Vov][iMod][iBar],"all","L");
-	leg->AddEntry(h_energyLR_selEnergySum[Vov][iMod][iBar],"E_{array} < 800","L");
-	leg->AddEntry(h_energyLR_selEnergySumNbars[Vov][iMod][iBar],"E_{array} < 800 && Nbars < 5","L");
-	leg->AddEntry(h_energyLR_selNbars[Vov][iMod][iBar],"Nbars < 5","L");
+	leg->AddEntry(h_energyLR_selEnergySum[Vov][iMod][iBar],Form("E_{array} < %f", maxEnergySum),"L");
+	leg->AddEntry(h_energyLR_selEnergySumNbars[Vov][iMod][iBar],Form("E_{array} < %f && Nbars < %d",maxEnergySum,maxNbars),"L");
+	leg->AddEntry(h_energyLR_selNbars[Vov][iMod][iBar],Form("Nbars < %d",maxNbars),"L");
 	leg->AddEntry(h_energyLR_selEnergyFraction[Vov][iMod][iBar],"E_{bar}/E_{array} > 0.9","L");
 	leg->Draw("same");
 	c->Print(Form("%s/c_energy_array%02d_bar%02d_Vov%.01f.png",plotDir.c_str(),iMod,iBar,Vov));
@@ -380,6 +394,7 @@ int main(int argc, char** argv){
       cc->Print(Form("%s/c_energySum_array%02d_Vov%.01f.pdf",plotDir.c_str(),iMod,Vov));
 
       cc->cd();
+      cc->SetLogy(0);
       h_nBars[Vov][iMod]->GetXaxis()->SetTitle("N bars");
       h_nBars[Vov][iMod]->Draw();
       cc->Print(Form("%s/c_nBars_array%02d_Vov%.01f.png",plotDir.c_str(),iMod,Vov));
