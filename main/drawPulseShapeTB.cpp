@@ -133,7 +133,10 @@ int main(int argc, char** argv)
 	//std::string inFileName = Form("/data1/cmsdaq/tofhir2/h8/reco/%04d/*_e.root",run);
 	//std::string inFileName = Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Oct2021/TOFHIR2/h8/reco/%04d/*_e.root",run); 
 	//std::string inFileName = Form("/afs/cern.ch/work/m/malberti/MTD/TBatFNALMar2023/Lab5015Analysis/data/run%05d_e.root",run); 
-	std::string inFileName = Form("/eos/uscms/store/group/cmstestbeam/2023_03_cmstiming_BTL/TOFHIR/RecoData/run%05d_e.root",run); 
+	//std::string inFileName = Form("/eos/uscms/store/group/cmstestbeam/2023_03_cmstiming_BTL/TOFHIR/RecoData/run%05d_e.root",run); 
+	//std::string inFileName = Form("%s/run%05d_e.root",inputDir.c_str(),run); 
+	//std::string inFileName = Form("%s/run%05d_e.root",inputDir.c_str(),run); // fnal data 2023
+	std::string inFileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01 
 	std::cout << ">>> Adding file " << inFileName << std::endl;
 	data -> Add(inFileName.c_str());
       }
