@@ -220,12 +220,22 @@ int main(int argc, char** argv)
       int nActiveBars0 = 0;
       int nActiveBars1 = 0;
       for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){          
-        if ( channelIdx[chL[iBar]] > 0  &&  channelIdx[chR[iBar]] > 0 && (*energy)[channelIdx[chL[iBar]]] > 0 && (*energy)[channelIdx[chR[iBar]]] > 0 )
-	  nActiveBars0+=1;
-        if ( channelIdx[chL[iBar]+64] > 0  &&  channelIdx[chR[iBar]+64] > 0 && (*energy)[channelIdx[chL[iBar]+64]] > 0 && (*energy)[channelIdx[chR[iBar]+64]] > 0 )
-	  nActiveBars1+=1;
-      }
-      
+	
+	if(opts.GetOpt<int>("Channels.array")==0){
+	  if ( channelIdx[chL[iBar]] > 0  &&  channelIdx[chR[iBar]] > 0 && (*energy)[channelIdx[chL[iBar]]] > 0 && (*energy)[channelIdx[chR[iBar]]] > 0 )
+	    nActiveBars0+=1;
+	  if ( channelIdx[chL[iBar]+64] > 0  &&  channelIdx[chR[iBar]+64] > 0 && (*energy)[channelIdx[chL[iBar]+64]] > 0 && (*energy)[channelIdx[chR[iBar]+64]] > 0 )
+	    nActiveBars1+=1;
+	}	
+
+	if(opts.GetOpt<int>("Channels.array")==1){
+	  if ( channelIdx[chL[iBar]-64] > 0  &&  channelIdx[chR[iBar]-64] > 0 && (*energy)[channelIdx[chL[iBar]-64]] > 0 && (*energy)[channelIdx[chR[iBar]-64]] > 0 )
+	    nActiveBars0+=1;
+	  if ( channelIdx[chL[iBar]] > 0  &&  channelIdx[chR[iBar]] > 0 && (*energy)[channelIdx[chL[iBar]]] > 0 && (*energy)[channelIdx[chR[iBar]]] > 0 )
+	    nActiveBars1+=1;
+	}	
+      }      
+
       int maxActiveBars = 3;
       //if (Vov>4.0) maxActiveBars = 5;
       if (nActiveBars0 > maxActiveBars || nActiveBars1 > maxActiveBars){
@@ -350,6 +360,19 @@ int main(int argc, char** argv)
       energyMins[index] = minE[std::make_pair(iBar,Vov)];
       energyMaxs[index] = 940;// take full mip spectrum
     }
+
+    if ( opts.GetOpt<std::string>("Input.runs") == "5665" ||
+	 opts.GetOpt<std::string>("Input.runs") == "5669,5670,5671" ||
+	 opts.GetOpt<std::string>("Input.runs") == "5685" ||
+	 opts.GetOpt<std::string>("Input.runs") == "5686"  
+	 ){
+      if ( opts.GetOpt<std::string>("Input.runs") == "5665" ) energyMins[index] = 600;
+      if ( opts.GetOpt<std::string>("Input.runs") == "5669,5670,5671" ) energyMins[index] = 250;
+      if ( opts.GetOpt<std::string>("Input.runs") == "5685" ) energyMins[index] = minE[std::make_pair(iBar, Vov)];
+      if ( opts.GetOpt<std::string>("Input.runs") == "5686" ) energyMins[index] = minE[std::make_pair(iBar, Vov)];
+      energyMaxs[index] = 1024;// take full mip spectrum
+    }
+
     std::cout << Vov << "  th = " << ith  << "   bar = "  << iBar <<  "   minEnergy = " << energyMins[index] <<  "  " <<  f_landau->GetParameter(1)  << "  " << minE[std::make_pair(iBar,Vov)] <<std::endl;
     histo->Write();      
   }
