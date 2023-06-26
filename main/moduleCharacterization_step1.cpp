@@ -87,15 +87,17 @@ int main(int argc, char** argv)
     
     for(int run = runMin; run <= runMax; ++run) {
       std::string fileName;
-      if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // pc-mtd-mib01
-      //if( !usePedestals ) fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01
+      //if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // pc-mtd-mib01
+      if( !usePedestals ) fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01 
+      //if( !usePedestals ) fileName = Form("%s/%s%05d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // cmslpc
       else                fileName = Form("%s/%04d/*ped_e.root",inputDir.c_str(),run);
       std::cout << ">>> Adding file " << fileName << std::endl;
       tree -> Add(fileName.c_str());
       
       struct stat t_stat;
       //stat(Form("/data/TOFHIR2/raw/run%04d.rawf",run), &t_stat);
-      stat(Form("/data/tofhir2/h8/raw/%04d/",run), &t_stat);
+      stat(Form("/data1/cmsdaq/tofhir2/h8/raw/%04d/",run), &t_stat);
+      //stat(Form("/eos/uscms/store/group/cmstestbeam/2023_03_cmstiming_BTL/TOFHIR/RawData/%s%05d.rawf/",fileBaseName.c_str(),run), &t_stat); // cmslpc
       struct tm * timeinfo = localtime(&t_stat.st_mtime);
       std::cout << "Time and date of raw file of run" << run << ": " << asctime(timeinfo);
     }
@@ -287,11 +289,13 @@ int main(int argc, char** argv)
 	  */
 
 
-	  for(int iBar = 0; iBar < int(channelMapping.size())/2; ++iBar) {                             
-	    //int chL_iext = channelMapping[iBar*2+0];// array0 for coincidence is hard coded... - to be fixed
-	    //int chR_iext = channelMapping[iBar*2+1];// array0 for coincidence is hard coded... - to be fixed
-	    int chL_iext = channelMapping[iBar*2+0]+64;// array1 for coincidence is hard coded... - to be fixed
-	    int chR_iext = channelMapping[iBar*2+1]+64;// array1 for coincidence is hard coded... - to be fixed
+	  for(int iBar = 0; iBar < int(channelMapping.size())/2; ++iBar) {
+	    int chL_iext = channelMapping[iBar*2+0];// module under test is array1, coincidence channel in array0 
+	    int chR_iext = channelMapping[iBar*2+1];// module under test is array1, coincidence channel in array0 
+	    if (opts.GetOpt<int>("Channels.array")==0) {
+	      int chL_iext = channelMapping[iBar*2+0]+64;// module under test is array0, coincidence channel in array1
+	      int chR_iext = channelMapping[iBar*2+1]+64;// module under test is array0, coincidence channel in array1
+	    }
 	    float energyL_iext = (*energy)[channelIdx[chL_iext]];              
 	    float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
 	    float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
@@ -355,10 +359,10 @@ int main(int argc, char** argv)
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 	  
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(100,900);
+	    index.second->GetXaxis()->SetRangeUser(50,900);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    index.second->GetXaxis()->SetRangeUser(100,900);
+	    index.second->GetXaxis()->SetRangeUser(50,900);
 	  }
 
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
