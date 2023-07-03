@@ -6,10 +6,11 @@ import math
 import array
 import sys
 import time
-import argparse                                                                                                                                                          
+import argparse                                                                                                                                   
 import json
 import numpy as np
-from collections import OrderedDict 
+
+from collections import OrderedDict
 
 from SiPM import *
 
@@ -50,9 +51,11 @@ def getNpe(Ipho, laserFreq, gain, xtalk):
 
 
 setVovs = [0.80, 1.00, 1.20, 1.50, 2.00, 3.50]
-laserTune = '77.7'
-#laserTune = '77.5'
-leds = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5','12'] 
+laserTune = '77'
+#laserTune = '76.7'
+#laserTune = '76.5'
+#laserTune = '76'
+leds = ['8', '12']
 sipm_type = 'HPK-PIT-C25-ES2'
 laserFreq = 50000
 
@@ -65,15 +68,17 @@ fIdcrR = 0.055
 fIdcr_err = 0.15 # errore relativo
 
 #outdir 
-outdir = '/var/www/html/TOFHIR2C/904/study_DCR_LaserTune%.1f_old/'%float(laserTune)
+outdir = '/var/www/html/TOFHIR2C/904/study_DCR_LaserTune%.1f_v2/'%float(laserTune)
 
 print('Laser tune = %s'%laserTune)
 
 # input files  ( Vov, LED) : run )
 runs_dict_noDCR = OrderedDict()
-firstRun = 175
-if (laserTune == '77.5'): firstRun = 163    
-if (laserTune == '77.7'): firstRun = 175    
+firstRun = 554
+if (laserTune == '77'  ): firstRun = 554    
+if (laserTune == '76.7'): firstRun = 572    
+if (laserTune == '76.5'): firstRun = 590    
+if (laserTune == '76'  ): firstRun = 608    
 print('First run: %d'%firstRun)
 it = 0
 for ov in [1.0, 0.8, 1.20, 1.50, 2.00, 3.50]:
@@ -81,12 +86,16 @@ for ov in [1.0, 0.8, 1.20, 1.50, 2.00, 3.50]:
     it = it + 1
 
 for k in runs_dict_noDCR:
-    print k, runs_dict_noDCR[k]  
+    print k, runs_dict_noDCR[k]
+ 
+
 
 runs_dict_DCR = OrderedDict()
-firstRun = 181
-if (laserTune == '77.5'): firstRun = 235
-if (laserTune == '77.7'): firstRun = 181
+firstRun = 560
+if (laserTune == '77'  ): firstRun = 560    
+if (laserTune == '76.7'): firstRun = 578    
+if (laserTune == '76.5'): firstRun = 596    
+if (laserTune == '76'  ): firstRun = 614    
 print('First run: %d'%firstRun)
 it = 0
 for led in leds:
@@ -98,26 +107,22 @@ for k in runs_dict_DCR:
     print k, runs_dict_DCR[k]
 
 
- 
 
 # IV with and without LED
-g_IV_dark_L = {}
-g_IV_dark_R = {}
-
-g_IV_laser_L = {}
-g_IV_laser_R = {}
-
 g_IV_laser_led_L = {}
 g_IV_laser_led_R = {}
 
-Vbd_L=38.08
-Vbd_R=38.15
+
+# Vbd of config_48.00 : ma e' davvero T = -30C. Come mai i Vbd sono uguali a quelli a +20C.
+
+Vbd_L=38.01 
+Vbd_R=38.04
 
 f = {}
 
 # dark: laser and LED off
-fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_dark_ASIC0_ALDOA_ch2_time_2023-06-15_10:47:37.root')
-fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_dark_ASIC0_ALDOB_ch1_time_2023-06-15_10:54:13.root')
+fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_dark_ASIC0_ALDOA_ch2_time_2023-06-30_01:49:05.root')
+fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_dark_ASIC0_ALDOB_ch1_time_2023-06-30_01:55:47.root')
 print(fNameA)
 print(fNameB)
 f_L = ROOT.TFile.Open(fNameA[0])
@@ -126,8 +131,8 @@ g_IV_dark_L = f_L.Get('g_IV')
 g_IV_dark_R = f_R.Get('g_IV')
 
 # laser ON
-fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_ASIC0_ALDOA_ch2_*root'%laserTune)
-fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_ASIC0_ALDOB_ch1_*root'%laserTune)
+fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_0_ASIC0_ALDOA_ch2_*.root'%laserTune)
+fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_0_ASIC0_ALDOB_ch1_*.root'%laserTune)
 print(fNameA)
 print(fNameB)
 f_L = ROOT.TFile.Open(fNameA[0])
@@ -137,8 +142,8 @@ g_IV_laser_R = f_R.Get('g_IV')
 
 # laser + LED ON
 for led in leds:
-    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_led_%s_ASIC0_ALDOA_ch2_*.root'%(laserTune,led))
-    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_led_%s_ASIC0_ALDOB_ch1_*.root'%(laserTune,led))
+    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_%s_ASIC0_ALDOA_ch2_*.root'%(laserTune,led))
+    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_%s_ASIC0_ALDOB_ch1_*root'%(laserTune,led))
     print(fNameA)
     print(fNameB)
     f_L = ROOT.TFile.Open(fNameA[0])
@@ -224,9 +229,9 @@ for led in leds:
 
     for vov_set in setVovs:
 
-        IarrayL = g_IV_laser_led_L[led].Eval(Vbd_L+vov_set)/1000 # uA->mA
-        IarrayR = g_IV_laser_led_R[led].Eval(Vbd_R+vov_set)/1000 #uA->mA
-        Iarray  = 0.5*(IarrayL+IarrayR)
+        IarrayL = g_IV_laser_led_L[led].Eval(Vbd_L+vov_set)/1000. # uA->mA
+        IarrayR = g_IV_laser_led_R[led].Eval(Vbd_R+vov_set)/1000. #uA->mA
+        Iarray  = 0.5 * (IarrayL+IarrayR)
 
         # approx. (it should be evaluated in OV_eff)
         IphoL   = (g_IV_laser_L.Eval(Vbd_L+vov_set) - g_IV_dark_L.Eval(Vbd_L+vov_set))/1000. # uA -> mA
@@ -235,10 +240,11 @@ for led in leds:
         IchL = IphoL * fIpho + (IarrayL - IphoL) * fIdcrL
         IchR = IphoR * fIpho + (IarrayR - IphoR) * fIdcrR
         Ich  = 0.5*(IchL+IchR)
-
+                        
 
         print('LED = %s     Vov_set = %.2f     Vdrop_10ohm = %.3f         Vdrop_240ohm = %.3f'%(led, vov_set, 0.001*Iarray*10,  0.001*Ich*240)   )
-                        
+
+
         vovEffL[led, vov_set] = computeVovEff(vov_set, IarrayL, IchL)
         vovEffR[led, vov_set] = computeVovEff(vov_set, IarrayR, IchR)
         vovEff[led, vov_set] = 0.5*(vovEffL[led, vov_set]+vovEffR[led, vov_set])    
@@ -247,13 +253,27 @@ for led in leds:
         vovEff_err[led, vov_set] = 0.5 * (vovEffL_err[led, vov_set]+vovEffR_err[led, vov_set])
 
 
-        IphoL   = (g_IV_laser_L.Eval(Vbd_L+vovEffL[led, vov_set]) - g_IV_dark_L.Eval(Vbd_L+vovEffL[led, vov_set]))/1000. # uA -> mA
-        IphoR   = (g_IV_laser_R.Eval(Vbd_R+vovEffR[led, vov_set]) - g_IV_dark_R.Eval(Vbd_R+vovEffR[led, vov_set]))/1000. # uA -> mA
-        gainL = Gain(sipm_type, vovEffL[led, vov_set])
-        gainR = Gain(sipm_type, vovEffR[led, vov_set])
-        npe[led, vov_set] = 0.5 * ( getNpe(IphoL*1E-03, laserFreq, gainL, 1./fIpho)  + getNpe(IphoR*1E-03, laserFreq, gainR, 1./fIpho) ) 
-        
+        '''
+        for it in range(0,10):
+            IphoL   = (g_IV_laser_L.Eval(Vbd_L+vovEffL[led, vov_set]) - g_IV_dark_L.Eval(Vbd_L+vovEffL[led, vov_set]))/1000. # uA -> mA
+            IphoR   = (g_IV_laser_R.Eval(Vbd_R+vovEffR[led, vov_set]) - g_IV_dark_R.Eval(Vbd_R+vovEffR[led, vov_set]))/1000. # uA -> mA
 
+            IchL = IphoL*fIpho + (IarrayL - IphoL) * fIdcrL
+            IchR = IphoR*fIpho + (IarrayR - IphoR) * fIdcrR
+            Ich  = 0.5*(IchL+IchR)                                                                                                                                                                                      
+            vovEffL[led, vov_set] = computeVovEff(vov_set, IarrayL, IchL)
+            vovEffR[led, vov_set] = computeVovEff(vov_set, IarrayR, IchR)
+            vovEff[led, vov_set] = 0.5*(vovEffL[led, vov_set]+vovEffR[led, vov_set])
+
+            print(it, vov_set, vovEffL[led, vov_set], vovEffR[led, vov_set])
+        '''
+
+        IphoL   = (g_IV_laser_L.Eval(Vbd_L+vovEffL[led, vov_set]) - g_IV_dark_L.Eval(Vbd_L+vovEffL[led, vov_set]) )/1000. # uA -> mA
+        IphoR   = (g_IV_laser_R.Eval(Vbd_R+vovEffR[led, vov_set]) - g_IV_dark_R.Eval(Vbd_R+vovEffR[led, vov_set]) )/1000. # uA -> mA
+
+        gain = Gain(sipm_type, vovEff[led, vov_set])
+        npe[led, vov_set] = 0.5 * ( getNpe(IphoL*1E-03, laserFreq, gain, 1./fIpho)  + getNpe(IphoR*1E-03, laserFreq, gain, 1./fIpho) ) 
+        
         g_Idcr_ch_L_vs_VovEff[led].SetPoint(g_Idcr_ch_L_vs_VovEff[led].GetN(), vovEffL[led, vov_set], IchL)
         g_Idcr_ch_R_vs_VovEff[led].SetPoint(g_Idcr_ch_R_vs_VovEff[led].GetN(), vovEffR[led, vov_set], IchR)
         g_Idcr_ch_vs_VovEff[led].SetPoint(g_Idcr_ch_vs_VovEff[led].GetN(), vovEff[led, vov_set], Ich)
@@ -268,7 +288,7 @@ for led in leds:
 
         dcrL = IchL*1E-03 / (1.602E-19 * Gain(sipm_type, vovEffL[led, vov_set])) * 1E-09 
         dcrR = IchR*1E-03 / (1.602E-19 * Gain(sipm_type, vovEffR[led, vov_set])) * 1E-09 
-        dcr  = Ich*1E-03 / (1.602E-19 * Gain(sipm_type, vovEff[led, vov_set])) * 1E-09
+        dcr  = Ich*1E-03  / (1.602E-19 * Gain(sipm_type, vovEff[led, vov_set])) * 1E-09
         g_DCR_L_vs_VovEff[led].SetPoint(g_DCR_L_vs_VovEff[led].GetN(), vovEffL[led, vov_set], dcrL)
         g_DCR_R_vs_VovEff[led].SetPoint(g_DCR_R_vs_VovEff[led].GetN(), vovEffR[led, vov_set], dcrR)
         g_DCR_vs_VovEff[led].SetPoint(g_DCR_vs_VovEff[led].GetN(), vovEff[led, vov_set], dcr)
@@ -390,7 +410,7 @@ for vov_set in setVovs:
             continue
         dcr =  g_DCR_vs_VovEff[led].Eval(vov_eff)
         err_dcr = 0.5*abs( g_DCR_vs_VovEff[led].Eval(vov_eff+vov_eff_err) -g_DCR_vs_VovEff[led].Eval(vov_eff-vov_eff_err) )
-        #print led, vovEff[led, vov_set], npe[led, vov_set], tRes, tRes_DCR
+        print ('With DCR -->  LED=%s  Vov_set=%.2f   Vov_eff=%.2f   Npe=%d    DCR=%.1f   tRes=%.1f   tRes_DCR=%.1f'%(led, vov_set, vovEff[led, vov_set], npe[led, vov_set], dcr, tRes, tRes_DCR))
         g_tRes_DCR_all.SetPoint(g_tRes_DCR_all.GetN(), dcr, npe[led,vov_set]/6000*tRes_DCR)
         g_tRes_DCR_all.SetPointError(g_tRes_DCR_all.GetN()-1, fIdcr_err*dcr, npe[led,vov_set]*fIpho_err/6000*tRes_DCR) 
 

@@ -9,6 +9,7 @@ import time
 import argparse                                                                                                                                                          
 import json
 import numpy as np
+from collections import OrderedDict
 
 from SiPM import *
 
@@ -49,7 +50,7 @@ def getNpe(Ipho, laserFreq, gain, xtalk):
 
 
 setVovs = [0.80, 1.00, 1.20, 1.50, 2.00, 3.50]
-laserTunes = ['74', '74.5','75','75.5','76','76.5','77.1','77.6','78.1']
+laserTunes = ['77', '76.7','76.5','76']
 sipm_type = 'HPK-PIT-C25-ES2'
 laserFreq = 50000
 
@@ -66,31 +67,29 @@ thRef = 11
 maxNpe = 20000
 
 #outdir 
-outdir = '/var/www/html/TOFHIR2C/904/study_DCR_vs_Npe_LED_12V_old/'
+outdir = '/var/www/html/TOFHIR2C/904/study_DCR_vs_Npe_LED_12V_v2/'
 
 # input files  ( Vov, laserTune) : run )
-runs_dict_DCR = {}
-firstRun = 289
+runs_dict_noDCR = OrderedDict()
+firstRun = 554
 print('First run: %d'%firstRun)
-it = 0
-for laser in laserTunes:
-    for ov in [1.0, 0.8, 1.20, 1.50, 2.00, 3.50]:
-        runs_dict_DCR[ (ov, laser)] =  firstRun +  it
-        it = it + 1
+for i, laser in enumerate(laserTunes):
+    for j,ov in enumerate([1.0, 0.8, 1.20, 1.50, 2.00, 3.50]):
+        runs_dict_noDCR[ (ov, laser)] =  firstRun +  6 * 3 * i + j
 
-print runs_dict_DCR
+for k in runs_dict_noDCR:
+    print k, runs_dict_noDCR[k]
 
-
-runs_dict_noDCR = {}
-firstRun = 439
+runs_dict_DCR = OrderedDict()
+firstRun = 566
 print('First run: %d'%firstRun)
-it = 0
-for laser in laserTunes:
-    for ov in [1.0, 0.8, 1.20, 1.50, 2.00, 3.50]:
-        runs_dict_noDCR[ (ov, laser)] =  firstRun +  it
-        it = it + 1
+for i, laser in enumerate(laserTunes):
+    for j, ov in enumerate([1.0, 0.8, 1.20, 1.50, 2.00, 3.50]):
+        runs_dict_DCR[ (ov, laser)] =  firstRun +  6 * 3 * i + j
+        
+for k in runs_dict_DCR:
+    print k, runs_dict_DCR[k]
 
-print runs_dict_noDCR
  
 
 # IV with and without LED
@@ -103,39 +102,40 @@ g_IV_laser_R = {}
 g_IV_laser_led_L = {}
 g_IV_laser_led_R = {}
 
-Vbd_L=38.08
-Vbd_R=38.15
+Vbd_L=38.01
+Vbd_R=38.04
+
 
 f = {}
 for laser in laserTunes:
 
     # dark: laser and LED off
-    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_dark_ASIC0_ALDOA_ch2_time_2023-06-15_10:47:37.root')[0]
-    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_dark_ASIC0_ALDOB_ch1_time_2023-06-15_10:54:13.root')[0]
+    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_dark_ASIC0_ALDOA_ch2_time_2023-06-30_01:49:05.root')
+    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_dark_ASIC0_ALDOB_ch1_time_2023-06-30_01:55:47.root')
     #print(fNameA)
     #print(fNameB)
-    f_L = ROOT.TFile.Open(fNameA)
-    f_R = ROOT.TFile.Open(fNameB)
+    f_L = ROOT.TFile.Open(fNameA[0])
+    f_R = ROOT.TFile.Open(fNameB[0])
     g_IV_dark_L[laser] = f_L.Get('g_IV')
     g_IV_dark_R[laser] = f_R.Get('g_IV')
 
     # laser ON
-    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_led_0_ASIC0_ALDOA_ch2_*.root'%laser)[0]
-    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_led_0_ASIC0_ALDOB_ch1_*.root'%laser)[0]
+    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_0_ASIC0_ALDOA_ch2_*.root'%laser)
+    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_0_ASIC0_ALDOB_ch1_*.root'%laser)
     #print(fNameA)
     #print(fNameB)
-    f_L = ROOT.TFile.Open(fNameA)
-    f_R = ROOT.TFile.Open(fNameB)
+    f_L = ROOT.TFile.Open(fNameA[0])
+    f_R = ROOT.TFile.Open(fNameB[0])
     g_IV_laser_L[laser] = f_L.Get('g_IV')
     g_IV_laser_R[laser] = f_R.Get('g_IV')
 
     # laser + LED ON
-    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_led_12_ASIC0_ALDOA_ch2_*.root'%laser)[0]
-    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_41.00/logIV_LYSO828_laser_50000_%s_led_12_ASIC0_ALDOB_ch1_*.root'%laser)[0]
+    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_12_ASIC0_ALDOA_ch2_*.root'%laser)
+    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_12_ASIC0_ALDOB_ch1_*root'%laser)
     #print(fNameA)
     #print(fNameB)
-    f_L = ROOT.TFile.Open(fNameA)
-    f_R = ROOT.TFile.Open(fNameB)
+    f_L = ROOT.TFile.Open(fNameA[0])
+    f_R = ROOT.TFile.Open(fNameB[0])
     g_IV_laser_led_L[laser] = f_L.Get('g_IV')
     g_IV_laser_led_R[laser] = f_R.Get('g_IV')
 
@@ -250,11 +250,9 @@ g_tRes_vs_Npe_withDCR = {}
 for vov_set in setVovs:
     g_tRes_vs_Npe_withDCR[vov_set] = ROOT.TGraphErrors()
 
-
-g_DCR_L_vs_VovEff = {}
-g_DCR_R_vs_VovEff = {}                                                                                                                              
-g_DCR_vs_VovEff = {} 
-
+g_DCR_L_vs_VovEff = {} 
+g_DCR_R_vs_VovEff = {}
+g_DCR_vs_VovEff = {}                        
 
 vovEff  = {}
 vovEff_err  = {}
@@ -267,9 +265,9 @@ leg2.SetBorderSize(0)
 for i,laser in enumerate(laserTunes):
     g_Npe_vs_VovEff_withDCR[laser] = ROOT.TGraphErrors()
     g_tRes_vs_VovEff_withDCR[laser] = ROOT.TGraphErrors()
-    g_DCR_L_vs_VovEff[laser] = ROOT.TGraphErrors()
+    g_DCR_L_vs_VovEff[laser] = ROOT.TGraphErrors()    
     g_DCR_R_vs_VovEff[laser] = ROOT.TGraphErrors()
-    g_DCR_vs_VovEff[laser] = ROOT.TGraphErrors() 
+    g_DCR_vs_VovEff[laser] = ROOT.TGraphErrors()  
 
     for vov_set in setVovs:
 
@@ -323,11 +321,10 @@ for i,laser in enumerate(laserTunes):
             vovEff[vov_set] = 0.5*(vovEffL+vovEffR)    
         
             print(it, vov_set, vovEffL, vovEffR)
-         '''
+        '''
 
         IphoL   = (g_IV_laser_L[laser].Eval(Vbd_L+vovEffL) - g_IV_dark_L[laser].Eval(Vbd_L+vovEffL))/1000. # uA -> mA
         IphoR   = (g_IV_laser_R[laser].Eval(Vbd_R+vovEffR) - g_IV_dark_R[laser].Eval(Vbd_R+vovEffR))/1000. # uA -> mA
-
         gain = Gain(sipm_type, vovEff[vov_set, laser])
         npe = 0.5 * ( getNpe(IphoL*1E-03, laserFreq, gain, 1./fIpho)  + getNpe(IphoR*1E-03, laserFreq, gain, 1./fIpho) ) 
 
@@ -339,13 +336,14 @@ for i,laser in enumerate(laserTunes):
 
         g_Npe_vs_VovEff_withDCR[laser].SetPoint( g_Npe_vs_VovEff_withDCR[laser].GetN(), vovEff[vov_set, laser], npe  )
         g_Npe_vs_VovEff_withDCR[laser].SetPointError( g_Npe_vs_VovEff_withDCR[laser].GetN()-1, vovEff_err[vov_set, laser], npe*fIpho_err )
-        
-        dcrL = IchL*1E-03 / (1.602E-19 * Gain(sipm_type, vovEffL)) * 1E-09 
-        dcrR = IchR*1E-03 / (1.602E-19 * Gain(sipm_type, vovEffR)) * 1E-09 
+
+        dcrL = IchL*1E-03 / (1.602E-19 * Gain(sipm_type, vovEffL)) * 1E-09
+        dcrR = IchR*1E-03 / (1.602E-19 * Gain(sipm_type, vovEffR)) * 1E-09
         dcr  = Ich*1E-03  / (1.602E-19 * Gain(sipm_type, vovEff[vov_set,laser])) * 1E-09
         g_DCR_L_vs_VovEff[laser].SetPoint(g_DCR_L_vs_VovEff[laser].GetN(), vovEffL, dcrL)
         g_DCR_R_vs_VovEff[laser].SetPoint(g_DCR_R_vs_VovEff[laser].GetN(), vovEffR, dcrR)
         g_DCR_vs_VovEff[laser].SetPoint(g_DCR_vs_VovEff[laser].GetN(), vovEff[vov_set,laser], dcr)
+
 
     c = ROOT.TCanvas('c_timeResolution_vs_VovEff_LaserTune_%.1f'%float(laser), '', 700, 600)
     hPad = ROOT.gPad.DrawFrame(0.,0.,4.0,100.)
@@ -363,8 +361,7 @@ for i,laser in enumerate(laserTunes):
     c.SaveAs(outdir+c.GetName()+'.png')
     c.SaveAs(outdir+c.GetName()+'.pdf')
 
-
-    c = ROOT.TCanvas('c_DCR_vs_VovEff_LED_12V', '', 700, 600)
+    c = ROOT.TCanvas('c_DCR_vs_VovEff_LED_12V_LaserTune_%.1f'%float(laser), '', 700, 600)
     hPad = ROOT.gPad.DrawFrame(0.0,0.,4.0,20.)
     hPad.SetTitle(";V_{OV}^{eff} [V]; DCR [GHz]")
     hPad.Draw()
@@ -377,7 +374,6 @@ for i,laser in enumerate(laserTunes):
     g_DCR_vs_VovEff[laser].Draw('lsame')
     c.SaveAs(outdir+c.GetName()+'.png')
     c.SaveAs(outdir+c.GetName()+'.pdf')
-
 
 
 # now computre DCR contribution to the time resolution
