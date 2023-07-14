@@ -48,44 +48,64 @@ def getNpe(Ipho, laserFreq, gain, xtalk):
 
 # --------------------
 
+led = sys.argv[1]
+dataset = '6'
+
+useCommonTh = False
+timingTh = 7
 
 setVovs = [0.80, 1.00, 1.20, 1.50, 2.00, 3.50]
-laserTunes = ['77', '76.7','76.5','76']
-sipm_type = 'HPK-PIT-C25-ES2'
+
+laserTunes = []
+if dataset == '2':  laserTunes = ['77', '76.7','76.5','76']
+#if dataset == '6':  laserTunes = ['76', '75.5','75','74.5','74'] 
+if dataset == '6':  laserTunes = ['76','75.5'] 
+
 laserFreq = 50000
 
 fIpho  = 0.75
 fIpho_err = 0.10 # errore relativo
-#fIdcrL = 1./16
-#fIdcrR = 1./16
-fIdcrL = 0.055
-fIdcrR = 0.055
+fIdcrL = 1./16
+fIdcrR = 1./16
+#fIdcrL = 0.055
+#fIdcrR = 0.055
 fIdcr_err = 0.15 # errore relativo
+
+sipm_type = 'HPK-PIT-C25-ES2'
 
 thRef = 11
 
-maxNpe = 20000
+maxNpe = 15000
 
 #outdir 
-outdir = '/var/www/html/TOFHIR2C/904/study_DCR_vs_Npe_LED_12V_v2/'
+outdir = '/var/www/html/TOFHIR2C/904/study_DCR_vs_Npe_LED_%.1fV_run%s/'%(float(led),dataset)
+if (os.path.exists(outdir)==False):
+    os.mkdir(outdir)
 
 # input files  ( Vov, laserTune) : run )
 runs_dict_noDCR = OrderedDict()
 firstRun = 554
-print('First run: %d'%firstRun)
+if (dataset == '6'): firstRun = 979
+print('First run without DCR: %d'%firstRun)
 for i, laser in enumerate(laserTunes):
     for j,ov in enumerate([1.0, 0.8, 1.20, 1.50, 2.00, 3.50]):
-        runs_dict_noDCR[ (ov, laser)] =  firstRun +  6 * 3 * i + j
+        if (dataset == '2'): runs_dict_noDCR[ (ov, laser)] =  firstRun +  6 * 3 * i + j
+        if (dataset == '6'): runs_dict_noDCR[ (ov, laser)] =  firstRun +  6 * 4 * i + j # 6 OVs, 4 LEDS  
 
 for k in runs_dict_noDCR:
     print k, runs_dict_noDCR[k]
 
 runs_dict_DCR = OrderedDict()
 firstRun = 566
-print('First run: %d'%firstRun)
+if (dataset == '6'): 
+    if (led == '7.5'): firstRun = 985
+    if (led == '8'  ): firstRun = 991
+    if (led == '8.5'): firstRun = 997
+print('First run with DCR: %d'%firstRun)
 for i, laser in enumerate(laserTunes):
     for j, ov in enumerate([1.0, 0.8, 1.20, 1.50, 2.00, 3.50]):
-        runs_dict_DCR[ (ov, laser)] =  firstRun +  6 * 3 * i + j
+        if (dataset == '2'): runs_dict_DCR[ (ov, laser)] =  firstRun +  6 * 3 * i + j
+        if (dataset == '6'): runs_dict_DCR[ (ov, laser)] =  firstRun +  6 * 4 * i + j # 6 OVs, 4 LEDS  
         
 for k in runs_dict_DCR:
     print k, runs_dict_DCR[k]
@@ -120,8 +140,8 @@ for laser in laserTunes:
     g_IV_dark_R[laser] = f_R.Get('g_IV')
 
     # laser ON
-    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_0_ASIC0_ALDOA_ch2_*.root'%laser)
-    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_0_ASIC0_ALDOB_ch1_*.root'%laser)
+    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_%s_laser_50000_%s_led_0_ASIC0_ALDOA_*.root'%(dataset,laser))
+    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_%s_laser_50000_%s_led_0_ASIC0_ALDOB_*.root'%(dataset,laser)) 
     #print(fNameA)
     #print(fNameB)
     f_L = ROOT.TFile.Open(fNameA[0])
@@ -130,8 +150,8 @@ for laser in laserTunes:
     g_IV_laser_R[laser] = f_R.Get('g_IV')
 
     # laser + LED ON
-    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_12_ASIC0_ALDOA_ch2_*.root'%laser)
-    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_2_laser_50000_%s_led_12_ASIC0_ALDOB_ch1_*root'%laser)
+    fNameA = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_%s_laser_50000_%s_led_%s_ASIC0_ALDOA_ch2_*.root'%(dataset,laser,led))
+    fNameB = glob.glob('/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/logs_48.00/logIV_LYSO828_run_%s_laser_50000_%s_led_%s_ASIC0_ALDOB_ch1_*root'%(dataset,laser,led))
     #print(fNameA)
     #print(fNameB)
     f_L = ROOT.TFile.Open(fNameA[0])
@@ -141,8 +161,8 @@ for laser in laserTunes:
 
 
 # get energy, time resolution  vs Vov - NO DCR
-g_energyL_vs_Vov = {}
-g_energyR_vs_Vov = {}
+g_energyL_vs_Vov_noDCR = {}
+g_energyR_vs_Vov_noDCR = {}
 g_Vov_vs_energyL = {}
 g_Vov_vs_energyR = {}
 
@@ -150,17 +170,17 @@ g_Vov_vs_energyR = {}
 Npe = {}
 g_Npe_vs_laserTune = {}
 g_Npe_vs_energy = {}
-g_tRes_vs_Npe_noDCR = {}
+g_Npe_vs_Vov_noDCR = {}
 g_tRes_vs_Vov_noDCR = {}
 for vov_set in setVovs: 
     g_Npe_vs_laserTune[vov_set]  = ROOT.TGraphErrors()
-    g_tRes_vs_Npe_noDCR[vov_set] = ROOT.TGraphErrors()
     g_Npe_vs_energy[vov_set] = ROOT.TGraphErrors()
 
 
 for laser in laserTunes:
-    g_energyL_vs_Vov[laser] = ROOT.TGraphErrors()
-    g_energyR_vs_Vov[laser] = ROOT.TGraphErrors()
+    g_energyL_vs_Vov_noDCR[laser] = ROOT.TGraphErrors()
+    g_energyR_vs_Vov_noDCR[laser] = ROOT.TGraphErrors()
+    g_Npe_vs_Vov_noDCR[laser] = ROOT.TGraphErrors()
     g_Vov_vs_energyL[laser] = ROOT.TGraphErrors()
     g_Vov_vs_energyR[laser] = ROOT.TGraphErrors()
     g_tRes_vs_Vov_noDCR[laser] = ROOT.TGraphErrors() 
@@ -169,6 +189,7 @@ for laser in laserTunes:
         fName = '../plots/summaryPlots_run%d.root'% runs_dict_noDCR[vov_set,laser]
         ff = ROOT.TFile.Open(fName)
         gRes = ff.Get('g_deltaT_totRatioCorr_bestTh_vs_vov_enBin01_average')        
+        if (useCommonTh): gRes = ff.Get('g_deltaT_totRatioCorr_vs_th_bar00_Vov%.2f_enBin01'%vov_set)        
         
         gL = ff.Get('g_energyL_vs_th_bar00_Vov%.2f'%vov_set)
         gR = ff.Get('g_energyR_vs_th_bar00_Vov%.2f'%vov_set)
@@ -178,18 +199,21 @@ for laser in laserTunes:
         gain = Gain(sipm_type, vov_set)
         npe = 0.5 * ( getNpe(IphoL*1E-06, laserFreq, gain, 1./fIpho)  + getNpe(IphoR*1E-06, laserFreq, gain, 1./fIpho) )
         g_Npe_vs_laserTune[vov_set].SetPoint(g_Npe_vs_laserTune[vov_set].GetN(), float(laser), npe)
-        g_tRes_vs_Npe_noDCR[vov_set].SetPoint(g_tRes_vs_Npe_noDCR[vov_set].GetN(), npe, gRes.Eval(vov_set))
-        g_tRes_vs_Vov_noDCR[laser].SetPoint(g_tRes_vs_Vov_noDCR[laser].GetN(), vov_set, gRes.Eval(vov_set))
+        g_Npe_vs_Vov_noDCR[laser].SetPoint(g_Npe_vs_Vov_noDCR[laser].GetN(), vov_set, npe)
 
-        
+        if (useCommonTh == False): 
+            g_tRes_vs_Vov_noDCR[laser].SetPoint(g_tRes_vs_Vov_noDCR[laser].GetN(), vov_set, gRes.Eval(vov_set))
+        else:
+            g_tRes_vs_Vov_noDCR[laser].SetPoint(g_tRes_vs_Vov_noDCR[laser].GetN(), vov_set, gRes.Eval(timingTh))
+
         if (vov_set > 1.5): continue # different delayE used
         g_Npe_vs_energy[vov_set].SetPoint(g_Npe_vs_energy[vov_set].GetN(), gL.Eval(thRef) , npe)   
 
-        g_energyL_vs_Vov[laser].SetPoint(g_energyL_vs_Vov[laser].GetN(), vov_set, gL.Eval(thRef))
-        g_energyL_vs_Vov[laser].SetPointError(g_energyL_vs_Vov[laser].GetN()-1, 0, gL.GetErrorY(3))
+        g_energyL_vs_Vov_noDCR[laser].SetPoint(g_energyL_vs_Vov_noDCR[laser].GetN(), vov_set, gL.Eval(thRef))
+        g_energyL_vs_Vov_noDCR[laser].SetPointError(g_energyL_vs_Vov_noDCR[laser].GetN()-1, 0, gL.GetErrorY(3))
     
-        g_energyR_vs_Vov[laser].SetPoint(g_energyR_vs_Vov[laser].GetN(), vov_set, gR.Eval(thRef))
-        g_energyR_vs_Vov[laser].SetPointError(g_energyR_vs_Vov[laser].GetN()-1, 0, gR.GetErrorY(3))
+        g_energyR_vs_Vov_noDCR[laser].SetPoint(g_energyR_vs_Vov_noDCR[laser].GetN(), vov_set, gR.Eval(thRef))
+        g_energyR_vs_Vov_noDCR[laser].SetPointError(g_energyR_vs_Vov_noDCR[laser].GetN()-1, 0, gR.GetErrorY(3))
 
         g_Vov_vs_energyL[laser].SetPoint(g_Vov_vs_energyL[laser].GetN(), gL.Eval(thRef), vov_set)
         g_Vov_vs_energyL[laser].SetPointError(g_Vov_vs_energyL[laser].GetN()-1, gL.GetErrorY(3), 0)
@@ -197,23 +221,6 @@ for laser in laserTunes:
         g_Vov_vs_energyR[laser].SetPoint(g_Vov_vs_energyR[laser].GetN(), gR.Eval(thRef), vov_set)
         g_Vov_vs_energyR[laser].SetPointError(g_Vov_vs_energyR[laser].GetN()-1, gR.GetErrorY(3), 0)
 
-
-c = ROOT.TCanvas('c_energy_vs_Vov_noDCR','c_energy_vs_Vov_noDCR', 700, 600)
-hPad = ROOT.gPad.DrawFrame(0.,0.,4.,1000.)
-hPad.SetTitle(";V_{OV}^{eff} [V]; energy [ADC]")
-hPad.Draw()
-ROOT.gPad.SetGridx()
-ROOT.gPad.SetGridy()
-for i,laser in enumerate(laserTunes):
-    g_energyL_vs_Vov[laser].SetMarkerStyle(20)
-    g_energyR_vs_Vov[laser].SetMarkerStyle(24)
-    g_energyL_vs_Vov[laser].SetMarkerColor(51+i*8)
-    g_energyR_vs_Vov[laser].SetMarkerColor(51+i*8)
-    g_energyL_vs_Vov[laser].SetLineColor(51+i*8)
-    g_energyR_vs_Vov[laser].SetLineColor(51+i*8)
-    g_energyL_vs_Vov[laser].Draw('plsame')
-    g_energyR_vs_Vov[laser].Draw('plsame')
-    c.SaveAs(outdir+c.GetName()+'.png')
 
 
 c = ROOT.TCanvas('c_Npe_vs_laserTune_noDCR','c_Npe_vs_laserTune_noDCR', 700, 600)
@@ -244,17 +251,16 @@ c.SaveAs(outdir+c.GetName()+'.png')
 
 
 # get energy, time resolution with DCR + estimate VovEff from energy
+g_energyL_vs_VovEff_withDCR = {}
+g_energyR_vs_VovEff_withDCR = {} 
 g_Npe_vs_VovEff_withDCR = {} 
 g_tRes_vs_VovEff_withDCR = {} 
 g_tRes_vs_Npe_withDCR = {} 
-for vov_set in setVovs:
-    g_tRes_vs_Npe_withDCR[vov_set] = ROOT.TGraphErrors()
-
 g_DCR_L_vs_VovEff = {} 
 g_DCR_R_vs_VovEff = {}
 g_DCR_vs_VovEff = {}                        
 
-vovEff  = {}
+vovEff   = {}
 vovEff_err  = {}
 
 
@@ -268,13 +274,15 @@ for i,laser in enumerate(laserTunes):
     g_DCR_L_vs_VovEff[laser] = ROOT.TGraphErrors()    
     g_DCR_R_vs_VovEff[laser] = ROOT.TGraphErrors()
     g_DCR_vs_VovEff[laser] = ROOT.TGraphErrors()  
+    g_energyL_vs_VovEff_withDCR[laser] = ROOT.TGraphErrors() 
+    g_energyR_vs_VovEff_withDCR[laser] = ROOT.TGraphErrors() 
 
     for vov_set in setVovs:
 
         fName = '../plots/summaryPlots_run%d.root'% runs_dict_DCR[vov_set,laser]
         ff = ROOT.TFile.Open(fName)
-        #gRes = ff.Get('g_deltaT_totRatioCorr_bestTh_vs_vov_enBin01_average')        
         gRes = ff.Get('g_deltaT_totRatioCorr_bestTh_vs_bar_Vov%.2f_enBin01'%vov_set)        
+        if (useCommonTh): gRes = ff.Get('g_deltaT_totRatioCorr_vs_th_bar00_Vov%.2f_enBin01'%vov_set) 
 
         #gL = ff.Get('g_energyL_vs_th_bar00_Vov%.2f'%vov_set)
         #gR = ff.Get('g_energyR_vs_th_bar00_Vov%.2f'%vov_set)
@@ -328,11 +336,13 @@ for i,laser in enumerate(laserTunes):
         gain = Gain(sipm_type, vovEff[vov_set, laser])
         npe = 0.5 * ( getNpe(IphoL*1E-03, laserFreq, gain, 1./fIpho)  + getNpe(IphoR*1E-03, laserFreq, gain, 1./fIpho) ) 
 
-        g_tRes_vs_Npe_withDCR[vov_set].SetPoint( g_tRes_vs_Npe_withDCR[vov_set].GetN(), npe,  gRes.Eval(0))        
-        g_tRes_vs_Npe_withDCR[vov_set].SetPointError( g_tRes_vs_Npe_withDCR[vov_set].GetN()-1, npe*fIpho_err,  gRes.GetErrorY(0))
+        if (useCommonTh == False):
+            g_tRes_vs_VovEff_withDCR[laser].SetPoint( g_tRes_vs_VovEff_withDCR[laser].GetN(), vovEff[vov_set, laser], gRes.Eval(0) )
+            g_tRes_vs_VovEff_withDCR[laser].SetPointError( g_tRes_vs_VovEff_withDCR[laser].GetN()-1, vovEff_err[vov_set, laser], gRes.GetErrorY(0) )
+        else:
+            g_tRes_vs_VovEff_withDCR[laser].SetPoint( g_tRes_vs_VovEff_withDCR[laser].GetN(), vovEff[vov_set, laser], gRes.Eval(timingTh) )
+            g_tRes_vs_VovEff_withDCR[laser].SetPointError( g_tRes_vs_VovEff_withDCR[laser].GetN()-1, vovEff_err[vov_set, laser], gRes.GetErrorY(3) )
 
-        g_tRes_vs_VovEff_withDCR[laser].SetPoint( g_tRes_vs_VovEff_withDCR[laser].GetN(), vovEff[vov_set, laser], gRes.Eval(0) )
-        g_tRes_vs_VovEff_withDCR[laser].SetPointError( g_tRes_vs_VovEff_withDCR[laser].GetN()-1, vovEff_err[vov_set, laser], gRes.GetErrorY(0) )
 
         g_Npe_vs_VovEff_withDCR[laser].SetPoint( g_Npe_vs_VovEff_withDCR[laser].GetN(), vovEff[vov_set, laser], npe  )
         g_Npe_vs_VovEff_withDCR[laser].SetPointError( g_Npe_vs_VovEff_withDCR[laser].GetN()-1, vovEff_err[vov_set, laser], npe*fIpho_err )
@@ -344,9 +354,21 @@ for i,laser in enumerate(laserTunes):
         g_DCR_R_vs_VovEff[laser].SetPoint(g_DCR_R_vs_VovEff[laser].GetN(), vovEffR, dcrR)
         g_DCR_vs_VovEff[laser].SetPoint(g_DCR_vs_VovEff[laser].GetN(), vovEff[vov_set,laser], dcr)
 
+        
+        # energy vs VovEff
+        if (vov_set > 1.5): continue # different delayE used
+        gL = ff.Get('g_energyL_vs_th_bar00_Vov%.2f'%vov_set)
+        gR = ff.Get('g_energyR_vs_th_bar00_Vov%.2f'%vov_set)
+        
+        energyL = gL.Eval(thRef)
+        energyR = gR.Eval(thRef)
+
+        g_energyL_vs_VovEff_withDCR[laser].SetPoint(g_energyL_vs_VovEff_withDCR[laser].GetN(), vovEffL, energyL)
+        g_energyR_vs_VovEff_withDCR[laser].SetPoint(g_energyR_vs_VovEff_withDCR[laser].GetN(), vovEffR, energyR)
+
 
     c = ROOT.TCanvas('c_timeResolution_vs_VovEff_LaserTune_%.1f'%float(laser), '', 700, 600)
-    hPad = ROOT.gPad.DrawFrame(0.,0.,4.0,100.)
+    hPad = ROOT.gPad.DrawFrame(0.,0.,4.0,120.)
     hPad.SetTitle(";V_{OV}^{eff} [V]; #sigma_{t} [ps]")
     hPad.Draw()
     ROOT.gPad.SetGridx()
@@ -361,8 +383,8 @@ for i,laser in enumerate(laserTunes):
     c.SaveAs(outdir+c.GetName()+'.png')
     c.SaveAs(outdir+c.GetName()+'.pdf')
 
-    c = ROOT.TCanvas('c_DCR_vs_VovEff_LED_12V_LaserTune_%.1f'%float(laser), '', 700, 600)
-    hPad = ROOT.gPad.DrawFrame(0.0,0.,4.0,20.)
+    c = ROOT.TCanvas('c_DCR_vs_VovEff_LED_%.1fV_LaserTune_%.1f'%(float(led),float(laser)), '', 700, 600)
+    hPad = ROOT.gPad.DrawFrame(0.0,0.,4.0,50.)
     hPad.SetTitle(";V_{OV}^{eff} [V]; DCR [GHz]")
     hPad.Draw()
     ROOT.gPad.SetGridx()
@@ -375,16 +397,74 @@ for i,laser in enumerate(laserTunes):
     c.SaveAs(outdir+c.GetName()+'.png')
     c.SaveAs(outdir+c.GetName()+'.pdf')
 
+c = ROOT.TCanvas('c_energyL_vs_VovEff', '', 700, 600)
+hPad = ROOT.gPad.DrawFrame(0.,0.,2.0,1000.)
+hPad.SetTitle(";V_{OV}^{eff} [V]; energy [ADC]")
+hPad.Draw()
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+for i,laser in enumerate(laserTunes):
+    g_energyL_vs_VovEff_withDCR[laser].SetMarkerColor(51+i*9)
+    g_energyL_vs_VovEff_withDCR[laser].SetLineColor(51+i*9)
+    g_energyL_vs_VovEff_withDCR[laser].Draw('plsame')
+    g_energyL_vs_Vov_noDCR[laser].SetMarkerColor(51+i*9)
+    g_energyL_vs_Vov_noDCR[laser].SetLineColor(51+i*9)
+    g_energyL_vs_Vov_noDCR[laser].SetMarkerStyle(25)
+    g_energyL_vs_Vov_noDCR[laser].Draw('plsame')
+    leg2.Draw('same')
+c.SaveAs(outdir+c.GetName()+'.png')
+c.SaveAs(outdir+c.GetName()+'.pdf')
+
+
+c = ROOT.TCanvas('c_energyR_vs_VovEff', '', 700, 600)
+hPad = ROOT.gPad.DrawFrame(0.,0.,2.0,1000.)
+hPad.SetTitle(";V_{OV}^{eff} [V]; energy [ADC]")
+hPad.Draw()
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+for i,laser in enumerate(laserTunes):
+    g_energyR_vs_VovEff_withDCR[laser].SetMarkerColor(51+i*9)
+    g_energyR_vs_VovEff_withDCR[laser].SetLineColor(51+i*9)
+    g_energyR_vs_VovEff_withDCR[laser].Draw('plsame')
+    g_energyR_vs_Vov_noDCR[laser].SetMarkerColor(51+i*9)
+    g_energyR_vs_Vov_noDCR[laser].SetLineColor(51+i*9)
+    g_energyR_vs_Vov_noDCR[laser].SetMarkerStyle(25)
+    g_energyR_vs_Vov_noDCR[laser].Draw('plsame')
+    leg2.Draw('same')
+c.SaveAs(outdir+c.GetName()+'.png')
+c.SaveAs(outdir+c.GetName()+'.pdf')
+
+
+c = ROOT.TCanvas('c_Npe_vs_VovEff', '', 700, 600)
+hPad = ROOT.gPad.DrawFrame(0.,0.,4.0,12000.)
+hPad.SetTitle(";V_{OV}^{eff} [V]; Npe]")
+hPad.Draw()
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+for i,laser in enumerate(laserTunes):
+    g_Npe_vs_VovEff_withDCR[laser].SetMarkerColor(51+i*9)
+    g_Npe_vs_VovEff_withDCR[laser].SetLineColor(51+i*9)
+    g_Npe_vs_VovEff_withDCR[laser].Draw('plsame')
+    g_Npe_vs_Vov_noDCR[laser].SetMarkerColor(51+i*9)
+    g_Npe_vs_Vov_noDCR[laser].SetLineColor(51+i*9)
+    g_Npe_vs_Vov_noDCR[laser].SetMarkerStyle(25)
+    g_Npe_vs_Vov_noDCR[laser].Draw('plsame')
+    leg2.Draw('same')
+c.SaveAs(outdir+c.GetName()+'.png')
+c.SaveAs(outdir+c.GetName()+'.pdf')
+
 
 # now computre DCR contribution to the time resolution
-g_tRes_DCR_all = ROOT.TGraphErrors()
-g_tRes_DCR = {}
+g_tRes_vs_Npe_noDCR = {}
+g_tRes_vs_Npe_withDCR = {}
+g_tRes_DCR_vs_Npe_all = ROOT.TGraphErrors()
+g_tRes_DCR_vs_Npe = {}
 fitFun = {}
 
-#for vov_set in setVovs:
-
 for k, vov_eff in enumerate([0.80, 1.00, 1.20, 1.40, 1.60]):
-    g_tRes_DCR[vov_eff] = ROOT.TGraphErrors()
+    g_tRes_vs_Npe_noDCR[vov_eff] = ROOT.TGraphErrors() 
+    g_tRes_vs_Npe_withDCR[vov_eff] = ROOT.TGraphErrors() 
+    g_tRes_DCR_vs_Npe[vov_eff] = ROOT.TGraphErrors()
     for laser in laserTunes:
         npe      = g_Npe_vs_VovEff_withDCR[laser].Eval(vov_eff)
         vov_eff_err = [ g_Npe_vs_VovEff_withDCR[laser].GetErrorX(i) for i in range(0, g_Npe_vs_VovEff_withDCR[laser].GetN()) if g_Npe_vs_VovEff_withDCR[laser].GetPointX(i)<=vov_eff][-1]
@@ -392,6 +472,7 @@ for k, vov_eff in enumerate([0.80, 1.00, 1.20, 1.40, 1.60]):
         npe_down = g_Npe_vs_VovEff_withDCR[laser].Eval(vov_eff-vov_eff_err)
         npe_err  =  0.5*abs(npe_up-npe_down)
         npe_err  = math.sqrt( pow(npe_err,2) + pow(npe*fIpho_err,2))
+        #print ('*****', 0.5*abs(npe_up-npe_down) , npe*fIpho_err, npe_err)
         # print(laser, vov_set, vov_eff, npe, npe_err/npe)
         tRes0      = g_tRes_vs_Vov_noDCR[laser].Eval(vov_eff)
         tRes0_up   = g_tRes_vs_Vov_noDCR[laser].Eval(vov_eff-vov_eff_err )
@@ -401,7 +482,11 @@ for k, vov_eff in enumerate([0.80, 1.00, 1.20, 1.40, 1.60]):
         tRes_up   = g_tRes_vs_VovEff_withDCR[laser].Eval(vov_eff-vov_eff_err )
         tRes_down = g_tRes_vs_VovEff_withDCR[laser].Eval(vov_eff+vov_eff_err )
         tRes_err  = 0.5*abs(tRes0_up-tRes0_down) 
-        print laser, vov_eff, tRes0, tRes
+        g_tRes_vs_Npe_noDCR[vov_eff].SetPoint(g_tRes_vs_Npe_noDCR[vov_eff].GetN(), npe, tRes0)
+        g_tRes_vs_Npe_noDCR[vov_eff].SetPointError(g_tRes_vs_Npe_noDCR[vov_eff].GetN()-1, npe_err, tRes0_err)
+        g_tRes_vs_Npe_withDCR[vov_eff].SetPoint(g_tRes_vs_Npe_withDCR[vov_eff].GetN(), npe, tRes)
+        g_tRes_vs_Npe_withDCR[vov_eff].SetPointError(g_tRes_vs_Npe_withDCR[vov_eff].GetN()-1, npe_err, tRes_err)
+        #print('****',  led , laser, vov_eff, tRes, tRes0) 
         if (tRes < tRes0 or tRes_up < tRes0_up or tRes_down < tRes0_down) : continue
         tRes_DCR = math.sqrt( tRes*tRes - tRes0*tRes0)    
         tRes_DCR_up = math.sqrt( tRes_up*tRes_up - tRes0_up*tRes0_up)    
@@ -409,60 +494,88 @@ for k, vov_eff in enumerate([0.80, 1.00, 1.20, 1.40, 1.60]):
         tRes_DCR_err = 0.5*abs(tRes_DCR_up-tRes_DCR_down)
         tRes_DCR_err = 1./tRes_DCR* math.sqrt( pow(tRes*tRes_err, 2) + pow(tRes0*tRes0_err, 2)) 
         #print(tRes_DCR_err, 0.5*abs(tRes_DCR_up-tRes_DCR_down) )
-        g_tRes_DCR[vov_eff].SetPoint(g_tRes_DCR[vov_eff].GetN(), npe, tRes_DCR)
-        g_tRes_DCR[vov_eff].SetPointError(g_tRes_DCR[vov_eff].GetN()-1, npe_err, tRes_DCR_err)     
-        g_tRes_DCR_all.SetPoint(g_tRes_DCR_all.GetN(), npe, tRes_DCR)
-        g_tRes_DCR_all.SetPointError(g_tRes_DCR_all.GetN()-1, npe_err, tRes_DCR_err)     
+        g_tRes_DCR_vs_Npe[vov_eff].SetPoint(g_tRes_DCR_vs_Npe[vov_eff].GetN(), npe, tRes_DCR)
+        g_tRes_DCR_vs_Npe[vov_eff].SetPointError(g_tRes_DCR_vs_Npe[vov_eff].GetN()-1, npe_err, tRes_DCR_err)     
+        g_tRes_DCR_vs_Npe_all.SetPoint(g_tRes_DCR_vs_Npe_all.GetN(), npe, tRes_DCR)
+        g_tRes_DCR_vs_Npe_all.SetPointError(g_tRes_DCR_vs_Npe_all.GetN()-1, npe_err, tRes_DCR_err)     
         
 
+    c = ROOT.TCanvas('c_timeResolution_vs_Npe_VovEff%.02f'%vov_eff, 'c_timeResolution_vs_Npe_Vov%.02f'%vov_eff, 700, 600)
+    hPad = ROOT.gPad.DrawFrame(0.,0., maxNpe,120.)
+    hPad.SetTitle("; Npe; #sigma_{t} [ps]")
+    hPad.Draw()
+    ROOT.gPad.SetGridx()
+    ROOT.gPad.SetGridy()
+    g_tRes_vs_Npe_withDCR[vov_eff].SetMarkerSize(1)
+    g_tRes_vs_Npe_withDCR[vov_eff].SetMarkerColor(k+1)
+    g_tRes_vs_Npe_withDCR[vov_eff].SetLineColor(k+1)
+    g_tRes_vs_Npe_withDCR[vov_eff].Draw('plsame')
+    g_tRes_vs_Npe_noDCR[vov_eff].SetMarkerSize(1)
+    g_tRes_vs_Npe_noDCR[vov_eff].SetMarkerStyle(25)
+    g_tRes_vs_Npe_noDCR[vov_eff].SetMarkerColor(k+1)
+    g_tRes_vs_Npe_noDCR[vov_eff].SetLineColor(k+1)
+    g_tRes_vs_Npe_noDCR[vov_eff].Draw('plsame')
+    g_tRes_DCR_vs_Npe[vov_eff].SetMarkerSize(1)
+    g_tRes_DCR_vs_Npe[vov_eff].SetMarkerStyle(24)
+    g_tRes_DCR_vs_Npe[vov_eff].SetMarkerColor(k+1)
+    g_tRes_DCR_vs_Npe[vov_eff].SetLineColor(k+1)
+    g_tRes_DCR_vs_Npe[vov_eff].Draw('psame')
+    fitFun[vov_eff] = ROOT.TF1('fitFun_%.2f'%vov_eff, '[1]*pow(x/6000.,[0])', 0, maxNpe)
+    fitFun[vov_eff].SetLineWidth(1)
+    fitFun[vov_eff].SetLineStyle(2)
+    fitFun[vov_eff].SetLineColor(k+1)
+    fitFun[vov_eff].SetParameters(-1.0, 40.)
+    g_tRes_DCR_vs_Npe[vov_eff].Fit(fitFun[vov_eff], 'QRS')
+    leg = ROOT.TLegend(0.6, 0.6, 0.89, 0.8)
+    leg.SetBorderSize(0)
+    leg.SetFillColor(0)
+    leg.AddEntry(g_tRes_vs_Npe_noDCR[vov_eff],'#sigma_{t}^{tot} w/o DCR','PL')
+    leg.AddEntry(g_tRes_vs_Npe_withDCR[vov_eff],'#sigma_{t}^{tot} with DCR','PL')
+    leg.AddEntry(g_tRes_DCR_vs_Npe[vov_eff],'#sigma_{t}^{DCR}','PL')    
+    leg.Draw()
+    c.SaveAs(outdir+c.GetName()+'.png')
+    c.SaveAs(outdir+c.GetName()+'.pdf')
+
+
     c = ROOT.TCanvas('c_timeResolutionDCR_vs_Npe_VovEff%.02f'%vov_eff, 'c_timeResolutionDCR_vs_Npe_Vov%.02f'%vov_eff, 700, 600)
-    hPad = ROOT.gPad.DrawFrame(0.,0., maxNpe,80.)
+    hPad = ROOT.gPad.DrawFrame(0.,0., maxNpe,120.)
     hPad.SetTitle("; Npe; #sigma_{t,DCR} [ps]")
     hPad.Draw()
     ROOT.gPad.SetGridx()
     ROOT.gPad.SetGridy()
-    print k, vov_eff
-    g_tRes_DCR[vov_eff].SetMarkerColor(k+1)
-    g_tRes_DCR[vov_eff].SetLineColor(k+1)
-    g_tRes_DCR[vov_eff].Draw('psame')
     fitFun_old = ROOT.TF1('fitFun_old', '[1]*pow(x/6000.,[0])', 3000, 10000) 
-    fitFun_old.SetLineColor(ROOT.kRed-10)
-    fitFun_old.SetLineStyle(7)
+    fitFun_old.SetLineColor(ROOT.kGray+2)
+    fitFun_old.SetLineWidth(1)
+    fitFun_old.SetLineStyle(2)
     fitFun_old.SetParameters(-1.0, 40.)
-    fitFun[vov_eff] = ROOT.TF1('fitFun_%.2f'%vov_eff, '[1]*pow(x/6000.,[0])', 0, maxNpe)
-    fitFun[vov_eff].SetLineColor(2)
-    fitFun[vov_eff].SetParameters(-1.0, 40.)
-    #fitFun[vov_eff].FixParameter(0,-1)
-    g_tRes_DCR[vov_eff].Fit(fitFun[vov_eff], 'QRS')
     fitFun_old.Draw('same')
+    g_tRes_DCR_vs_Npe[vov_eff].Draw('psame')
     leg = ROOT.TLegend(0.6, 0.6, 0.89, 0.8)
     leg.SetBorderSize(0)
     leg.SetFillColor(0)
-    leg.AddEntry(g_tRes_DCR[vov_eff],'data - 25#mum','PL')
-    leg.AddEntry(fitFun[vov_eff],'fit ', 'L')
+    leg.AddEntry(fitFun[vov_eff],'fit - 25 #mum', 'L')
     leg.AddEntry(fitFun_old,'old param - 15#mum', 'L')
     leg.Draw()
     c.SaveAs(outdir+c.GetName()+'.png')
     c.SaveAs(outdir+c.GetName()+'.pdf')
 
 
-
 leg2 = ROOT.TLegend(0.6, 0.6, 0.89, 0.8)
 leg2.SetBorderSize(0)
 leg2.SetFillColor(0)
 
-
 c = ROOT.TCanvas('c_timeResolutionDCR_vs_Npe_all', 'c_timeResolutionDCR_vs_Npe_all', 700, 600)
-hPad = ROOT.gPad.DrawFrame(0.,0., maxNpe,80.)
+hPad = ROOT.gPad.DrawFrame(0.,0., maxNpe,120.)
 hPad.SetTitle("; Npe; #sigma_{t,DCR} [ps]")
 hPad.Draw()
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-g_tRes_DCR_all.Draw('psame')
-for vov_eff in g_tRes_DCR.keys():
-    g_tRes_DCR[vov_eff].GetFunction('fitFun_%.2f'%vov_eff).Delete()
-    g_tRes_DCR[vov_eff].Draw('psame')
-    leg2.AddEntry(g_tRes_DCR[vov_eff],'V_{OV}^{eff} = %.2f V'%vov_eff,'PL') 
+g_tRes_DCR_vs_Npe_all.Draw('psame')
+for vov_eff in g_tRes_DCR_vs_Npe.keys():
+    if (g_tRes_DCR_vs_Npe[vov_eff].GetFunction('fitFun_%.2f'%vov_eff) != None): 
+        g_tRes_DCR_vs_Npe[vov_eff].GetFunction('fitFun_%.2f'%vov_eff).Delete()
+    g_tRes_DCR_vs_Npe[vov_eff].Draw('psame')
+    leg2.AddEntry(g_tRes_DCR_vs_Npe[vov_eff],'V_{OV}^{eff} = %.2f V'%vov_eff,'PL') 
 fitFun_old = ROOT.TF1('fitFun_old', '[1]*pow(x/6000.,[0])', 3000, 10000) 
 fitFun_old.SetLineColor(ROOT.kRed-10)
 fitFun_old.SetLineStyle(7)
@@ -471,7 +584,7 @@ fitFun_all = ROOT.TF1('fitFun', '[1]*pow(x/6000.,[0])', 0, maxNpe)
 fitFun_all.SetLineColor(2)
 fitFun_all.SetParameters(-1.0, 40.)
 #fitFun[vov_eff].FixParameter(0,-1)
-g_tRes_DCR_all.Fit(fitFun_all, 'QRS')
+g_tRes_DCR_vs_Npe_all.Fit(fitFun_all, 'QRS')
 fitFun_old.Draw('same')
 leg2.Draw()
 c.SaveAs(outdir+c.GetName()+'.png')

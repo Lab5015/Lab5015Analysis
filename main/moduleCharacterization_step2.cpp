@@ -564,10 +564,14 @@ int main(int argc, char** argv)
 	  // -- if Co60 sum peak or laser, we don't use the spectrum analyzers - just gaussian fit to the energy peak.
 	  if( !source.compare(Co60SumPeak) || !source.compare(Laser) )
 	    { 
+	      // MM
 	      histo -> GetXaxis() -> SetRangeUser(map_energyMins[Vov],map_energyMaxs[Vov]);
-	      float max = FindXMaximum(histo,map_energyMins[Vov],map_energyMaxs[Vov]);
-	      
-	      TF1* fitFunc = new TF1 ( Form("func_%d",index), "gaus(0)", max-2*histo->GetRMS(), max+2*histo->GetRMS() );
+	      //float max = FindXMaximum(histo,map_energyMins[Vov],map_energyMaxs[Vov]);
+	      float max = FindXMaximum(histo, 40, map_energyMaxs[Vov]);
+	      	      
+
+	      //TF1* fitFunc = new TF1 ( Form("func_%d",index), "gaus(0)", max-2*histo->GetRMS(), max+2*histo->GetRMS() );
+	      TF1* fitFunc = new TF1 ( Form("func_%d",index), "gaus(0)", 0.95*max, 1.05*max );
 	      fitFunc -> SetLineColor(kBlack);
 	      fitFunc -> SetLineWidth(2);
 	      histo -> Fit( fitFunc, "NQR");

@@ -91,8 +91,9 @@ for run in runs:
          command = 'sed -i \"s%^vth .*$%vth '+args.vth+'%\" '+configFileName
          os.system(command)
       # command = 'sed -i \"s%^plotDir .*$%plotDir '+'/var/www/html/TOFHIR2B/ModuleCharacterization/run'+str(run)+ '%\" '+configFileName
-      command = 'sed -i \"s%^plotDir .*$%plotDir '+'/var/www/html/TOFHIR2X/ModuleCharacterization/run'+str(run)+ '%\" '+configFileName
+      #command = 'sed -i \"s%^plotDir .*$%plotDir '+'/var/www/html/TOFHIR2X/ModuleCharacterization/run'+str(run)+ '%\" '+configFileName
       #command = 'sed -i \"s%^plotDir .*$%plotDir '+'/var/www/html/TOFHIR2A/MTDTB_CERN_Jul21/ModuleCharacterization/run'+str(run)+ '%\" '+configFileName
+      command = 'sed -i \"s%^plotDir .*$%plotDir '+'/var/www/html/TOFHIR2C/904/ModuleCharacterization/run'+str(run)+ '%\" '+configFileName
       os.system(command)
       
       parallelCommand += configFileName + " "
