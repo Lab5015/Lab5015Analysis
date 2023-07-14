@@ -66,7 +66,7 @@ fIdcrL = 1./16
 fIdcrR = 1./16
 #fIdcrL = 0.055
 #fIdcrR = 0.055
-fIdcr_err = 0.15 # errore relativo
+fIdcr_err = 0.10 # errore relativo
 
 thRef = 11
 
