@@ -10,14 +10,10 @@ import argparse
 import json
 
 
-from VovsEff import *
-
-
 parser = argparse.ArgumentParser(description='Module characterization summary plots')
 parser.add_argument("-i",  "--inputLabels",   required=True, type=str, help="comma-separated list of input labels")
 parser.add_argument("-m",  "--resMode",       required=True, type=int, help="resolution mode: 2 - tDiff, 1 - tAve")
 parser.add_argument("-o",  "--outFolder",     required=True, type=str, help="out folder")
-parser.add_argument("-v",  "--versionTOFHIR", required=True, type=str, help="TOFHIR version: TOFHIR2X or TOFHIR2C")
 args = parser.parse_args()
 
 
@@ -77,26 +73,18 @@ def getTimeResolution(h1_deltaT):
 
 
 # INPUT
-inputdir = '/afs/cern.ch/work/m/malberti/MTD/TBatH8May2023/Lab5015Analysis/plots/%s/'%args.versionTOFHIR 
-print('Input dir: %s'%inputdir)
+inputdir = '/data1/cmsdaq/Lab5015Analysis_new/TB_CERN_Sept2023/Lab5015Analysis/plots/'
 #source = 'Laser'
 source = 'TB'
 
+
 # OUTPUT
-outdir  = '/eos/user/m/malberti/www/MTD/%s/MTDTB_CERN_May23/ModuleCharacterization/'%args.versionTOFHIR 
+outdir  = '/var/www/html/TOFHIR2C/MTDTB_CERN_Sept23/ModuleCharacterization/'
 outdir=outdir+args.outFolder
 outFileName = inputdir+'/summaryPlots_'+args.outFolder+'.root'
 print 'Saving root file ', outFileName
 print 'Saving plots in ', outdir
 outfile = ROOT.TFile(outFileName, 'RECREATE' )
-
-# Import file with VovEff and DCR
-if (args.versionTOFHIR == 'TOFHIR2X'):
-   with open('/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_May2023/VovsEff.json', 'r') as f:
-      data = json.load(f)   
-if (args.versionTOFHIR == 'TOFHIR2C'):
-   with open('/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_May2023/VovsEff_TOFHIR2C.json', 'r') as f:
-      data = json.load(f)   
 
 
 
@@ -148,6 +136,7 @@ cols = { 0.50 : 51,
          3.50 : 51+48
 }
 
+
 # --- prepare output dir
 if (os.path.isdir(outdir) == False): 
     os.system('mkdir %s'%outdir)
@@ -159,7 +148,7 @@ os.system('mkdir %s/summaryPlots/timeResolution/fits/'%outdir)
     
 
 # -- ref threhsold
-thRef = 5
+thRef = 11
 
 # -- get list of bars, Vovs, thresholds to be analyzed
 bars = []
@@ -191,6 +180,36 @@ plots_label = ''
 print('Vovs:',Vovs)
 print('Bars:',bars)
 
+if ('528' in args.outFolder):
+    plots_label = 'HPK + LYSO528 (prod5, type2)'
+    for vov in Vovs:
+        VovsEff[vov] = vov 
+    goodBars[3.50] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
+    goodBars[1.50] = [2,3,4,5,7,8,9,10,11,12,13]
+
+elif ('813' in args.outFolder):
+    plots_label = 'HPK (25 #mum, type2) + LYSO813 (prod1, type2)'
+    for vov in Vovs:
+        VovsEff[vov] = vov 
+    goodBars[3.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.25] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.60] = [0,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
+
+elif ('818' in args.outFolder):
+    plots_label = 'HPK (25 #mum, type1) + LYSO818 (prod1, type1)'
+    for vov in Vovs:
+        VovsEff[vov] = vov 
+    goodBars[3.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13]
+    goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
 
 if ('528' in args.outFolder):
    plots_label = 'HPK (15#mum) + LYSO528 (prod5, type2)'
@@ -495,8 +514,7 @@ else:
    for vov in Vovs:
       VovsEff[vov] = vov
       goodBars[vov] = bars 
-      print VovsEff
-      
+
 print 'bars:', bars
 print 'good bars:', goodBars
 print 'Vovs:',Vovs
@@ -937,7 +955,7 @@ for bar in bars:
 
         # -- time resolution vs Vov
         ctres2 = ROOT.TCanvas('c_tRes_energyRatioCorr_vs_Vov_bar%.02d_enBin%02d'%(bar,enBin))
-        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0.0, vovMax, 10, tResMin,tResMax)
+        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0., vovMax, 10, tResMin,tResMax)
         hPadT2.SetTitle(";V_{OV}^{eff} [V];#sigma_{t} [ps]")
         hPadT2.Draw()
         ctres2.SetGridy()
@@ -970,7 +988,7 @@ for bar in bars:
 
         # -- time resolution vs Vov at the best Th
         ctres2 = ROOT.TCanvas('c_tRes_energyRatioCorr_bestTh_vs_Vov_bar%.02d_enBin%02d'%(bar,enBin))
-        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0.0, vovMax,10, tResMin,tResMax)
+        hPadT2 = ROOT.TH2F('hPadT2','', 6, 0., vovMax,10, tResMin,tResMax)
         hPadT2.SetTitle(";V_{OV}^{eff} [V];#sigma_{t} [ps]")
         hPadT2.Draw()
         ctres2.SetGridy()
@@ -1085,7 +1103,7 @@ for i, vov in enumerate(Vovs):
       leg = ROOT.TLegend(0.70, 0.18, 0.90, 0.45)
       leg.SetBorderSize(0)
       leg.SetFillStyle(0)
-      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerStyle(20)
+      g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerStyle(24)
       g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetMarkerColor(cols[vov])
       g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].SetLineColor(cols[vov])
       g_deltaT_energyRatioCorr_vs_bar[vov, thRef, enBin].Draw('psame')

@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <iterator>
+#include <dirent.h>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -63,6 +64,7 @@ int main(int argc, char** argv)
   int usePedestals = opts.GetOpt<int>("Input.usePedestals");
   std::string source = opts.GetOpt<std::string>("Input.sourceName");
   int useTrackInfo = opts.GetOpt<int>("Input.useTrackInfo");
+  float my_step1 = opts.GetOpt<float>("Input.vov") ;
   
   std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
   TOFHIRThresholdZero thrZero(discCalibrationFile,1);
@@ -86,13 +88,59 @@ int main(int argc, char** argv)
     if( runMax == -1 ) runMax = runMin;
     
     for(int run = runMin; run <= runMax; ++run) {
-      std::string fileName;
-      //if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // pc-mtd-mib01
-      if( !usePedestals ) fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01 
-      //if( !usePedestals ) fileName = Form("%s/%s%05d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // cmslpc
-      else                fileName = Form("%s/%04d/*ped_e.root",inputDir.c_str(),run);
-      std::cout << ">>> Adding file " << fileName << std::endl;
-      tree -> Add(fileName.c_str());
+
+      // -- analyze only spills at a chosen OV to speed up analysis
+      // - list of files in run folder
+      DIR *dir_ptr;
+      struct dirent *diread;
+      std::vector<std::string> filenames;
+      std::string directory_path = Form("%s/%04d/",inputDir.c_str(),run);
+      std::cout << directory_path.c_str()<<std::endl;
+
+      if ((dir_ptr = opendir(directory_path.c_str())) != nullptr) {
+        while ((diread = readdir(dir_ptr)) != nullptr) {
+	  //std::cout << diread->d_name << std::endl;
+	  std::string fname(diread->d_name);
+	  filenames.push_back(fname);
+	}
+	closedir(dir_ptr);    
+      }	
+
+      for (auto fname: filenames) {
+	//std::cout << fname.c_str() << std::endl;;
+
+	if (fname == ".") continue;
+	if (fname == "..") continue;
+
+	// -- check if Vov selected
+	bool addFile = true;
+	TFile *f = TFile::Open((directory_path+fname).c_str());
+	TTree *tmpTree = f->Get<TTree>("data");
+	float step1;
+	tmpTree->SetBranchAddress("step1",&step1);
+	tmpTree->GetEntry(0);
+	if (my_step1 > 0 && step1!=my_step1) addFile = false;
+	delete tmpTree;
+	f->Close();
+	
+	if (addFile){
+	  std::cout << ">>> step1 = " << step1 << " --> Adding file: " << fname.c_str()<< std::endl;
+	  tree->Add((directory_path+fname).c_str());
+	}
+      }
+
+      
+      //
+      //std::string fileName;
+      ////if( !usePedestals ) fileName = Form("%s/%s%04d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // pc-mtd-mib01
+      //if( !usePedestals ) fileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01 
+      ////if( !usePedestals ) fileName = Form("%s/%s%05d_*e.root",inputDir.c_str(),fileBaseName.c_str(),run); // cmslpc
+      //else                fileName = Form("%s/%04d/*ped_e.root",inputDir.c_str(),run);
+      //std::cout << ">>> Adding file " << fileName << std::endl;
+      //tree -> Add(fileName.c_str());
+      //
+
+
       
       struct stat t_stat;
       //stat(Form("/data/TOFHIR2/raw/run%04d.rawf",run), &t_stat);
@@ -251,6 +299,8 @@ int main(int argc, char** argv)
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
 	if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 
+	// select only one OV
+	if (my_step1 > 0  && my_step1 != step1) continue;
 
 	if (channelIdx[chL_ext] <0 || channelIdx[chR_ext] <0) continue;
 	
@@ -359,10 +409,11 @@ int main(int argc, char** argv)
           if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 	  
 	  if( opts.GetOpt<int>("Channels.array") == 0){
-	    index.second->GetXaxis()->SetRangeUser(50,900);
+	    //	    index.second->GetXaxis()->SetRangeUser(50,900);
+	    index.second->GetXaxis()->SetRangeUser(200,900);
 	  }
 	  if( opts.GetOpt<int>("Channels.array") == 1){
-	    index.second->GetXaxis()->SetRangeUser(50,900);
+	    index.second->GetXaxis()->SetRangeUser(200,900);
 	  }
 
 	  float max = index.second->GetBinCenter(index.second->GetMaximumBin());
@@ -432,6 +483,9 @@ int main(int argc, char** argv)
     if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
     // float vthe = float(int((step2-10000*vth1-step2-100*vth2)/1)-1);
     
+    // select only one OV
+    if (my_step1 > 0  && my_step1 != step1) continue;
+
     
     // --- check coincidence with another channel 
     if(!opts.GetOpt<std::string>("Coincidence.status").compare("yes"))

@@ -236,29 +236,30 @@ int main(int argc, char** argv)
   // -- read minimum energy for each bar from file
   std::string minEnergiesFileName = opts.GetOpt<std::string>("Cuts.minEnergiesFileName");
   std::map < std::pair<int, float>, float> minE; 
-  std::cout << minEnergiesFileName <<std::endl;
-  if (minEnergiesFileName != "") {
-    std::ifstream minEnergiesFile;
-    minEnergiesFile.open(minEnergiesFileName);
-    std::string line;
-    int bar;
-    float ov;
-    float value;
-    while ( minEnergiesFile.good() ){
-      getline(minEnergiesFile, line);
-      std::istringstream ss(line);
-      ss >> bar >> ov >> value; 
-      minE[std::make_pair(bar,ov)] = value; 
-      //std::cout<< bar <<  "   " << ov << "  " << minE[std::make_pair(bar,ov)] <<std::endl;
+  std::cout << minEnergiesFileName << std::endl;
+  if( minEnergiesFileName != "" )
+    {
+      std::ifstream minEnergiesFile;
+      minEnergiesFile.open(minEnergiesFileName);
+      std::string line;
+      int bar;
+      float ov;
+      float value;
+      while( minEnergiesFile.good() )
+	{
+	  getline(minEnergiesFile, line);
+	  std::istringstream ss(line);
+	  ss >> bar >> ov >> value; 
+	  minE[std::make_pair(bar,ov)] = value; 
+	  //std::cout << "minEnergies:   bar " << bar <<  "   Vov " << ov << "   E " << minE[std::make_pair(bar,ov)] <<std::endl;
+	}
     }
-  }
-  else{
-    for(unsigned int iBar = 0; iBar < 16; ++iBar){
-      for(unsigned int ii = 0; ii < Vov.size(); ++ii){
-	minE[std::make_pair(iBar, Vov[ii])] = map_energyMins[Vov[ii]];
-      }
+  else
+    {
+      for(unsigned int iBar = 0; iBar < 16; ++iBar)
+	for(unsigned int ii = 0; ii < Vov.size(); ++ii)
+	  minE[std::make_pair(iBar, Vov[ii])] = map_energyMins[Vov[ii]];
     }
-  }
 
 
 
