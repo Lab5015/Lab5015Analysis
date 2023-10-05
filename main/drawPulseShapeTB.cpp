@@ -11,6 +11,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -50,6 +51,7 @@ int main(int argc, char** argv)
   TOFHIRThresholdZero thrZero(discCalibrationFile,0);
 
   int chRef = opts.GetOpt<float>("Input.chRef");
+  float my_step1 = opts.GetOpt<float>("Input.vov") ;
 
   std::string outName = opts.GetOpt<std::string>("Output.outName");
   std::string outDir  = opts.GetOpt<std::string>("Output.outDir");
@@ -129,6 +131,47 @@ int main(int argc, char** argv)
       if( runMax == -1 ) runMax = runMin;
     
       for(int run = runMin; run <= runMax; ++run) {
+	// -- analyze only spills at a chosen OV to speed up analysis
+	// - list of files in run folder
+	DIR *dir_ptr;
+	struct dirent *diread;
+	std::vector<std::string> filenames;
+	std::string directory_path = Form("%s/%04d/",inputDir.c_str(),run);
+	std::cout << directory_path.c_str()<<std::endl;
+	
+	if ((dir_ptr = opendir(directory_path.c_str())) != nullptr) {
+	  while ((diread = readdir(dir_ptr)) != nullptr) {
+	    //std::cout << diread->d_name << std::endl;
+	    std::string fname(diread->d_name);
+	    filenames.push_back(fname);
+	  }
+	  closedir(dir_ptr);
+	}
+
+	for (auto fname: filenames) {
+	  //std::cout << fname.c_str() << std::endl;
+
+	  if (fname == ".") continue;
+	  if (fname == "..") continue;
+
+	  // -- check if Vov selected
+	  bool addFile = true;
+	  TFile *f = TFile::Open((directory_path+fname).c_str());
+	  TTree *tmpTree = f->Get<TTree>("data");
+	  float step1;
+	  tmpTree->SetBranchAddress("step1",&step1);
+	  tmpTree->GetEntry(0);
+	  if (my_step1 > 0 && step1!=my_step1) addFile = false;
+	  delete tmpTree;
+	  f->Close();
+
+	  if (addFile){
+	    std::cout << ">>> step1 = " << step1 << " --> Adding file: " << fname.c_str()<< std::endl;
+	    data->Add((directory_path+fname).c_str());
+	  }
+	}
+
+
 	//std::string inFileName = Form("/data/tofhir2/h8/reco/%04d/*_e.root",run); 
 	//std::string inFileName = Form("/data1/cmsdaq/tofhir2/h8/reco/%04d/*_e.root",run);
 	//std::string inFileName = Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Oct2021/TOFHIR2/h8/reco/%04d/*_e.root",run); 
@@ -136,9 +179,9 @@ int main(int argc, char** argv)
 	//std::string inFileName = Form("/eos/uscms/store/group/cmstestbeam/2023_03_cmstiming_BTL/TOFHIR/RecoData/run%05d_e.root",run); 
 	//std::string inFileName = Form("%s/run%05d_e.root",inputDir.c_str(),run); 
 	//std::string inFileName = Form("%s/run%05d_e.root",inputDir.c_str(),run); // fnal data 2023
-	std::string inFileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01 
-	std::cout << ">>> Adding file " << inFileName << std::endl;
-	data -> Add(inFileName.c_str());
+	//std::string inFileName = Form("%s/%04d/*_e.root",inputDir.c_str(),run); // pc-mtd-tb01 
+	//std::cout << ">>> Adding file " << inFileName << std::endl;
+	//data -> Add(inFileName.c_str());
       }
     }
   
