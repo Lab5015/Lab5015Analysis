@@ -73,17 +73,14 @@ example:
 ./bin/drawPulseShapeTB.exe cfg/drawPulseShapeTB.cfg
 ```
 
-Remember to change the paths of input and output folders/files in all the configurations files according to your needs.z 
+Remember to change the paths of input and output folders/files in all the configurations files as needed.
 
 
 ### Scripts to prepare configuration files
 A set of scripts is available under the `scripts` folder to create configuration files (both for the moduleCharacterization executables and the drawPulseShapeTB.exe). 
-The starting point are base configuration files: 
-    - https://github.com/Lab5015/Lab5015Analysis/tree/TB_CERN_Sept2023/cfg/TOFHIR2C/moduleCharacterization_base_TOFHIR2C.cfg 
-    - https://github.com/Lab5015/Lab5015Analysis/tree/TB_CERN_Sept2023/cfg/TOFHIR2C/minEnergies_base_TOFHIR2C.txt
-    - https://github.com/Lab5015/Lab5015Analysis/tree/TB_CERN_Sept2023/cfg/TOFHIR2C/moduleCharacterization_base_TOFHIR2C.cfg  
-
-Edit the base configuration files and the `create_config_TOFHIR2C.py` and `launch_create_config.sh` scripts, as needed  To run the scripts:
+The starting point are the base configuration files under the `cfg/TOFHIR2C` folder
+Edit the base configuration files (`moduleCharacterization_base_TOFHIR2C.cfg`, `drawPulseShapeTB_base_TOFHIR2C.cfg`, `minEnergies_base_TOFHIR2C.txt`) and the `create_config_TOFHIR2C.py` and `launch_create_config.sh` scripts, as needed.
+To run the scripts:
 ```sh
 cd scripts/
 source launch_create_config.sh 
@@ -91,7 +88,7 @@ source launch_create_config.sh
 
 ### Submit the analysis in parallel on lxplus Condor 
 A set of scripts under the `scripts` folder allows the submission of multiple jobs (e.g. a set of runs corresponding to an overvoltage/threshold scan) in parallel singin Condor on lxplus. 
-From `scripts` folder, edit moduleCharacterizationCondor.sh, submit_moduleCharacterization_Condor.sub, list_cfg_moduleCharacterization.txt as needed.
+From `scripts` folder, edit `moduleCharacterizationCondor.sh`, `submit_moduleCharacterization_Condor.sub`, `list_cfg_moduleCharacterization.txt` as needed.
 
 The script is used as follows:
 ```sh
