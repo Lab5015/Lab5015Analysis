@@ -49,12 +49,12 @@ source scripts/setup.sh
 ### Run the analysis
 The analysis of the collected data is structured in three steps
 1. `moduleCharacterization_step1.cpp`:
-   This step performs the first loop over the events and fills base histograms such as energy and ToT for each bar, each theshold and each over-voltage. A skim of the events according to the selections defined in the config file is also performed. The output is in the form of TTrees and histograms.
+   This step performs the first loop over the events and fills base histograms such as energy and ToT for each bar, each threshold and each over-voltage. A skim of the events according to the selections defined in the config file is also performed. The output is in the form of TTrees and histograms.
 
 1. `moduleCharacterization_step2.cpp`:
    This step performs several loops over the events:
     1. loop over the histos filled in step1 and define the energy ranges
-    1. loop over the skimmed TTrees and fill raw distribution of energy and energy ratio according to the predefined bins
+    1. loop over the skimmed TTrees and fill raw distribution of energy, ToT, energy ratio, ToT ratio according to the predefined bins
     1. loop over the skimmed TTrees and compute time walk corrections
     1. loop over the skimmed TTrees and apply the time walk corrections
     
@@ -64,28 +64,41 @@ The analysis of the collected data is structured in three steps
    This step takes the output of step2 as an input and displays summary plots in a website. Loop over the events doesn't belong here.
    example:
    ```sh
-   python moduleCharacterizationSummaryPlots.py -m 2 -i run2071 -o /var/www/html/TOFHIR2X/ModuleCharacterization/run2071
+   python moduleCharacterizationSummaryPlots.py -m 2 -i run6055 -o run6055
    ```
 
-
-An additional code which is useful to plot the pulse shape for a given channel is `drawPulseShape.exe`. The pulse shape is computed with respect to the trigger.
+An additional code which is useful to plot the pulse shape for a given channel is `drawPulseShapeTB.exe`. 
 example:
 ```sh
-./bin/drawPulseShape.exe cfg/drawPulseShape_HPK_2E14_52deg_T-40C_Vov1.50.cfg`
+./bin/drawPulseShapeTB.exe cfg/drawPulseShapeTB.cfg
+```
+
+Remember to change the paths of input and output folders/files in all the configurations files according to your needs.z 
+
+
+### Scripts to prepare configuration files
+A set of scripts is available under the `scripts` folder to create configuration files (both for the moduleCharacterization executables and the drawPulseShapeTB.exe). 
+The starting point are base configuration files: 
+    - https://github.com/Lab5015/Lab5015Analysis/tree/TB_CERN_Sept2023/cfg/TOFHIR2C/moduleCharacterization_base_TOFHIR2C.cfg 
+    - https://github.com/Lab5015/Lab5015Analysis/tree/TB_CERN_Sept2023/cfg/TOFHIR2C/minEnergies_base_TOFHIR2C.txt
+    - https://github.com/Lab5015/Lab5015Analysis/tree/TB_CERN_Sept2023/cfg/TOFHIR2C/moduleCharacterization_base_TOFHIR2C.cfg  
+
+Edit the base configuration files and the `create_config_TOFHIR2C.py` and `launch_create_config.sh` scripts, as needed  To run the scripts:
+```sh
+cd scripts/
+source launch_create_config.sh 
+```
+
+### Submit the analysis in parallel on lxplus Condor 
+A set of scripts under the `scripts` folder allows the submission of multiple jobs (e.g. a set of runs corresponding to an overvoltage/threshold scan) in parallel singin Condor on lxplus. 
+From `scripts` folder, edit moduleCharacterizationCondor.sh, submit_moduleCharacterization_Condor.sub, list_cfg_moduleCharacterization.txt as needed.
+
+The script is used as follows:
+```sh
+condor_submit submit_moduleCharacterization_Condor.sub
 ```
 
 
-### Submit the analysis in parallel on pcfatis
-A script under the `scripts` folder allows the submission of multiple jobs (e.g. a set of runs corresponding to an overvoltage/threshold scan) in parallel on `pcfatis`. one job per run. The script is used as follows:
-```
-python scripts/submit_moduleCharacterization.py --label myTask_stepX -b /path/of/Lab5015Analysis -e bin/moduleCharacterization_stepX.exe -r run1-run2,run3 -c cfg/moduleCharacterization.cfg --submit
-```
-The config file is used as a template for each job, and the run number and file names in it are modified by the script as required. The command can be executed without the `--submit` flag first to inspect the jobs (in the `scripts/jobs` folder) before actually running them.
-
-
-
-### Visualize the results
-All the results are available for inspection on a website hosted on pcfatis. The [link](http://pcfatis.mib.infn.it) is accessible from the INFN network or via tunnel.
 
 
 
