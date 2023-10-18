@@ -16,8 +16,10 @@ aldos = ['A', 'B']
 channelMap = {}
 channelMap[(0,'A')] = 2
 channelMap[(0,'B')] = 1
-channelMap[(2,'A')] = 6
-channelMap[(2,'B')] = 5
+#channelMap[(2,'A')] = 6
+#channelMap[(2,'B')] = 5
+channelMap[(2,'A')] = 5 # Sept23 TB
+channelMap[(2,'B')] = 6 # Sept23 TB
 
 inputfolder = '/home/cmsdaq/DAQ/tofhir/sw_daq_tofhir2b_gen23/'
 
@@ -38,10 +40,26 @@ confs = [
 #        '27.00', '27.01', '27.02', '27.03',
 #        '28.00', '28.01', '28.02', '28.03',
 #        '29.00', '29.01',
-        '36.00', '36.01', #TOFHIR2C
-        '37.00',          #TOFHIR2C
-        '38.00',          #TOFHIR2C
-        '39.00',          #TOFHIR2C
+#        '36.00', '36.01', #TOFHIR2C
+#        '37.00',          #TOFHIR2C
+#        '38.00',          #TOFHIR2C
+#        '39.00',          #TOFHIR2C
+        '51.00',           #TOFHIR2C - Sep. 23
+        '51.04',           #TOFHIR2C - Sep. 23
+        '51.05',           #TOFHIR2C - Sep. 23
+        '52.00',           #TOFHIR2C - Sep. 23
+        '52.02',           #TOFHIR2C - Sep. 23
+        '52.03',           #TOFHIR2C - Sep. 23
+        '53.00',           #TOFHIR2C - Sep. 23
+        '54.00',           #TOFHIR2C - Sep. 23
+        '54.01',           #TOFHIR2C - Sep. 23
+        '54.02',           #TOFHIR2C - Sep. 23
+        '55.00',           #TOFHIR2C - Sep. 23
+        '55.01',           #TOFHIR2C - Sep. 23
+        '55.02',           #TOFHIR2C - Sep. 23
+        '56.00',           #TOFHIR2C - Sep. 23
+        '56.01',           #TOFHIR2C - Sep. 23
+        '56.02',           #TOFHIR2C - Sep. 23
 ]
 
 temps = {}
@@ -67,6 +85,22 @@ temps['36.01'] = -30.
 temps['37.00'] = -35.
 temps['38.00'] = -30.
 temps['39.00'] = -30.
+temps['51.00'] = -40.
+temps['51.04'] = -35.
+temps['51.05'] = -30.
+temps['52.00'] = -35.
+temps['52.02'] = -40.
+temps['52.03'] = -30.
+temps['53.00'] = -35.
+temps['54.00'] = -40.
+temps['54.01'] = -35.
+temps['54.02'] = -30.
+temps['55.00'] = -30.
+temps['55.01'] = -35.
+temps['55.02'] = -40.
+temps['56.00'] = -32.
+temps['56.01'] = -37.
+temps['56.02'] = -27.
 
 sipmTypes = {}
 sipmTypes['24.04'] = 'HPK-PIT-C25-ES2'
@@ -91,6 +125,22 @@ sipmTypes['36.01'] = 'HPK-PIT-C25-ES2'
 sipmTypes['37.00'] = 'HPK-PIT-C20-ES2'
 sipmTypes['38.00'] = 'HPK-MS' #15 um 
 sipmTypes['39.00'] = 'HPK-PIT-C25-ES2'
+sipmTypes['51.00'] = 'HPK-PIT-C25-ES2'
+sipmTypes['51.04'] = 'HPK-PIT-C25-ES2'
+sipmTypes['51.05'] = 'HPK-PIT-C25-ES2'
+sipmTypes['52.00'] = 'HPK-PIT-C25-ES2'
+sipmTypes['52.02'] = 'HPK-PIT-C25-ES2'
+sipmTypes['52.03'] = 'HPK-PIT-C25-ES2'
+sipmTypes['53.00'] = 'HPK-PIT-C25-ES2'
+sipmTypes['54.00'] = 'HPK-PIT-C30-ES2'
+sipmTypes['54.01'] = 'HPK-PIT-C30-ES2'
+sipmTypes['54.02'] = 'HPK-PIT-C30-ES2'
+sipmTypes['55.00'] = 'HPK-PIT-C20-ES2'
+sipmTypes['55.01'] = 'HPK-PIT-C20-ES2'
+sipmTypes['55.02'] = 'HPK-PIT-C20-ES2'
+sipmTypes['56.00'] = 'HPK-PIT-C25-ES2'
+sipmTypes['56.01'] = 'HPK-PIT-C25-ES2'
+sipmTypes['56.02'] = 'HPK-PIT-C25-ES2'
 
 labels = {}
 labels['24.04'] = 'HPK_2E14_LYSO815'
@@ -115,31 +165,64 @@ labels['36.01'] = 'HPK_2E14_LYSO815'
 labels['37.00'] = 'HPK_2E14_LYSO825'
 labels['38.00'] = 'HPK_1E14_LYSO844'
 labels['39.00'] = 'HPK_1E14_LYSO819'
+labels['51.00'] = 'HPK_2E14_LYSO100056'
+labels['51.04'] = 'HPK_2E14_LYSO100056'
+labels['51.05'] = 'HPK_2E14_LYSO100056'
+labels['52.00'] = 'HPK_2E14_LYSO815'
+labels['52.02'] = 'HPK_2E14_LYSO815'
+labels['52.03'] = 'HPK_2E14_LYSO815'
+labels['53.00'] = 'HPK_2E14_LYSO300032'
+labels['54.00'] = 'HPK_2E14_LYSO200104'
+labels['54.01'] = 'HPK_2E14_LYSO200104'
+labels['54.02'] = 'HPK_2E14_LYSO200104'
+labels['55.00'] = 'HPK_2E14_LYSO825'
+labels['55.01'] = 'HPK_2E14_LYSO825'
+labels['55.02'] = 'HPK_2E14_LYSO825'
+labels['56.00'] = 'HPK_1E14_LYSO819'
+labels['56.01'] = 'HPK_1E14_LYSO819'
+labels['56.02'] = 'HPK_1E14_LYSO819'
 
 
 gainDrops = {}
-gainDrops['24.04'] = 0.08
-gainDrops['24.03'] = 0.08
-gainDrops['24.00'] = 0.08
-gainDrops['24.01'] = 0.08
-gainDrops['25.00'] = 0.08
-gainDrops['25.01'] = 0.08
-gainDrops['25.02'] = 0.08
-gainDrops['27.00'] = 0.04
-gainDrops['27.01'] = 0.04
-gainDrops['27.02'] = 0.04
-gainDrops['27.03'] = 0.04
+gainDrops['24.04'] = 0.05
+gainDrops['24.03'] = 0.05
+gainDrops['24.00'] = 0.05
+gainDrops['24.01'] = 0.05
+gainDrops['25.00'] = 0.05
+gainDrops['25.01'] = 0.05
+gainDrops['25.02'] = 0.05
+gainDrops['27.00'] = 0.025
+gainDrops['27.01'] = 0.025
+gainDrops['27.02'] = 0.025
+gainDrops['27.03'] = 0.025
 gainDrops['28.00'] = 0.
 gainDrops['28.01'] = 0.
 gainDrops['28.02'] = 0.
 gainDrops['28.03'] = 0.
-gainDrops['29.00'] = 0.04
-gainDrops['29.01'] = 0.04
-gainDrops['36.00'] = 0.08
-gainDrops['36.01'] = 0.08
-gainDrops['37.00'] = 0.08
-gainDrops['38.00'] = 0.04
-gainDrops['39.00'] = 0.04
+gainDrops['29.00'] = 0.025
+gainDrops['29.01'] = 0.025
+gainDrops['36.00'] = 0.05
+gainDrops['36.01'] = 0.05
+gainDrops['37.00'] = 0.05
+gainDrops['38.00'] = 0.025
+gainDrops['39.00'] = 0.025
+gainDrops['51.00'] = 0.05
+gainDrops['51.04'] = 0.05
+gainDrops['51.05'] = 0.05
+gainDrops['52.00'] = 0.05
+gainDrops['52.02'] = 0.05
+gainDrops['52.03'] = 0.05
+gainDrops['53.00'] = 0.05
+gainDrops['54.00'] = 0.05
+gainDrops['54.01'] = 0.05
+gainDrops['54.02'] = 0.05
+gainDrops['55.00'] = 0.05
+gainDrops['55.01'] = 0.05
+gainDrops['55.02'] = 0.05
+gainDrops['56.00'] = 0.025
+gainDrops['56.01'] = 0.025
+gainDrops['56.02'] = 0.025
+
 
 
 
@@ -157,7 +240,9 @@ for aldo in aldos:
 
 
 #outfile = ROOT.TFile('./logIVEff.root','RECREATE')
-outfile = ROOT.TFile('./logIVEff_TOFHIR2C.root','RECREATE')
+#outfile = ROOT.TFile('./logIVEff_TOFHIR2X_May23.root','RECREATE')
+#outfile = ROOT.TFile('./logIVEff_TOFHIR2C_May23.root','RECREATE')
+outfile = ROOT.TFile('./logIVEff_TOFHIR2C_Sep23.root','RECREATE')
 
 output_dict = OrderedDict()
 
