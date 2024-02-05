@@ -48,6 +48,7 @@ confs = [
         '51.04',           #TOFHIR2C - Sep. 23
         '51.05',           #TOFHIR2C - Sep. 23
         '52.00',           #TOFHIR2C - Sep. 23
+        '52.01',  # 815 HPK 25 μm T2 2E+14 Operating temperature: -35 °C, Angle 52° TOFHIR2C
         '52.02',           #TOFHIR2C - Sep. 23
         '52.03',           #TOFHIR2C - Sep. 23
         '53.00',           #TOFHIR2C - Sep. 23
@@ -60,6 +61,7 @@ confs = [
         '56.00',           #TOFHIR2C - Sep. 23
         '56.01',           #TOFHIR2C - Sep. 23
         '56.02',           #TOFHIR2C - Sep. 23
+        '73.00',  # 200 113 FBK 25 μm T2 2E+14 Operating temperature: -40 °C, fridge -34°C, Angle = 52° TOFHIR2C
 ]
 
 temps = {}
@@ -89,6 +91,7 @@ temps['51.00'] = -40.
 temps['51.04'] = -35.
 temps['51.05'] = -30.
 temps['52.00'] = -35.
+temps['52.01'] = -35.
 temps['52.02'] = -40.
 temps['52.03'] = -30.
 temps['53.00'] = -35.
@@ -101,6 +104,7 @@ temps['55.02'] = -40.
 temps['56.00'] = -32.
 temps['56.01'] = -37.
 temps['56.02'] = -27.
+temps['73.00'] = -40.
 
 sipmTypes = {}
 sipmTypes['24.04'] = 'HPK-PIT-C25-ES2'
@@ -129,6 +133,7 @@ sipmTypes['51.00'] = 'HPK-PIT-C25-ES2'
 sipmTypes['51.04'] = 'HPK-PIT-C25-ES2'
 sipmTypes['51.05'] = 'HPK-PIT-C25-ES2'
 sipmTypes['52.00'] = 'HPK-PIT-C25-ES2'
+sipmTypes['52.01'] = 'HPK-PIT-C25-ES2'
 sipmTypes['52.02'] = 'HPK-PIT-C25-ES2'
 sipmTypes['52.03'] = 'HPK-PIT-C25-ES2'
 sipmTypes['53.00'] = 'HPK-PIT-C25-ES2'
@@ -141,6 +146,7 @@ sipmTypes['55.02'] = 'HPK-PIT-C20-ES2'
 sipmTypes['56.00'] = 'HPK-PIT-C25-ES2'
 sipmTypes['56.01'] = 'HPK-PIT-C25-ES2'
 sipmTypes['56.02'] = 'HPK-PIT-C25-ES2'
+sipmTypes['73.00'] = 'FBK-PIT-C25-ES2'
 
 labels = {}
 labels['24.04'] = 'HPK_2E14_LYSO815'
@@ -169,6 +175,7 @@ labels['51.00'] = 'HPK_2E14_LYSO100056'
 labels['51.04'] = 'HPK_2E14_LYSO100056'
 labels['51.05'] = 'HPK_2E14_LYSO100056'
 labels['52.00'] = 'HPK_2E14_LYSO815'
+labels['52.01'] = 'HPK_2E14_LYSO815'
 labels['52.02'] = 'HPK_2E14_LYSO815'
 labels['52.03'] = 'HPK_2E14_LYSO815'
 labels['53.00'] = 'HPK_2E14_LYSO300032'
@@ -181,6 +188,7 @@ labels['55.02'] = 'HPK_2E14_LYSO825'
 labels['56.00'] = 'HPK_1E14_LYSO819'
 labels['56.01'] = 'HPK_1E14_LYSO819'
 labels['56.02'] = 'HPK_1E14_LYSO819'
+labels['73.00'] = 'FBK_2E14_LYSO200113'
 
 
 gainDrops = {}
@@ -210,6 +218,7 @@ gainDrops['51.00'] = 0.05
 gainDrops['51.04'] = 0.05
 gainDrops['51.05'] = 0.05
 gainDrops['52.00'] = 0.05
+gainDrops['52.01'] = 0.05
 gainDrops['52.02'] = 0.05
 gainDrops['52.03'] = 0.05
 gainDrops['53.00'] = 0.05
@@ -222,6 +231,7 @@ gainDrops['55.02'] = 0.05
 gainDrops['56.00'] = 0.025
 gainDrops['56.01'] = 0.025
 gainDrops['56.02'] = 0.025
+gainDrops['73.00'] = 0.05 # TO BE CHECKED
 
 
 
