@@ -50,6 +50,9 @@ def Gain(sipm_type, ov):
         return 9.067E04 + 4.020E05*ov
     elif   (sipm_type == "HPK-PIT-C30-ES2"): #BOH 
         return 9.067E04 + 4.020E05*ov
+    elif   (sipm_type == "FBK-PIT-C25-ES2"): #BOH 
+#        return 7.E04 + 3.E05*ov
+        return 1.E05 + 2.75E05*ov            
 
     else:
         print("error!!! Gain not specified!")
