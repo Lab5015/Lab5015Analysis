@@ -61,7 +61,7 @@ confs = [
         '56.00',           #TOFHIR2C - Sep. 23
         '56.01',           #TOFHIR2C - Sep. 23
         '56.02',           #TOFHIR2C - Sep. 23
-        '73.00',  # 200 113 FBK 25 μm T2 2E+14 Operating temperature: -40 °C, fridge -34°C, Angle = 52° TOFHIR2C
+        '73.00',  # 200 113 FBK 25 μm T2 2E+14 Operating temperature: -35 °C, fridge -34°C, Angle = 52° TOFHIR2C
 ]
 
 temps = {}
