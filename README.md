@@ -15,7 +15,7 @@ ssh username@hostname
 export MYNAME=putYourNameHere  #use your name for development
 mkdir $MYNAME
 cd $MYNAME
-git clone --recursive https://github.com/Lab5015/Lab5015Analysis
+git clone --recursive https://github.com/CMSROMA/Lab5015Analysis
 cd Lab5015Analysis
 source scripts/setup.sh
 make
