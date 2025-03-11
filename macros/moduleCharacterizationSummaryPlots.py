@@ -79,7 +79,7 @@ source = 'TB'
 
 
 # OUTPUT
-outdir  = '/eos/home-f/ftonetto/Lab5015Analysis/plots/'
+outdir  = '/eos/home-f/ftonetto/www/MTD_TB_CERN_Sep23/'
 outdir=outdir+args.outFolder
 outFileName = inputdir+'/summaryPlots_'+args.outFolder+'.root'
 print('Saving root file ', outFileName)
@@ -137,18 +137,24 @@ cols = { 0.50 : 51,
 }
 
 
-# --- prepare output dir
-if (os.path.isdir(outdir) == False): 
+# --- prepare output dir 
+if (os.path.isdir(outdir) == False):
     os.system('mkdir %s'%outdir)
-os.system('mkdir %s/summaryPlots/'%outdir)
-os.system('mkdir %s/summaryPlots/tot/'%outdir)
-os.system('mkdir %s/summaryPlots/energy/'%outdir)
-os.system('mkdir %s/summaryPlots/timeResolution/'%outdir)
-os.system('mkdir %s/summaryPlots/timeResolution/fits/'%outdir)
+    os.system('cp /eos/home-f/ftonetto/www/index.php %s'%outdir) #copia file index.php per visualizzazione web
+    os.system('mkdir %s/summaryPlots/'%outdir)
+    os.system('cp /eos/home-f/ftonetto/www/index.php %s/summaryPlots/'%outdir)
+    os.system('mkdir %s/summaryPlots/tot/'%outdir)
+    os.system('cp /eos/home-f/ftonetto/www/index.php %s/summaryPlots/tot/'%outdir)
+    os.system('mkdir %s/summaryPlots/energy/'%outdir)
+    os.system('cp /eos/home-f/ftonetto/www/index.php %s/summaryPlots/energy/'%outdir)
+    os.system('mkdir %s/summaryPlots/timeResolution/'%outdir)
+    os.system('cp /eos/home-f/ftonetto/www/index.php %s/summaryPlots/timeResolution/'%outdir)
+    os.system('mkdir %s/summaryPlots/timeResolution/fits/'%outdir)
+    os.system('cp /eos/home-f/ftonetto/www/index.php %s/summaryPlots/timeResolution/fits/'%outdir)
     
 
 # -- ref threhsold
-thRef = 20
+thRef = 11
 
 # -- get list of bars, Vovs, thresholds to be analyzed
 bars = []

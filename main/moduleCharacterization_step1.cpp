@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
         if( runMax == -1 ) runMax = runMin;
     
         for(int run = runMin; run <= runMax; ++run) {
-
             // -- analyze only spills at a chosen OV to speed up analysis
             // - list of files in run folder
             DIR *dir_ptr;
@@ -259,6 +258,7 @@ int main(int argc, char** argv) {
     std::map<int,TH1F*> h1_energyR;
     std::map<int,TH1F*> h1_energyLR;
     std::map<int,TH1F*> h1_energyLR_ext;
+	std::map<int,TH1F*> h1_energyLR_sum;
     std::map<int,TCanvas*> c;
     std::map<int,std::vector<float>*> rangesLR;
     std::map<int,bool> acceptEvent;
@@ -454,14 +454,15 @@ int main(int argc, char** argv) {
     float energyR[16];
   
     int nEntries = tree->GetEntries();
+	int mio_counter=0;
     if( maxEntries > 0 ) nEntries = maxEntries;
     for(int entry = 0; entry < nEntries; ++entry) {
+		
         tree -> GetEntry(entry);
         if( entry%200000 == 0 ) {
 	        std::cout << "\n>>> 1st loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << std::endl;
 	        TrackProcess(cpu, mem, vsz, rss);
         }
-    
         if (useTrackInfo && nhits > 0 &&  (x < -100 || y < -100 ) ) continue;
 
         float Vov = step1;
@@ -476,11 +477,10 @@ int main(int argc, char** argv) {
         // select only one OV
         if (my_step1 > 0  && my_step1 != step1) continue;
 
-    
         // --- check coincidence with another channel 
         if(!opts.GetOpt<std::string>("Coincidence.status").compare("yes")) {
 	        if(!acceptEvent[entry] ) continue;
-	
+
 	        int chL_ext = opts.GetOpt<int>("Coincidence.chL");
 	        int chR_ext = opts.GetOpt<int>("Coincidence.chR");
 	        float energyL_ext = (*energy)[channelIdx[chL_ext]];
@@ -497,8 +497,6 @@ int main(int argc, char** argv) {
 	            continue;
 	        }
         }
-    
-    
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){
 			if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0){
 				qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
@@ -511,6 +509,10 @@ int main(int argc, char** argv) {
 				timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
 				t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
 				t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
+				if(mio_counter==-1){
+				  std::cout<<"Entry: "<<entry<<" Barra: "<<iBar<<" chL["<<iBar<<"]= "<<chL[iBar]<<" channelIdx["<<chL[iBar]<<"]= "<<channelIdx[chL[iBar]]<<"\nEnergyL: "<<energyL[iBar]<<std::endl;
+				}
+
 			}
 			else{
 				qfineL[iBar]=-10;
@@ -523,9 +525,21 @@ int main(int argc, char** argv) {
 				timeR[iBar]=-10;
 				t1fineL[iBar]=-10;
 				t1fineR[iBar]=-10;
-			}     
+			} 
+			if(mio_counter==-1){
+				std::cout<<"\ntotL["<<iBar<<"]: "<<totL[iBar]<<"\t   totR["<<iBar<<"]: "<<totR[iBar]<<std::endl;
+				std::cout<<"qfineL["<<iBar<<"]: "<<qfineL[iBar]<<"\t   qfineR["<<iBar<<"]: "<<qfineR[iBar]<<std::endl;
+				std::cout<<"timeL["<<iBar<<"]: "<<timeL[iBar]<<"\t   timeR["<<iBar<<"]: "<<timeR[iBar]<<std::endl;
+				std::cout<<"t1fineL["<<iBar<<"]: "<<t1fineL[iBar]<<"   t1fineR["<<iBar<<"]: "<<t1fineR[iBar]<<std::endl;
+			    std::cout<<"energyL["<<iBar<<"]: "<<energyL[iBar]<<"\t   energyR["<<iBar<<"]: "<<energyR[iBar]<<std::endl;
+			}
+			if(mio_counter==-1){
+				  std::cout<<"Entry: "<<entry<<" Barra: "<<iBar<<"\nchL["<<iBar<<"]= "<<chL[iBar]<<" channelIdx["<<chL[iBar]<<"]= "<<channelIdx[chL[iBar]]<<"  totL["<<iBar<<"]: "<<totL[iBar]<<"  energyL["<<iBar<<"]: "<<energyL[iBar]<<std::endl;
+				}
         }// end loop over bars
-    
+        if(mio_counter==-1) std::cout<<" "<<std::endl;
+	    mio_counter++;
+
         int maxEn=0;
         int maxBar=0;
 
@@ -567,8 +581,7 @@ int main(int argc, char** argv) {
 	        }
         }// end loop over bars
 
-
-    
+        double mean_en_sum=0;
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {
             if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100){  
     
@@ -589,6 +602,7 @@ int main(int argc, char** argv) {
 	                outTrees[index] -> Branch("event",&anEvent);
 	  
 	                h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+					h1_energyLR_sum[index] = new TH1F(Form("h1_energy_bar%02dL-R_sum_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	            }
       
 	
@@ -621,7 +635,9 @@ int main(int argc, char** argv) {
 	                h1_energyR[index] -> Fill( energyR[iBar] );
 	  
 	                h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
-	  
+                    
+					mean_en_sum=0.5*(energyL[iBar]+energyR[iBar]);
+
 	                anEvent.barID = iBar;
 	                anEvent.Vov = Vov;
 	                anEvent.vth1 = vth;
@@ -645,12 +661,30 @@ int main(int argc, char** argv) {
 	                }
 
 	                outTrees[index] -> Fill();
+                    int mio_counter_bis=0;
+					for(int jBar=int(iBar)-1; jBar<int(iBar)+2; jBar++){
+                        if(jBar<0 || jBar > 15) continue;
+						if(jBar==int(iBar)) continue;
+						if(totL[jBar]>-10 && totR[jBar]>-10 && totL[jBar]<100 && totR[jBar]<100){
+							mean_en_sum=mean_en_sum+0.5*(energyL[jBar]+energyR[jBar]);
+							if(mio_counter==-1 && mio_counter_bis==0){
+						         std::cout<<"For entry: "<<entry<<" and bar: "<<iBar<<" sum over: ";
+					        }
+							if(mio_counter==-1){std::cout<<jBar<<" ";}
+							mio_counter_bis++;
+						}
+						
+					}
+
+					if(mio_counter == -1) std::cout << std::endl;
+					h1_energyLR_sum[index]->Fill( mean_en_sum );
 	            }	  
 	        }
      	}// -- end loop over bars
-    
+        
+		
         // --- for Na22 or Laser analysis use only the bar with max energy to remove cross-talk between adjacent bars
-        if( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") |
+        if( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") ||
 	        !opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") ||
 	        !opts.GetOpt<std::string>("Input.sourceName").compare("Laser") ||
 	        !opts.GetOpt<std::string>("Input.sourceName").compare("keepAll") ) {
@@ -695,9 +729,13 @@ int main(int argc, char** argv) {
 	            anEvent.y = -999.;
 	        }
 	        outTrees[index] -> Fill();
+
+			
         }
     } // --- end loop over events
-  
+    
+    std::cout<<"\nevents of interest: "<<mio_counter<<std::endl;
+
     int bytes = outFile -> Write();
     std::cout << "============================================"  << std::endl;
     std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
