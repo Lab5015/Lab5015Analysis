@@ -31,7 +31,7 @@
 #include "TLine.h"
 #include "TRandom3.h"
 
-
+#include <cmath>
 
 
 int main(int argc, char** argv) {
@@ -258,7 +258,9 @@ int main(int argc, char** argv) {
     std::map<int,TH1F*> h1_energyR;
     std::map<int,TH1F*> h1_energyLR;
     std::map<int,TH1F*> h1_energyLR_ext;
-	std::map<int,TH1F*> h1_energyLR_sum;
+	std::map<int,TH1F*> h1_energyLR_PRE_sum;
+	std::map<int,TH1F*> h1_energyLR_POST_sum;
+	std::map<int,TH1F*> h1_energyLR_PREPOST_sum;
     std::map<int,TCanvas*> c;
     std::map<int,std::vector<float>*> rangesLR;
     std::map<int,bool> acceptEvent;
@@ -455,6 +457,10 @@ int main(int argc, char** argv) {
   
     int nEntries = tree->GetEntries();
 	int mio_counter=0;
+	int pre_counter=0;
+	int post_counter=0;
+	int prepost_counter=0;
+	int single_counter=0;
     if( maxEntries > 0 ) nEntries = maxEntries;
     for(int entry = 0; entry < nEntries; ++entry) {
 		
@@ -538,7 +544,7 @@ int main(int argc, char** argv) {
 				}
         }// end loop over bars
         if(mio_counter==-1) std::cout<<" "<<std::endl;
-	    mio_counter++;
+	    
 
         int maxEn=0;
         int maxBar=0;
@@ -602,7 +608,10 @@ int main(int argc, char** argv) {
 	                outTrees[index] -> Branch("event",&anEvent);
 	  
 	                h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
-					h1_energyLR_sum[index] = new TH1F(Form("h1_energy_bar%02dL-R_sum_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+
+					h1_energyLR_PRE_sum[index]=  new TH1F(Form("h1_energy_PRE_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+					h1_energyLR_POST_sum[index]=  new TH1F(Form("h1_energy_POST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+					h1_energyLR_PREPOST_sum[index]= new TH1F(Form("h1_energy_PREPOST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	            }
       
 	
@@ -623,9 +632,58 @@ int main(int argc, char** argv) {
 	                int maxActiveBars = 3;
 	                if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > maxActiveBars)) continue; // to remove showering events
 
-	  
-	  
+	
+                    int mio_check=0;//controlla se è un evento singolo, pre, post o pre-post e somma energy hist
+					if((iBar > 0) && (iBar < 15) ){
+						if( (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<100 && totR[iBar-1]<100)&&
+							(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<100 && totR[iBar+1]<100)  ){
+								mio_check=3;//pre-post
+								prepost_counter++;
+								for(int jBar=int(iBar)-1; jBar<int(iBar)+2; jBar++){
+									mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+								}
+								h1_energyLR_PREPOST_sum[index] -> Fill(mean_en_sum);
+							}
+						else if(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<100 && totR[iBar+1]<100) { 
+							mio_check=2;//post	
+							post_counter++;
+							for(int jBar=int(iBar); jBar<int(iBar)+2; jBar++){
+								mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+							}
+							h1_energyLR_POST_sum[index] -> Fill(mean_en_sum);
+						}
+						else if(totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<100 && totR[iBar-1]<100) { 
+							mio_check=1;//pre
+							pre_counter++;
+							for(int jBar=int(iBar)-1; jBar<int(iBar)+1; jBar++){
+								mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+							}
+							h1_energyLR_PRE_sum[index] -> Fill(mean_en_sum);
+						} 	
+					}
 
+					if(iBar==0 && (totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<100 && totR[iBar+1]<100)) {
+						mio_check=2;//post
+						post_counter++;
+						for(int jBar=int(iBar); jBar<int(iBar)+2; jBar++){
+							mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+						}
+						h1_energyLR_POST_sum[index] -> Fill(mean_en_sum);
+					}
+					if(iBar==15 && (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<100 && totR[iBar-1]<100)) {
+						mio_check=1;//pre
+						pre_counter++;
+						for(int jBar=int(iBar)-1; jBar<int(iBar)+1; jBar++){
+							mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+						}
+						h1_energyLR_PRE_sum[index] -> Fill(mean_en_sum);
+					}
+
+					if(mio_check==0) { 
+						single_counter++;
+						h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar])); 
+					}
+					
 	                h1_qfineL[index] -> Fill( qfineL[iBar] );
 	                h1_totL[index] -> Fill( totL[iBar]  );
 	                h1_energyL[index] -> Fill( energyL[iBar] );
@@ -633,10 +691,6 @@ int main(int argc, char** argv) {
 	                h1_qfineR[index] -> Fill( qfineR[iBar] );
 	                h1_totR[index] -> Fill( totR[iBar] );
 	                h1_energyR[index] -> Fill( energyR[iBar] );
-	  
-	                h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
-                    
-					mean_en_sum=0.5*(energyL[iBar]+energyR[iBar]);
 
 	                anEvent.barID = iBar;
 	                anEvent.Vov = Vov;
@@ -661,11 +715,10 @@ int main(int argc, char** argv) {
 	                }
 
 	                outTrees[index] -> Fill();
-                    int mio_counter_bis=0;
+
+                   /* int mio_counter_bis=0;
 					for(int jBar=int(iBar)-1; jBar<int(iBar)+2; jBar++){
-                        if(jBar<0 || jBar > 15) continue;
-						if(jBar==int(iBar)) continue;
-						if(totL[jBar]>-10 && totR[jBar]>-10 && totL[jBar]<100 && totR[jBar]<100){
+						if(mio_check==3){h1_energyLR_sum[index]->Fill( mean_en_sum );
 							mean_en_sum=mean_en_sum+0.5*(energyL[jBar]+energyR[jBar]);
 							if(mio_counter==-1 && mio_counter_bis==0){
 						         std::cout<<"For entry: "<<entry<<" and bar: "<<iBar<<" sum over: ";
@@ -676,8 +729,8 @@ int main(int argc, char** argv) {
 						
 					}
 
-					if(mio_counter == -1) std::cout << std::endl;
-					h1_energyLR_sum[index]->Fill( mean_en_sum );
+					if(mio_counter == -1) std::cout << std::endl;*/
+					
 	            }	  
 	        }
      	}// -- end loop over bars
@@ -732,9 +785,16 @@ int main(int argc, char** argv) {
 
 			
         }
+		mio_counter++;
     } // --- end loop over events
     
-    std::cout<<"\nevents of interest: "<<mio_counter<<std::endl;
+    std::cout<<"\nStarted with "<<nEntries<<" events.  Accepted "<<mio_counter<<" events (" << 100.*mio_counter/nEntries << "%)"<<std::endl; 
+	std::cout<<"Of which \n"<<single_counter<<" single events (" << 100.*single_counter/mio_counter << "%)\n"<< post_counter<<" ("<< 100.*post_counter/mio_counter <<"%)   "<< pre_counter<<" ("<<100.*pre_counter/mio_counter <<"%)   double events [post and pre]\n"<<prepost_counter<<" triple events (" << 100.*prepost_counter/mio_counter << "%)"<<std::endl;
+
+	if(pre_counter+prepost_counter+single_counter==mio_counter){std::cout<<"totale= tripli + doppi (contati una volta) + singoli "<<std::endl;}
+	else {
+		std::cout<<"\npre_counter+ diff pre and post +prepost_counter+single_counter = "<<pre_counter+prepost_counter+single_counter+ std::abs(pre_counter-post_counter) <<std::endl;
+	}
 
     int bytes = outFile -> Write();
     std::cout << "============================================"  << std::endl;
