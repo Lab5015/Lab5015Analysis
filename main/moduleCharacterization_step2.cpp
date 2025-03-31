@@ -421,9 +421,8 @@ int main(int argc, char** argv) {
     std::string keepAll = "keepAll";
     std::vector<int> barList = opts.GetOpt<std::vector<int> >("Plots.barList");// list of bars to be analyzed read from cfg
   
-    std::cout<<"##########\nPRE-LOOP SU STEPLABLES"<<std::endl;
     for(auto stepLabel : stepLabels) {   
-        std::cout<<"##########\nstepLabel: "<<stepLabel<<"##########"<<std::endl;
+        std::cout<<"##########\nstepLabel: "<<stepLabel<<"\n##########"<<std::endl;
 		//TrackProcess(cpu, mem, vsz, rss);
         
         float Vov = map_Vovs[stepLabel];
@@ -721,7 +720,7 @@ int main(int argc, char** argv) {
 	  
 	        }// end loop over L, R, L-R labels
 	        
-			// -- loop over PRE ,POST, PREPOST
+			// -- loop over PRE ,POST, PREPOST labels
 			for(auto PPLabel : PPLabels){
 				std::string label(Form("%s_bar%02dL-R_%s",PPLabel.c_str(),iBar,stepLabel.c_str()));
 				latex = new TLatex(0.40,0.85,Form("#splitline{bar %02d%s}{V_{OV} = %.2f V, th. = %d DAC}",iBar,PPLabel.c_str(),Vov,int(vth1)));
@@ -749,7 +748,7 @@ int main(int argc, char** argv) {
 	            delete c;
 	            delete latex;
 
-			}
+			}//end loop over PP labels
 	
         }// -- end loop over bars
       

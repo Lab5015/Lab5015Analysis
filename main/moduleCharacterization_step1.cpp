@@ -456,11 +456,18 @@ int main(int argc, char** argv) {
     float energyR[16];
   
     int nEntries = tree->GetEntries();
+	//--- my counters for debugging
 	int mio_counter=0;
 	int pre_counter=0;
 	int post_counter=0;
 	int prepost_counter=0;
 	int single_counter=0;
+	int bar0_counter=0;
+	int bar15_counter=0;
+	int pre_post_diff=0;
+	int pre_post_diff_old=0;
+	bool print= false;
+	//--- 
     if( maxEntries > 0 ) nEntries = maxEntries;
     for(int entry = 0; entry < nEntries; ++entry) {
 		
@@ -503,6 +510,7 @@ int main(int argc, char** argv) {
 	            continue;
 	        }
         }
+		if(print){std::cout<<"\n----------Entry: "<<entry<<"-----------"<<std::endl;}
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){
 			if (channelIdx[chL[iBar]] >=0 && channelIdx[chR[iBar]] >=0){
 				qfineL[iBar]=(*qfine)[channelIdx[chL[iBar]]];
@@ -532,18 +540,15 @@ int main(int argc, char** argv) {
 				t1fineL[iBar]=-10;
 				t1fineR[iBar]=-10;
 			} 
-			if(mio_counter==-1){
+			if(print){
 				std::cout<<"\ntotL["<<iBar<<"]: "<<totL[iBar]<<"\t   totR["<<iBar<<"]: "<<totR[iBar]<<std::endl;
-				std::cout<<"qfineL["<<iBar<<"]: "<<qfineL[iBar]<<"\t   qfineR["<<iBar<<"]: "<<qfineR[iBar]<<std::endl;
-				std::cout<<"timeL["<<iBar<<"]: "<<timeL[iBar]<<"\t   timeR["<<iBar<<"]: "<<timeR[iBar]<<std::endl;
-				std::cout<<"t1fineL["<<iBar<<"]: "<<t1fineL[iBar]<<"   t1fineR["<<iBar<<"]: "<<t1fineR[iBar]<<std::endl;
 			    std::cout<<"energyL["<<iBar<<"]: "<<energyL[iBar]<<"\t   energyR["<<iBar<<"]: "<<energyR[iBar]<<std::endl;
 			}
-			if(mio_counter==-1){
+			if(print){
 				  std::cout<<"Entry: "<<entry<<" Barra: "<<iBar<<"\nchL["<<iBar<<"]= "<<chL[iBar]<<" channelIdx["<<chL[iBar]<<"]= "<<channelIdx[chL[iBar]]<<"  totL["<<iBar<<"]: "<<totL[iBar]<<"  energyL["<<iBar<<"]: "<<energyL[iBar]<<std::endl;
 				}
         }// end loop over bars
-        if(mio_counter==-1) std::cout<<" "<<std::endl;
+        if(print) std::cout<<" "<<std::endl;
 	    
 
         int maxEn=0;
@@ -586,11 +591,16 @@ int main(int argc, char** argv) {
 	            }
 	        }
         }// end loop over bars
-
+        
         double mean_en_sum=0;
+		int active_counter=0;
+	    int dead_counter=0;
+		int loop_counter=0;
+		pre_post_diff_old=abs(pre_counter+bar15_counter-post_counter-bar0_counter);
+		//std::cout<<"\n iteration "<<mio_counter<<") old: "<<pre_post_diff_old<<"\n  post counter: "<<post_counter<<"  post 0 counter: "<<bar0_counter<<"\n  pre counter: "<<pre_counter<<"  pre 15 counter: "<<bar15_counter<<std::endl;
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {
             if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100){  
-    
+                if(print){std::cout<<"entro in "<<iBar<<std::endl;}
 	            int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
 	
 	            //--- create histograms, if needed
@@ -608,10 +618,10 @@ int main(int argc, char** argv) {
 	                outTrees[index] -> Branch("event",&anEvent);
 	  
 	                h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
-
-					h1_energyLR_PRE_sum[index]=  new TH1F(Form("h1_energy_PRE_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
-					h1_energyLR_POST_sum[index]=  new TH1F(Form("h1_energy_POST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
-					h1_energyLR_PREPOST_sum[index]= new TH1F(Form("h1_energy_PREPOST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+                    //cambio range per asse x lasciando la stessa larghezza bin(2)
+					h1_energyLR_PRE_sum[index]=  new TH1F(Form("h1_energy_PRE_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyLR_POST_sum[index]=  new TH1F(Form("h1_energy_POST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyLR_PREPOST_sum[index]= new TH1F(Form("h1_energy_PREPOST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 	            }
       
 	
@@ -631,59 +641,94 @@ int main(int argc, char** argv) {
 	                //if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > 3)) continue; // to remove showering events
 	                int maxActiveBars = 3;
 	                if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > maxActiveBars)) continue; // to remove showering events
-
-	
+                    active_counter++;
                     int mio_check=0;//controlla se è un evento singolo, pre, post o pre-post e somma energy hist
+					mean_en_sum=0;
+					
+					
 					if((iBar > 0) && (iBar < 15) ){
-						if( (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<100 && totR[iBar-1]<100)&&
-							(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<100 && totR[iBar+1]<100)  ){
+						if( (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50. && totR[iBar-1]<50.)&&
+							(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50.) ){
 								mio_check=3;//pre-post
 								prepost_counter++;
+								if(print) {std::cout<<"\ntriple coincidence (n."<<prepost_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\nmean_en_sum:  ";}
 								for(int jBar=int(iBar)-1; jBar<int(iBar)+2; jBar++){
 									mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+									if(print){std::cout<<" + "<<0.5*(energyL[jBar]+energyR[jBar]);}
 								}
+								if(print){std::cout<<"\nenergy wrote on histo: "<<mean_en_sum<<std::endl;}
 								h1_energyLR_PREPOST_sum[index] -> Fill(mean_en_sum);
-							}
-						else if(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<100 && totR[iBar+1]<100) { 
+								mean_en_sum=0;
+							}	
+						else if((iBar!=14)&&(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50.) && (totL[iBar+2]>-10 && totR[iBar+2]>-10 && totL[iBar+2]<50. && totR[iBar+2]<50.)) {
+							loop_counter++;
+							 continue;}
+						else if(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50.  ) { 
 							mio_check=2;//post	
 							post_counter++;
+							if(print){std::cout<<"\ndouble post coincidence (n."<<post_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\nmean_en_sum:  ";}
 							for(int jBar=int(iBar); jBar<int(iBar)+2; jBar++){
 								mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+								if(print){std::cout<<" + "<<0.5*(energyL[jBar]+energyR[jBar]);}
 							}
+							if(print){std::cout<<"\n energy wrote on histo: "<<mean_en_sum<<std::endl;}
 							h1_energyLR_POST_sum[index] -> Fill(mean_en_sum);
+							mean_en_sum=0;
 						}
-						else if(totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<100 && totR[iBar-1]<100) { 
+						else if((iBar!=1)&&(totL[iBar-2]>-10 && totR[iBar-2]>-10 && totL[iBar-2]<50. && totR[iBar-2]<50.)&&(totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50. && totR[iBar-1]<50.)) {
+							loop_counter++;
+							continue;}
+						else if(totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50 ) { 
 							mio_check=1;//pre
 							pre_counter++;
+							if(print){std::cout<<"\ndouble pre coincidence (n."<<pre_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\nmean_en_sum:  ";}
 							for(int jBar=int(iBar)-1; jBar<int(iBar)+1; jBar++){
 								mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+								if(print){std::cout<<" + "<<0.5*(energyL[jBar]+energyR[jBar]);}
 							}
+							if(print){std::cout<<"\nenergy wrote on histo: "<<mean_en_sum<<std::endl;}
 							h1_energyLR_PRE_sum[index] -> Fill(mean_en_sum);
+							mean_en_sum=0;
 						} 	
 					}
-
-					if(iBar==0 && (totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<100 && totR[iBar+1]<100)) {
+					if(iBar==0 && (totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50 && totR[iBar+1]<50) && (totL[iBar+2]>-10 && totR[iBar+2]>-10 && totL[iBar+2]<50 && totR[iBar+2]<50) ) {
+						loop_counter++;
+						continue;}
+					else if(iBar==0 && (totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50 && totR[iBar+1]<50) ) {
 						mio_check=2;//post
-						post_counter++;
+						bar0_counter++;
+						if(print){std::cout<<"\ndouble post 0 coincidence (n."<<bar0_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\nmean_en_sum:  ";}
 						for(int jBar=int(iBar); jBar<int(iBar)+2; jBar++){
 							mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+							if(print){std::cout<<" + "<<0.5*(energyL[jBar]+energyR[jBar]);}
 						}
+						if(print){std::cout<<"\nenergy wrote on histo: "<<mean_en_sum<<std::endl;}
 						h1_energyLR_POST_sum[index] -> Fill(mean_en_sum);
+						mean_en_sum=0;
 					}
-					if(iBar==15 && (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<100 && totR[iBar-1]<100)) {
+					if(iBar==15 && (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50) &&  (totL[iBar-2]>-10 && totR[iBar-2]>-10 && totL[iBar-2]<50 && totR[iBar-2]<50) ) {
+						loop_counter++; 
+						continue;}
+					else if(iBar==15 && (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50)) {
 						mio_check=1;//pre
-						pre_counter++;
+						bar15_counter++;
+						if(print){std::cout<<"\ndouble pre 15 coincidence (n."<<bar15_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\nmean_en_sum:  ";}
 						for(int jBar=int(iBar)-1; jBar<int(iBar)+1; jBar++){
 							mean_en_sum+=0.5*(energyL[jBar]+energyR[jBar]);
+							if(print){std::cout<<" + "<<0.5*(energyL[jBar]+energyR[jBar]);}
 						}
+						if(print){std::cout<<"\nenergy wrote on histo: "<<mean_en_sum<<std::endl;}
 						h1_energyLR_PRE_sum[index] -> Fill(mean_en_sum);
 					}
 
-					if(mio_check==0) { 
+					if(mio_check==0 && ((energyL[iBar]+energyR[iBar])>0) ) {
 						single_counter++;
-						h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar])); 
+						h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
+						if(print){std::cout<<"\nsingle coincidence (n."<<single_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\n mean_en_sum: "<<0.5*(energyL[iBar]+energyR[iBar])<<std::endl;}
 					}
 					
+                
+
 	                h1_qfineL[index] -> Fill( qfineL[iBar] );
 	                h1_totL[index] -> Fill( totL[iBar]  );
 	                h1_energyL[index] -> Fill( energyL[iBar] );
@@ -716,25 +761,22 @@ int main(int argc, char** argv) {
 
 	                outTrees[index] -> Fill();
 
-                   /* int mio_counter_bis=0;
-					for(int jBar=int(iBar)-1; jBar<int(iBar)+2; jBar++){
-						if(mio_check==3){h1_energyLR_sum[index]->Fill( mean_en_sum );
-							mean_en_sum=mean_en_sum+0.5*(energyL[jBar]+energyR[jBar]);
-							if(mio_counter==-1 && mio_counter_bis==0){
-						         std::cout<<"For entry: "<<entry<<" and bar: "<<iBar<<" sum over: ";
-					        }
-							if(mio_counter==-1){std::cout<<jBar<<" ";}
-							mio_counter_bis++;
-						}
-						
-					}
-
-					if(mio_counter == -1) std::cout << std::endl;*/
-					
+                    
 	            }	  
 	        }
+			else {dead_counter++;}
+			loop_counter++;
      	}// -- end loop over bars
-        
+		 pre_post_diff=abs(pre_counter+bar15_counter-post_counter-bar0_counter);
+		 //std::cout<<"\n iteration"<<mio_counter<<") new: "<<pre_post_diff<<"\n  post counter: "<<post_counter<<"  post 0 counter: "<<bar0_counter<<"\n  pre counter: "<<pre_counter<<"  pre 15 counter: "<<bar15_counter<<std::endl;
+		 if(pre_post_diff > pre_post_diff_old){
+			 std::cout<<"\n"<<mio_counter<<") strange event spotted for entry: "<<entry<<"\n  post counter: "<<post_counter<<"  post 0 counter: "<<bar0_counter<<"\n  pre counter: "<<pre_counter<<"  pre 15 counter: "<<bar15_counter<<"\n"<<pre_post_diff<<" "<<pre_post_diff_old<<std::endl;
+		 }
+        if(loop_counter!=active_counter+dead_counter){std::cout<<" problem in loop bover bar for entry: "<<entry<<"  active bars: "<<active_counter<<"  dead bars: "<<dead_counter<<"  loop over "<<loop_counter<<" bars"<<std::endl;}
+		else{
+			if(dead_counter==16) continue;
+			if(print){std::cout<<"\n\nfor entry: "<<entry<<"  active bars: "<<active_counter<<"  dead bars: "<<dead_counter<<std::endl; } 
+			}
 		
         // --- for Na22 or Laser analysis use only the bar with max energy to remove cross-talk between adjacent bars
         if( !opts.GetOpt<std::string>("Input.sourceName").compare("Na22") ||
@@ -785,16 +827,19 @@ int main(int argc, char** argv) {
 
 			
         }
+		if(dead_counter==16) continue;
 		mio_counter++;
     } // --- end loop over events
     
-    std::cout<<"\nStarted with "<<nEntries<<" events.  Accepted "<<mio_counter<<" events (" << 100.*mio_counter/nEntries << "%)"<<std::endl; 
-	std::cout<<"Of which \n"<<single_counter<<" single events (" << 100.*single_counter/mio_counter << "%)\n"<< post_counter<<" ("<< 100.*post_counter/mio_counter <<"%)   "<< pre_counter<<" ("<<100.*pre_counter/mio_counter <<"%)   double events [post and pre]\n"<<prepost_counter<<" triple events (" << 100.*prepost_counter/mio_counter << "%)"<<std::endl;
+	
+    int lost=(mio_counter-(pre_counter+prepost_counter+single_counter));
 
-	if(pre_counter+prepost_counter+single_counter==mio_counter){std::cout<<"totale= tripli + doppi (contati una volta) + singoli "<<std::endl;}
-	else {
-		std::cout<<"\npre_counter+ diff pre and post +prepost_counter+single_counter = "<<pre_counter+prepost_counter+single_counter+ std::abs(pre_counter-post_counter) <<std::endl;
-	}
+    std::cout<<"\nRun "<<runs<<" Started with "<<nEntries<<" events.  Accepted "<<mio_counter<<" events (" << 100.*mio_counter/nEntries << "%)."<<std::endl; 
+	std::cout<<"Of which \n"<<single_counter<<" (" << 100.*single_counter/mio_counter << "%) single events\n"<< post_counter<<" ("
+	         << 100.*post_counter/mio_counter <<"%) [post] \t"<< pre_counter<<" ("<<100.*pre_counter/mio_counter <<"%) [pre]   double events\n"<<bar0_counter<<" [post 0] \t"<<bar15_counter<<" [pre 15]   double events\ndifference between all pre and post events: "<<pre_post_diff<<"\n"
+			 <<prepost_counter<<" (" << 100.*prepost_counter/mio_counter << "%) triple events"<<std::endl;
+    
+	std::cout<<"\nUntracked events = "<<lost<<" (" << 100.* lost/mio_counter << "%)\n"<<std::endl;
 
     int bytes = outFile -> Write();
     std::cout << "============================================"  << std::endl;
