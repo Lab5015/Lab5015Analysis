@@ -1,2 +1,1 @@
-/afs/cern.ch/work/m/malberti/MTD/TBatH8May2023/Lab5015Analysis/cfg/TOFHIR2X/moduleCharacterization_HPK_2E14_LYSO815_Vov2.00_T-30C.cfg
-/afs/cern.ch/work/m/malberti/MTD/TBatH8May2023/Lab5015Analysis/cfg/TOFHIR2X/moduleCharacterization_HPK_2E14_LYSO815_Vov1.00_T-30C.cfg
+cfg/TOFHIR2C/moduleCharacterization_nonIrr_LYSO818_Vov2.00_T-35C_run6278_TOFHIR2C.cfg

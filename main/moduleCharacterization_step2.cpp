@@ -197,6 +197,10 @@ int main(int argc, char** argv) {
     system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/totRatio/",plotDir.c_str()));
     system(Form("mkdir -p %s/energy/",plotDir.c_str()));
     system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energy/",plotDir.c_str()));
+
+	system(Form("mkdir -p %s/energy/singleBars",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energy/singleBars",plotDir.c_str()));
+
     system(Form("mkdir -p %s/energyRatio/",plotDir.c_str()));
     system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energyRatio/",plotDir.c_str()));
     system(Form("mkdir -p %s/t1fine/",plotDir.c_str()));
@@ -383,12 +387,16 @@ int main(int argc, char** argv) {
 
 
     std::map<std::string, std::map<int, std::vector<float>*> > ranges; //ranges[LRlabel][index]
+
+	std::map<int,std::vector<float> >  my_ranges;
+
     std::map<std::string, std::map<int, std::map<std::string,std::pair<float,float> > > > peaks;	//peaks[LRlabel][index][energyPeak]
     std::map<std::string, std::map<int, std::map<int,float> > > energyBin; // energyBin[LRlabel][index]
 
     std::map<int,TF1*>  f_langaus; // f_langaus[index]
     std::map<int,TF1*>  f_gaus; // f_gaus[index]
-    std::map<int,TF1*>  f_landau; // f_gaus[index]
+    std::map<int,TF1*>  f_landau; // f_landau[index]
+    std::map<int,TF1*>  f_landau1; 	
     std::map<float,int>  Vov_LandauMin; //Vov_LandauMin[Vov]
     Vov_LandauMin[1.0] = 0;
     Vov_LandauMin[1.5] = 50;
@@ -680,7 +688,7 @@ int main(int argc, char** argv) {
 	    
 	                f_landau[index] -> SetLineColor(kBlack);
 	                f_landau[index] -> SetLineWidth(2);
-	                f_landau[index] -> Draw("same");
+	                if(LRLabel!='L-R') {f_landau[index] -> Draw("same");}
 	    
 	                if( f_landau[index]->GetNDF() >0 && f_landau[index]->GetParameter(1) > minE[std::make_pair(iBar, Vov)] &&  
 		                (f_landau[index]->GetParameter(1) - 2.0 * std::abs(f_landau[index]->GetParameter(2))) >=  minE[std::make_pair(iBar, Vov)] &&
@@ -749,9 +757,120 @@ int main(int argc, char** argv) {
 	            delete latex;
 
 			}//end loop over PP labels
-	
+
+			//histo sum for energy sharing 
+			TH1F* histo1;
+			TH1F* histo2;
+			TH1F* histo3;
+			TH1F* histo4;
+
+			std::string label(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));
+			std::cout<<label<<std::endl;
+			latex = new TLatex(0.40,0.85,Form("#splitline{ bar %02dL-R}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+			latex -> SetNDC();
+	        latex -> SetTextFont(42);
+	        latex -> SetTextSize(0.04);
+	        latex -> SetTextColor(kRed);
+
+			histo1 = (TH1F*)(inFile->Get( Form("h1_energy_%s",label.c_str()) ) );
+			if(!histo1){std::cout<<Form("h1_energy_%s",label.c_str()) <<" not found"<<std::endl;
+			            continue;}
+			else{std::cout<<Form("h1_energy_%s",label.c_str()) <<" found"<<std::endl;}
+			histo1->GetXaxis()->SetRangeUser(0,2024);
+			
+
+			histo2 = (TH1F*)(inFile->Get( Form("h1_energy_PRE_%s",label.c_str()) ) );
+			if(!histo2){std::cout<<Form("h1_energy_PRE_%s",label.c_str()) <<" not found"<<std::endl;}
+			else {std::cout<<Form("h1_energy_PRE_%s",label.c_str()) <<" found"<<std::endl;}
+
+			histo3 = (TH1F*)(inFile->Get( Form("h1_energy_POST_%s",label.c_str()) ) );
+			if(!histo3){std::cout<<Form("h1_energy_POST_%s",label.c_str()) <<" not found"<<std::endl;}
+			else{std::cout<<Form("h1_energy_POST_%s",label.c_str()) <<" found"<<std::endl;}
+
+			histo4 = (TH1F*)(inFile->Get( Form("h1_energy_PREPOST_%s",label.c_str()) ) );
+			if(!histo4){std::cout<<Form("h1_energy_PREPOST_%s",label.c_str()) <<" not found"<<std::endl;}
+			else{std::cout<<Form("h1_energy_PREPOST_%s",label.c_str()) <<" found"<<std::endl;}
+
+			histo1->Add(histo2);
+			histo1->Add(histo3);
+			histo1->Add(histo4);
+
+			c = new TCanvas(Form("c_energy_sum_bar%02dL-R_%s",iBar,stepLabel.c_str()),Form("c_energy_sum_bar%02dL-R_%s",iBar,stepLabel.c_str()));
+			gPad -> SetLogy();
+			histo1 -> SetTitle(";energy [a.u.];entries");
+	        histo1 -> SetLineColor(kRed);
+	        histo1 -> SetLineWidth(2);
+	        histo1 -> Draw();
+			histo1->GetXaxis()->SetRangeUser(minE[std::make_pair(iBar, Vov)], 1600);
+			//-----start fit-----
+			float max = histo1->GetBinCenter(histo1->GetMaximumBin());
+			histo1->GetXaxis()->SetRangeUser(0, 2024);
+            f_landau1[index] = new TF1(Form("f_landau_bar%02dL-R_Vov%.2f_vth1_%02.0f", iBar,Vov,vth1),"[0]*TMath::Landau(x,[1],[2])", 0,2000.);
+			float xmin = max * 0.65;
+			float xmax = std::min(max*2.5, 1600.);
+			f_landau1[index]->SetRange(xmin,xmax);
+            //setting dei parametri da chiedere; 0 ampiezza, 1 mpv, 2 width
+			f_landau1[index] -> SetParameters(histo1->Integral(histo1->GetMaximumBin(), histo1->GetNbinsX())/10, max, 0.1*max);
+	        f_landau1[index] -> SetParLimits(1,0,9999);
+	        f_landau1[index] -> SetParLimits(2,0,9999);
+            histo1->Fit(f_landau1[index],"QRS");
+			if ( f_landau1[index]->GetParameter(1) > 0 ){
+				xmin = f_landau1[index]->GetParameter(1) - 2 * std::abs(f_landau1[index]->GetParameter(2));
+				if (xmin < minE[std::make_pair(iBar, Vov)]) xmin = minE[std::make_pair(iBar, Vov)] ;
+				xmax = std::min(f_landau1[index]->GetParameter(1) * 2.5, 1600.);
+				f_landau1[index] -> SetRange(xmin, xmax);
+				f_landau1[index] -> SetParameters(histo1->Integral(histo1->GetMaximumBin(), histo1->GetNbinsX())/10, f_landau1[index]->GetParameter(1), 0.1*f_landau1[index]->GetParameter(1));
+			}
+			histo1->Fit(f_landau1[index],"QRS");
+			f_landau1[index] -> SetLineColor(kBlack);
+	        f_landau1[index] -> SetLineWidth(2);
+	        f_landau1[index] -> Draw("same");
+			std::cout<<f_landau1[index]->GetParameter(0)<<"  "<<f_landau1[index]->GetParameter(1)<<"  "<<std::abs(f_landau1[index]->GetParameter(2))<<std::endl;
+			my_ranges[index].push_back( f_landau1[index]->GetParameter(1) - 2.0 * std::abs(f_landau1[index]->GetParameter(2)));
+			my_ranges[index].push_back(std::min(f_landau1[index]->GetParameter(1)*2.5, 1600.));
+            std::cout<<"fin qui ok "<<std::endl;
+			for(auto range: (my_ranges[index])){
+				TLine* line = new TLine(range,0.,range, histo1->GetMaximum());
+				line -> SetLineWidth(2);
+				line -> SetLineStyle(7);
+				line -> Draw("same");
+			}
+            //-----end fit-----
+			latex -> Draw("same");
+			outFile -> cd();
+			histo1 -> Write();
+			c->Update();
+			c -> Print(Form("%s/energy/singleBars/c_energy_sum_%s.png",plotDir.c_str(),label.c_str()));
+	        c -> Print(Form("%s/energy/singleBars/c_energy_sum_%s.pdf",plotDir.c_str(),label.c_str()));
+	        delete c;
+	        delete latex;
         }// -- end loop over bars
-      
+
+		//draw counter
+		std::string label(Form("%s",stepLabel.c_str()));
+        c = new TCanvas(Form("c_counter_%s",stepLabel.c_str()),Form("c_counter_%s",stepLabel.c_str()));
+		histo = (TH1F*)( inFile->Get(Form("h1_counter_%s",label.c_str())) );      
+	    if( !histo ) continue;
+	    histo -> SetTitle(";nCluster;entries");
+	    histo -> SetLineColor(kBlue);
+	    histo -> SetLineWidth(2);
+	    histo -> Draw();
+
+		latex = new TLatex(0.40,0.85,Form("#splitline{events distribution}{V_{OV} = %.2f V, th. = %d DAC}",Vov,int(vth1)));
+		latex -> SetNDC();
+	    latex -> SetTextFont(42);
+	    latex -> SetTextSize(0.04);
+	    latex -> SetTextColor(kRed);
+
+		latex -> Draw();
+		outFile -> cd();
+		histo -> Write();
+		
+		c -> Print(Form("%s/energy/c_counter__%s.png",plotDir.c_str(),label.c_str()));
+	    c -> Print(Form("%s/energy/c_counter__%s.pdf",plotDir.c_str(),label.c_str()));
+	    delete c;
+	    delete latex;
+		 
     } // -- end loop over stepLabels
   
   // ---  end 1st plots
@@ -763,67 +882,61 @@ int main(int argc, char** argv) {
   //--- 2nd loop over events
   std::map<int,std::map<int,bool> > accept;
   
-  for(auto mapIt : trees)
-    {
-      ModuleEventClass* anEvent = new ModuleEventClass();
+  for(auto mapIt : trees){
+     ModuleEventClass* anEvent = new ModuleEventClass();
       
-      mapIt.second -> SetBranchAddress("event",&anEvent);
+     mapIt.second -> SetBranchAddress("event",&anEvent);
       
-      int nEntries = mapIt.second->GetEntries();
-      for(int entry = 0; entry < nEntries; ++entry)
-	{
-	  if( entry%100000 == 0 ) {
-	    std::cout << ">>> 2nd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
-	    //TrackProcess(cpu, mem, vsz, rss);
-	  }
+     int nEntries = mapIt.second->GetEntries();
+     for(int entry = 0; entry < nEntries; ++entry){
+	        if( entry%100000 == 0 ) {
+	            std::cout << ">>> 2nd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	            //TrackProcess(cpu, mem, vsz, rss);
+	        }
 	  
-	  mapIt.second -> GetEntry(entry);
+	        mapIt.second -> GetEntry(entry);
 	  
-	  bool barFound = std::find(barList.begin(), barList.end(), anEvent->barID) != barList.end() ;
-	  if (!barFound) continue;
+	        bool barFound = std::find(barList.begin(), barList.end(), anEvent->barID) != barList.end() ;
+	        if (!barFound) continue;
 	  
 	  
-	  int index1( (10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+	        int index1( (10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
 	  
-	  accept[index1][entry] = false;
+	        accept[index1][entry] = false;
 	  
-	  if(!ranges["L-R"][index1] ) continue;
+	        if(!ranges["L-R"][index1] ) continue;
 	  
-	  int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
+	        int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
 	  
-	  if( energyBinAverage < 1 ) continue;
+	        if( energyBinAverage < 1 ) continue;
 	  
-	  accept[index1][entry] = true;
+	        accept[index1][entry] = true;
 	  
-	  double index2( (10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+	        double index2( (10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
 	  
-	  if( h1_energyRatio[index2] == NULL )
-	    {
-	      std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
+	        if( h1_energyRatio[index2] == NULL ){
+	            std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage));
 	      
-              h1_energyRatio[index2] = new TH1F(Form("h1_energyRatio_%s",labelLR_energyBin.c_str()),"",1000,0.,5.);
-	      h1_totRatio[index2] = new TH1F(Form("h1_totRatio_%s",labelLR_energyBin.c_str()),"",2000,0.,5.);
-	      h1_t1fineMean[index2] = new TH1F(Form("h1_t1fineMean_%s",labelLR_energyBin.c_str()),"",1000,0.,1000.);
-	      h1_qT1Mean[index2] = new TH1F(Form("h1_qT1Mean_%s",labelLR_energyBin.c_str()),"",250,0.5,1.5);
-	      h1_deltaT_raw[index2] = new TH1F(Form("h1_deltaT_raw_%s",labelLR_energyBin.c_str()),"",2000,-24000.,24000.);
-	    }
+                h1_energyRatio[index2] = new TH1F(Form("h1_energyRatio_%s",labelLR_energyBin.c_str()),"",1000,0.,5.);
+	            h1_totRatio[index2] = new TH1F(Form("h1_totRatio_%s",labelLR_energyBin.c_str()),"",2000,0.,5.);
+	            h1_t1fineMean[index2] = new TH1F(Form("h1_t1fineMean_%s",labelLR_energyBin.c_str()),"",1000,0.,1000.);
+	            h1_qT1Mean[index2] = new TH1F(Form("h1_qT1Mean_%s",labelLR_energyBin.c_str()),"",250,0.5,1.5);
+	            h1_deltaT_raw[index2] = new TH1F(Form("h1_deltaT_raw_%s",labelLR_energyBin.c_str()),"",2000,-24000.,24000.);
+	        }
 	  
-	  if (fabs(anEvent->timeR-anEvent->timeL)<10000)
-	    {
-	      //if ((anEvent->energyR / anEvent->energyL >0) & (anEvent->energyR / anEvent->energyL <5)){
-	      if ((anEvent->energyR / anEvent->energyL > -999) & (anEvent->energyR / anEvent->energyL <9999999)){
-		h1_energyRatio[index2] -> Fill( anEvent->energyR / anEvent->energyL );						     
-		h1_totRatio[index2] -> Fill( anEvent->totR / anEvent->totL );
-		h1_deltaT_raw[index2] -> Fill( anEvent->timeR-anEvent->timeL );
+	        if (fabs(anEvent->timeR-anEvent->timeL)<10000){
+	            //if ((anEvent->energyR / anEvent->energyL >0) & (anEvent->energyR / anEvent->energyL <5)){
+	            if ((anEvent->energyR / anEvent->energyL > -999) & (anEvent->energyR / anEvent->energyL <9999999)){
+		            h1_energyRatio[index2] -> Fill( anEvent->energyR / anEvent->energyL );						     
+		            h1_totRatio[index2] -> Fill( anEvent->totR / anEvent->totL );
+		            h1_deltaT_raw[index2] -> Fill( anEvent->timeR-anEvent->timeL );
 
-		h1_t1fineMean[index2] -> Fill( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) );
-		h1_qT1Mean[index2] -> Fill( 0.5 * (anEvent->qT1R + anEvent->qT1L) );
-
-	      }
-
-	    }
+		            h1_t1fineMean[index2] -> Fill( 0.5 * (anEvent->t1fineR + anEvent->t1fineL) );
+		            h1_qT1Mean[index2] -> Fill( 0.5 * (anEvent->qT1R + anEvent->qT1L) );
+	            }  
+	        }
 	  
-	} // end loop over entries
+	    } // end loop over entries
     }
       
   
