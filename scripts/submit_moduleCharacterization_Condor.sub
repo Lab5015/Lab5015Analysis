@@ -1,9 +1,7 @@
 executable            = moduleCharacterizationCondor.sh
 arguments             = $(cfg)
-output                = /eos/home-f/ftonetto/Lab5015Analysis/scripts/jobs/job_moduleCharact.out
-error                 = /eos/home-f/ftonetto/Lab5015Analysis/scripts/jobs/job_moduleCharact.err
-log                   = /eos/home-f/ftonetto/Lab5015Analysis/scripts/jobs/job_moduleCharact.log
-+JobFlavour = "workday"
+output                = /afs/cern.ch/user/f/ftonetto/francesco/Lab5015Analysis/scripts/jobs/job_moduleCharact.out
+error                 = /afs/cern.ch/user/f/ftonetto/francesco/Lab5015Analysis/scripts/jobs/job_moduleCharact.err
+log                   = /afs/cern.ch/user/f/ftonetto/francesco/Lab5015Analysis/scripts/jobs/job_moduleCharact.log
++JobFlavour = "longlunch"
 queue cfg from list_cfg_moduleCharacterization.txt
-
-#output                = /eos/home-f/ftonetto/Lab5015Analysis/scripts/jobs/job_moduleCharact.$(ClusterId).$(ProcId).out

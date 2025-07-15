@@ -1,1 +1,1 @@
-cfg/TOFHIR2C/moduleCharacterization_nonIrr_LYSO818_Vov2.00_T-35C_run6278_TOFHIR2C.cfg
+/afs/cern.ch/user/f/ftonetto/francesco/Lab5015Analysis/cfg/TOFHIR2C/moduleCharacterization_HPK_2E14_LYSO100056_Vov1.25_T-35C_run6290_TOFHIR2C.cfg

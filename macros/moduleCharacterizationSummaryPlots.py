@@ -128,12 +128,12 @@ cols = { 0.50 : 51,
          0.60 : 51+8,
          0.80 : 51+16,
          1.00 : 51+24,
-         1.25 : 51+32,
+         1.25 : 51+48, #51+32 
          1.50 : 51+40,
          2.00 : 51+44,
          2.50 : 51+46,
          3.00 : 51+47,
-         3.50 : 51+48
+         3.50 : 51+32 #51+48
 }
 
 
@@ -1139,7 +1139,7 @@ for enBin in enBins:
       leg.SetColumnSeparation(0.2);
    for i, vov in enumerate(Vovs):
       print(g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetN())
-      g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(24)
+      g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(20)
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerColor(cols[vov])
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetLineColor(cols[vov])
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')

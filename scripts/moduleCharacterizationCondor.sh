@@ -3,11 +3,11 @@
 echo
 echo 'START---------------'
 echo 'current dir: ' ${PWD}
-cd /eos/home-f/ftonetto/Lab5015Analysis/
+cd /afs/cern.ch/user/f/ftonetto/francesco/Lab5015Analysis/
 echo 'current dir: ' ${PWD}
 source scripts/setup.sh
 ./bin/moduleCharacterization_step1.exe $1
-./bin/moduleCharacterization_step2.exe $1
+#./bin/moduleCharacterization_step2ES.exe $1
 echo 'STOP---------------'
 echo
 echo
