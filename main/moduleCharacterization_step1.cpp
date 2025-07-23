@@ -60,12 +60,14 @@ int main(int argc, char** argv) {
     int usePedestals = opts.GetOpt<int>("Input.usePedestals");
     std::string source = opts.GetOpt<std::string>("Input.sourceName");
     int useTrackInfo = opts.GetOpt<int>("Input.useTrackInfo");
+	int useMCP = opts.GetOpt<int>("Input.useMCP");
     float my_step1 = opts.GetOpt<float>("Input.vov") ;
-  
+	std::string inputDirH4 = opts.GetOpt<std::string>("Input.inputDirH4");
     std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
     TOFHIRThresholdZero thrZero(discCalibrationFile,1);
 
     TChain* tree = new TChain("data","data");
+	TChain* treeH4 = new TChain("h4","h4");
   
   
     std::stringstream ss(runs); 
@@ -121,6 +123,12 @@ int main(int argc, char** argv) {
 	                tree->Add((directory_path+fname).c_str());
 	            }
             }
+			if(useMCP){
+				std::string fileNameH4 = Form("%s/%04d.root",inputDirH4.c_str(),run);
+			    std::cout <<">>> from MCP directory  --> Adding file: " << fileNameH4.c_str() << std::endl;
+			    treeH4->Add(fileNameH4.c_str());
+			}
+            
 
       
             //
@@ -173,7 +181,19 @@ int main(int argc, char** argv) {
     std::vector<unsigned short>* t1fine = 0;
   
     int nhits;
+	int iev_H4DAQ;
+    int iev_TOFHIR;
     float x, y;
+	unsigned long long t_TOFHIR,t_H4DAQ;
+
+	int MCP_H4;
+    int CFD_H4;
+    int CLK_P_H4;
+    int CLK_M_H4;
+    int CLK_C_H4;
+    float amp_max_H4[100];
+    float time_H4[100];
+    float fit_time_H4[100];
   
     tree -> SetBranchStatus("*",0);
     tree -> SetBranchStatus("step1",  1); tree -> SetBranchAddress("step1",  &step1);
@@ -194,7 +214,26 @@ int main(int argc, char** argv) {
         tree -> SetBranchStatus("x_WC", 1);     tree -> SetBranchAddress("x_WC",          &x);
         tree -> SetBranchStatus("y_WC", 1);     tree -> SetBranchAddress("y_WC",          &y);
     }
+
+	if ( !opts.GetOpt<std::string>("Input.sourceName").compare("TB") && useMCP  ){
+        tree -> SetBranchStatus("iev_H4DAQ", 1);  tree -> SetBranchAddress("iev_H4DAQ",  &iev_H4DAQ);
+        tree -> SetBranchStatus("iev_TOFHIR", 1); tree -> SetBranchAddress("iev_TOFHIR",  &iev_TOFHIR);
+        tree -> SetBranchStatus("t_H4DAQ", 1);    tree -> SetBranchAddress("t_H4DAQ",  &t_H4DAQ);
+        tree -> SetBranchStatus("t_TOFHIR", 1);   tree -> SetBranchAddress("t_TOFHIR",  &t_TOFHIR);
+      }
   
+    if ( !opts.GetOpt<std::string>("Input.sourceName").compare("TB") && useMCP){ 
+      //from H4DAQ ntuple
+        treeH4 -> SetBranchStatus("MCP",1);      treeH4 -> SetBranchAddress("MCP",&MCP_H4);
+        treeH4 -> SetBranchStatus("CFD",1);      treeH4 -> SetBranchAddress("CFD",&CFD_H4);
+        treeH4 -> SetBranchStatus("CLK_P",1);    treeH4 -> SetBranchAddress("CLK_P",&CLK_P_H4);
+        treeH4 -> SetBranchStatus("CLK_M",1);    treeH4 -> SetBranchAddress("CLK_M",&CLK_M_H4);
+        treeH4 -> SetBranchStatus("CLK_C",1);    treeH4 -> SetBranchAddress("CLK_C",&CLK_C_H4);
+        treeH4 -> SetBranchStatus("amp_max",1);  treeH4 -> SetBranchAddress("amp_max",amp_max_H4);
+        treeH4 -> SetBranchStatus("time",1);     treeH4 -> SetBranchAddress("time",time_H4);
+        treeH4 -> SetBranchStatus("fit_time",1); treeH4 -> SetBranchAddress("fit_time",fit_time_H4);
+      
+  }
 
     //--- get plot settings
     std::vector<float> Vov = opts.GetOpt<std::vector<float> >("Plots.Vov");
@@ -509,6 +548,13 @@ int main(int argc, char** argv) {
         }
         if (useTrackInfo && nhits > 0 &&  (x < -100 || y < -100 ) ) continue;
 
+		//Get corresponding event in H4DAQ ntuple
+	    if (useMCP && iev_H4DAQ>-1){
+	        std::cout << "Getting H4 " << iev_H4DAQ << "," << iev_TOFHIR << "," << t_H4DAQ << "," << t_TOFHIR << std::endl;
+	        treeH4->GetEntry(iev_H4DAQ);
+	        std::cout << "time MCP " << time_H4[1] << std::endl;
+	    }
+        
         float Vov = step1;
         float vth1 = float(int(step2/10000)-1);
         float vth2 = int((step2-10000*(vth1+1))/100.)-1;
@@ -909,6 +955,23 @@ int main(int argc, char** argv) {
 	                    anEvent.x = -999.;
 	                    anEvent.y = -999.;
 	                }
+
+					if(useMCP && iev_H4DAQ>-1){
+						std::cout << "Chek pre anEvent "<< std::endl;
+		                anEvent.amp_MCP = amp_max_H4[MCP_H4];
+		                anEvent.t_MCP = fit_time_H4[MCP_H4];//+CFD
+			            anEvent.t_CFD_MCP = time_H4[MCP_H4+CFD_H4];
+		                anEvent.t_CLK_P = fit_time_H4[CLK_P_H4];//prima CLK_P_H4
+		                anEvent.t_CLK_M = fit_time_H4[CLK_M_H4];// 
+			            //anEvent.t_CLK_C = fit_time_H4[CLK_C_H4];
+						std::cout << "Chek post anEvent "<< std::endl;
+		            }
+		            else{
+		                anEvent.amp_MCP = -999;
+		                anEvent.t_MCP = -999;
+		                anEvent.t_CLK_P = -999;
+		                anEvent.t_CLK_M = -999;
+		            }
     
 
 	                outTrees[index] -> Fill();

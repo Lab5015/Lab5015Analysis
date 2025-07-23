@@ -99,6 +99,12 @@ public:
   int nClusters;
   float energySum;
   int timeDiff;
+
+  float amp_MCP; 
+  float t_MCP;
+  float t_CFD_MCP;
+  float t_CLK_P;
+	float t_CLK_M;
   ClassDef(ModuleEventClass,1);
 };
 
