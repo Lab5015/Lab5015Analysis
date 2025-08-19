@@ -105,6 +105,13 @@ public:
   float t_CFD_MCP;
   float t_CLK_P;
 	float t_CLK_M;
+
+  long long timeL_ext;
+  long long timeR_ext;
+  float energyL_ext;
+  float energyR_ext;
+  unsigned short t1fineL_ext;
+  unsigned short t1fineR_ext;  
   ClassDef(ModuleEventClass,1);
 };
 

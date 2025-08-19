@@ -831,6 +831,8 @@ for bar in bars:
     
     # -- tot vs threshold
     ctot1 = ROOT.TCanvas('c_tot_vs_th_bar%.02d'%bar)
+    ctot1.SetLeftMargin(0.15)
+    ctot1.SetBottomMargin(0.15)
     hPad1 = ROOT.TH2F('hPad1','', 100, -1., 64.,40, 0.,40.)
     hPad1.SetTitle(";threshold [DAC];ToT [ns]")
     hPad1.Draw()
@@ -855,6 +857,8 @@ for bar in bars:
 
     # -- tot vs Vov
     ctot2 = ROOT.TCanvas('c_tot_vs_Vov_bar%.02d'%bar)
+    ctot2.SetLeftMargin(0.15)
+    ctot2.SetBottomMargin(0.15)
     hPad2 = ROOT.TH2F('hPad2','', 10, 0., vovMax, 40, 0.,40.)
     hPad2.SetTitle(";V_{OV}^{eff} [V];ToT [ns]")
     hPad2.Draw()
@@ -878,6 +882,8 @@ for bar in bars:
     
     # -- energy vs threshold
     cen1 = ROOT.TCanvas('c_energy_vs_th_bar%.02d'%bar)
+    cen1.SetLeftMargin(0.15)
+    cen1.SetBottomMargin(0.15)
     hPadEn1 = ROOT.TH2F('hPadEn1','', 100, -1., 64.,500, 0.,1000.)
     hPadEn1.SetTitle(";threshold [DAC]; energy")
     hPadEn1.Draw()
@@ -901,6 +907,8 @@ for bar in bars:
 
     # -- energy vs Vov
     cen2 = ROOT.TCanvas('c_energy_vs_Vov_bar%.02d'%bar)
+    cen2.SetLeftMargin(0.15)
+    cen2.SetBottomMargin(0.15)
     hPadEn2 = ROOT.TH2F('hPadEn2','', 10, 0., vovMax,50, 0.,1000.)
     hPadEn2.SetTitle(";V_{OV}^{eff} [V]; energy")
     hPadEn2.Draw()
@@ -926,6 +934,8 @@ for bar in bars:
     # -- time resolution vs threshold
     for enBin in enBins:
         ctres1 = ROOT.TCanvas('c_tRes_energyRatioCorr_vs_th_bar%.02d_enBin%02d'%(bar,enBin))
+        ctres1.SetLeftMargin(0.15)
+        ctres1.SetBottomMargin(0.15)
         hPadT1 = ROOT.TH2F('hPadT1','', 100, -1., 64.,100, tResMin,tResMaxTh)
         hPadT1.SetTitle(";threshold [DAC]; #sigma_{t} [ps]")
         hPadT1.Draw()
@@ -961,6 +971,8 @@ for bar in bars:
 
         # -- time resolution vs Vov
         ctres2 = ROOT.TCanvas('c_tRes_energyRatioCorr_vs_Vov_bar%.02d_enBin%02d'%(bar,enBin))
+        ctres2.SetLeftMargin(0.15)
+        ctres2.SetBottomMargin(0.15)
         hPadT2 = ROOT.TH2F('hPadT2','', 6, 0., vovMax, 10, tResMin,tResMax)
         hPadT2.SetTitle(";V_{OV}^{eff} [V];#sigma_{t} [ps]")
         hPadT2.Draw()
@@ -994,6 +1006,8 @@ for bar in bars:
 
         # -- time resolution vs Vov at the best Th
         ctres2 = ROOT.TCanvas('c_tRes_energyRatioCorr_bestTh_vs_Vov_bar%.02d_enBin%02d'%(bar,enBin))
+        ctres2.SetLeftMargin(0.15)
+        ctres2.SetBottomMargin(0.15)
         hPadT2 = ROOT.TH2F('hPadT2','', 6, 0., vovMax,10, tResMin,tResMax)
         hPadT2.SetTitle(";V_{OV}^{eff} [V];#sigma_{t} [ps]")
         hPadT2.Draw()
@@ -1022,6 +1036,8 @@ for bar in bars:
 # average time resolution vs OV
 for enBin in enBins:
    ctres2 = ROOT.TCanvas('c_tRes_totRatioCorr_bestTh_vs_Vov_enBin%02d_average'%(enBin))
+   ctres2.SetLeftMargin(0.15)
+   ctres2.SetBottomMargin(0.15)
    hPadT2 = ROOT.TH2F('hPadT2','', 6, 0.0, vovMax,10, tResMin,tResMax)
    hPadT2.SetTitle(";V_{OV}^{eff} [V];#sigma_{t} [ps]")
    hPadT2.Draw()
@@ -1052,6 +1068,8 @@ for enBin in enBins:
 # -- tot vs bar 
 for i, vov in enumerate(Vovs):
    ctot3 = ROOT.TCanvas('c_tot_vs_bar_Vov%.02f'%vov)
+   ctot3.SetLeftMargin(0.15)
+   ctot3.SetBottomMargin(0.15)
    hPad3 = ROOT.TH2F('hPad3','', 100, -0.5, 15.5,40, 0.,40.)
    hPad3.SetTitle("; bar; ToT [ns]")
    hPad3.Draw()
@@ -1075,6 +1093,8 @@ for i, vov in enumerate(Vovs):
 # -- energy vs bar
 for i, vov in enumerate(Vovs):
    cen3 = ROOT.TCanvas('c_energy_vs_bar_Vov%.02f'%vov)
+   cen3.SetLeftMargin(0.15)
+   cen3.SetBottomMargin(0.15)
    hPadEn3 = ROOT.TH2F('hPadEn3','', 100, -0.5, 15.5, 40, 0.,1000.)
    hPadEn3.SetTitle("; bar; energy")
    hPadEn3.Draw()
@@ -1101,6 +1121,8 @@ for i, vov in enumerate(Vovs):
 for i, vov in enumerate(Vovs):
    for enBin in enBins:
       ctres3 = ROOT.TCanvas('c_tRes_energyRatioCorr_refTh_vs_bar_Vov%.02f_enBin%02d'%(vov,enBin))
+      ctres3.SetLeftMargin(0.15)
+      ctres3.SetBottomMargin(0.15)
       hPadT3 = ROOT.TH2F('hPadT3','', 100, -0.5, 15.5,100, tResMin,tResMax)
       hPadT3.SetTitle("; bar; #sigma_{t}[ps]")
       hPadT3.Draw()
@@ -1126,6 +1148,8 @@ for i, vov in enumerate(Vovs):
 # -- time resolution vs bar at the best threshold
 for enBin in enBins:
    ctres3 = ROOT.TCanvas('c_tRes_energyRatioCorr_bestTh_vs_bar_enBin%02d'%(enBin))
+   ctres3.SetLeftMargin(0.15)
+   ctres3.SetBottomMargin(0.15)
    hPadT3 = ROOT.TH2F('hPadT3','', 100, -0.5, 15.5,100, tResMin,tResMax)
    hPadT3.SetTitle("; bar; #sigma_{t} [ps]")
    hPadT3.Draw()
@@ -1156,6 +1180,8 @@ for enBin in enBins:
    hPadT3.Delete()
 
    ctres3 = ROOT.TCanvas('c_tRes_totRatioCorr_bestTh_vs_bar_enBin%02d'%(enBin))
+   ctres3.SetLeftMargin(0.15)
+   ctres3.SetBottomMargin(0.15)
    hPadT4 = ROOT.TH2F('hPadT4','', 100, -0.5, 15.5,100, tResMin,tResMax)
    hPadT4.SetTitle("; bar; #sigma_{t} [ps]")
    hPadT4.Draw()
@@ -1186,6 +1212,8 @@ for enBin in enBins:
 
 
    ctres3 = ROOT.TCanvas('c_tRes_energyRatioCorr_totRatioCorr_bestTh_vs_bar_enBin%02d'%(enBin))
+   ctres3.SetLeftMargin(0.15)
+   ctres3.SetBottomMargin(0.15)
    hPadT5 = ROOT.TH2F('hPadT5','', 100, -0.5, 15.5,100, tResMin,tResMax)
    hPadT5.SetTitle("; bar; #sigma_{t} [ps]")
    hPadT5.Draw()

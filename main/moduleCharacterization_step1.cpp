@@ -232,8 +232,7 @@ int main(int argc, char** argv) {
         treeH4 -> SetBranchStatus("amp_max",1);  treeH4 -> SetBranchAddress("amp_max",amp_max_H4);
         treeH4 -> SetBranchStatus("time",1);     treeH4 -> SetBranchAddress("time",time_H4);
         treeH4 -> SetBranchStatus("fit_time",1); treeH4 -> SetBranchAddress("fit_time",fit_time_H4);
-      
-  }
+    }
 
     //--- get plot settings
     std::vector<float> Vov = opts.GetOpt<std::vector<float> >("Plots.Vov");
@@ -303,10 +302,18 @@ int main(int argc, char** argv) {
 	std::map<int,TH1F*> h1_energyLR_POST_sum;
 	std::map<int,TH1F*> h1_energyLR_PREPOST_sum;
 	std::map<int,TH1F*> h1_counter;
+    std::map<int,TH2F*> h2_xy_double_noCoin;
+	std::map<int,TH2F*> h2_xy_double;
+    std::map<int,TH2F*> h2_xy_REF;
+	std::map<int,TH2F*> h2_xy_REF_cut;
+
+	std::map<int,TH2F*> h2_tREF_vs_eREF;
+	std::map<int, TProfile*> p1_tREF_vs_eREF;
+	std::map<int,TH2F*> h2_tREF_vs_eREF2;
+	std::map<int, TProfile*> p1_tREF_vs_eREF2;
 
     std::map<int,TH1F*> h1_energy_LR_PRE_triple;
 	std::map<int,TH1F*> h1_energy_LR_POST_triple;
-
     std::map<int,TCanvas*> c;
     std::map<int,std::vector<float>*> rangesLR;
     std::map<int,bool> acceptEvent;
@@ -414,11 +421,22 @@ int main(int argc, char** argv) {
 	            c[index] -> cd();
 	            c[index] ->SetLogy();
 	            h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.2f_th%02.0f",Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+				if(useTrackInfo){
+					h2_xy_REF[index] = new TH2F(Form("h2_trackInfo_REF_Vov%.2f_th%02.0f",Vov,vth),Form("h2_trackInfo_REF_Vov%.2f_th%02.0f",Vov,vth),100,-100,100,100,-100,100);
+				}
 	        }
 	
 	        acceptEvent[entry] = true;
 	
-	        h1_energyLR_ext[index] -> Fill(0.5*(energyL_ext + energyR_ext));    
+	        h1_energyLR_ext[index] -> Fill(0.5*(energyL_ext + energyR_ext));
+            
+			float totL_ext    = 0.001*(*tot)[channelIdx[chL_ext]];              
+	        float totR_ext    = 0.001*(*tot)[channelIdx[chR_ext]];
+			if(useTrackInfo && nhits>0 && x>-100 && y>-100){
+				if(totL_ext >-10 && totL_ext < 100 && totR_ext >-10 && totR_ext < 100){
+				    h2_xy_REF[index] -> Fill(x,y);
+			    } 
+		    }  
 	
         }
 
@@ -469,11 +487,11 @@ int main(int argc, char** argv) {
 	            f_pre -> SetParLimits(2, 0, 9999);
 	            index.second->Fit(f_pre, "QRS+");      
 	  
-	            if (f_pre->GetParameter(1)>20) rangesLR[index.first] -> push_back( 0.70*f_pre->GetParameter(1));
+	            if (f_pre->GetParameter(1)>20) rangesLR[index.first] -> push_back( 0.85*f_pre->GetParameter(1));
 	            else   rangesLR[index.first] -> push_back( 20 );
 	  
 
-	            rangesLR[index.first] -> push_back( 950 );
+	            rangesLR[index.first] -> push_back( 400 );
 	  
 	            std::cout << "Vov = " << Vov << "  vth1 = " << vth1 << "   vth2 = " << vth2 
 		                  << "    Coincidence bar - energy range:  " << rangesLR[index.first]->at(0) << " - " << rangesLR[index.first]->at(1)<< std::endl;
@@ -487,7 +505,7 @@ int main(int argc, char** argv) {
     //--- 1st loop over events
   
     ModuleEventClass anEvent;
-  
+    // DUT 
     unsigned short qfineL[16];
     unsigned short qfineR[16];    
     float totL[16];
@@ -500,8 +518,16 @@ int main(int argc, char** argv) {
     float qT1R[16]; 
     float energyL[16];
     float energyR[16];
+    // REF
+	long long timeL_ext;
+	long long timeR_ext;
+	float energyL_ext;
+	float energyR_ext;
+	float totL_ext;              
+	float totR_ext;
+	unsigned short t1fineL_ext; 
+    unsigned short t1fineR_ext; 
   
-    int nEntries = tree->GetEntries();
 	//--- my counters for debugging
 	int mio_counter=0;
 	int pre_counter=0;
@@ -533,11 +559,14 @@ int main(int argc, char** argv) {
 	int pre_post_diff=0;
 	int pre_post_diff_old=0;
 	bool print= false;
+	int xy_counter=0;
+	int xy_counter0=0;
 
 	int c_entry7=0;
 	int c_entry11=0;
 	int c_entry15=0;
 	//--- 
+	int nEntries = tree->GetEntries();
     if( maxEntries > 0 ) nEntries = maxEntries;
     for(int entry = 0; entry < nEntries; ++entry) {
 		
@@ -546,7 +575,9 @@ int main(int argc, char** argv) {
 	        std::cout << "\n>>> 1st loop: reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << std::endl;
 	        TrackProcess(cpu, mem, vsz, rss);
         }
+
         if (useTrackInfo && nhits > 0 &&  (x < -100 || y < -100 ) ) continue;
+		if( useTrackInfo && nhits > 0 && x>=-100 && y>=-100) xy_counter0++; 
 
 		//Get corresponding event in H4DAQ ntuple
 	    if (useMCP && iev_H4DAQ>-1){
@@ -575,8 +606,8 @@ int main(int argc, char** argv) {
 
 	        int chL_ext = opts.GetOpt<int>("Coincidence.chL");
 	        int chR_ext = opts.GetOpt<int>("Coincidence.chR");
-	        float energyL_ext = (*energy)[channelIdx[chL_ext]];
-	        float energyR_ext = (*energy)[channelIdx[chR_ext]];
+	        /*float*/ energyL_ext = (*energy)[channelIdx[chL_ext]];
+	        /*float*/ energyR_ext = (*energy)[channelIdx[chR_ext]];
 	
 	        int label = (10000*int(Vov*100.)) + (100*vth) + 99;
 	        int eBin = opts.GetOpt<int>("Coincidence.peak511eBin");
@@ -587,7 +618,22 @@ int main(int argc, char** argv) {
 	
 	        if ( (!opts.GetOpt<std::string>("Input.sourceName").compare("TB")) && ( avEn < rangesLR[label]-> at(0) || avEn > rangesLR[label]-> at(1) ) ) {
 	            continue;
-	        }
+	        } 
+
+			timeL_ext = (*time)[channelIdx[chL_ext]];
+			timeR_ext = (*time)[channelIdx[chR_ext]];
+			t1fineL_ext = (*t1fine)[channelIdx[chL_ext]];
+			t1fineR_ext = (*t1fine)[channelIdx[chR_ext]];
+			int indexx( (10000*int(Vov*100.)) + (100*vth) + 99 );
+			if(useTrackInfo && h2_xy_REF_cut[indexx] == NULL) h2_xy_REF_cut[indexx] = new TH2F(Form("h2_trackInfo_REF_cuts_Vov%.2f_th%02.0f",Vov,vth),Form("h2_trackInfo_REF_cuts_Vov%.2f_th%02.0f",Vov,vth),100,-100,100,100,-100,100);
+			totL_ext    = 0.001*(*tot)[channelIdx[chL_ext]];              
+	        totR_ext    = 0.001*(*tot)[channelIdx[chR_ext]];
+			if(useTrackInfo && nhits>0 && x>-100 && y>-100){
+				if(totL_ext >-10 && totL_ext < 100 && totR_ext >-10 && totR_ext < 100){
+				    h2_xy_REF_cut[indexx] -> Fill(x,y);
+			    } 
+		    }
+			
         }
 		if(print){std::cout<<"\n----------Entry: "<<entry<<"-----------"<<std::endl;}
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){
@@ -602,7 +648,7 @@ int main(int argc, char** argv) {
 				timeR[iBar]=(*time)[channelIdx[chR[iBar]]];
 				t1fineL[iBar]=(*t1fine)[channelIdx[chL[iBar]]];
 				t1fineR[iBar]=(*t1fine)[channelIdx[chR[iBar]]];
-				if(mio_counter==-1){
+				if(print){
 				  std::cout<<"Entry: "<<entry<<" Barra: "<<iBar<<" chL["<<iBar<<"]= "<<chL[iBar]<<" channelIdx["<<chL[iBar]<<"]= "<<channelIdx[chL[iBar]]<<"\nEnergyL: "<<energyL[iBar]<<std::endl;
 				}
 
@@ -676,6 +722,8 @@ int main(int argc, char** argv) {
 	    int dead_counter=0;
 		int loop_counter=0;
 		pre_post_diff_old=abs(pre_counter+bar15_counter-post_counter-bar0_counter);
+		float temp_energy1=0;
+		float temp_energy2=0;
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {
             if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100){  
                 if(print){std::cout<<"entro in "<<iBar<<std::endl;}
@@ -694,21 +742,33 @@ int main(int argc, char** argv) {
 	  
 	                outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth));
 	                outTrees[index] -> Branch("event",&anEvent);
-	  
+
+	                //cambio range per asse x lasciando la stessa larghezza bin(2)
 	                h1_energyLR[index] = new TH1F(Form("h1_energy_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
-                    //cambio range per asse x lasciando la stessa larghezza bin(2)
+                    // for bar 7 (as example) PRE means 7+6 , POST means 7+8, PREPOST means 6+7+8 
 					h1_energyLR_PRE_sum[index]=  new TH1F(Form("h1_energy_PRE_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 					h1_energyLR_POST_sum[index]=  new TH1F(Form("h1_energy_POST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 					h1_energyLR_PREPOST_sum[index]= new TH1F(Form("h1_energy_PREPOST_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
-
+                    // this one refers to the energy seen by a single bar in case of PRE;POST and PREPOST events
 					h1_energyLR_PRE[index]=  new TH1F(Form("h1_energy_PRE_ONLY_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 					h1_energyLR_POST[index]=  new TH1F(Form("h1_energy_POST_ONLY_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 					h1_energyLR_PREPOST[index]= new TH1F(Form("h1_energy_PREPOST_ONLY_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					// histos for trackInfo
+					h2_xy_double_noCoin[index] = new TH2F(Form("h2_xy_double_noCoin_bar%02d_Vov%.2f_th%02.0f",iBar,Vov,vth),"",100,-100,100,100,-100,100);
+					h2_xy_double[index] = new TH2F(Form("h2_xy_double_bar%02d_Vov%.2f_th%02.0f",iBar,Vov,vth),"",100,-100,100,100,-100,100);
 	            }
 				if(h1_counter[index2]==NULL){
+					// events counter (single double triple)
 					h1_counter[index2] = new TH1F(Form("h1_counter_Vov%.2f_th%02.0f",Vov,vth),"",3,0.5,3.5);
+					// time vs energy of external bar
+					h2_tREF_vs_eREF[index2] = new TH2F(Form("h2_tREF_L_vs_eREF_Vov%.2f_th%02.0f",Vov,vth),"",100,100,450,300,-500,500);
+					p1_tREF_vs_eREF[index2] = new TProfile(Form("p1_tREF_L_vs_eREF_Vov%.2f_th%02.0f",Vov,vth),"",50,100,450);
+					h2_tREF_vs_eREF2[index2] = new TH2F(Form("h2_tREF_R_vs_eREF_Vov%.2f_th%02.0f",Vov,vth),"",100,100,450,300,-500,500);
+					p1_tREF_vs_eREF2[index2] = new TProfile(Form("p1_tREF_R_vs_eREF_Vov%.2f_th%02.0f",Vov,vth),"",50,100,450);
 				}
+
 				if(h1_energy_LR_PRE_triple[index]== NULL){
+					// in case of triple for bar 7 (as example) events PRE_triple refers to the energy seen by bar 6, POST_triple bar 8
 					h1_energy_LR_PRE_triple[index] = new TH1F(Form("h1_energy_LR_PRE_triple_bar%02d_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 					h1_energy_LR_POST_triple[index] = new TH1F(Form("h1_energy_LR_POST_triple_bar%02d_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 				}
@@ -735,6 +795,7 @@ int main(int argc, char** argv) {
 					mean_en_sum=0;
 					double timeDiff;
 					if((iBar > 0) && (iBar < 15) ){
+						// triple events
 						if( (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50. && totR[iBar-1]<50.)&&
 							(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50.) &&
 						    (energyL[iBar-1]>0 && energyR[iBar-1]>0 && energyL[iBar+1]>0 && energyR[iBar+1]>0 ) ){
@@ -761,6 +822,7 @@ int main(int argc, char** argv) {
 						        (energyL[iBar+1]>0 && energyR[iBar+1]>0 && energyL[iBar+2]>0 && energyR[iBar+2]>0 )) {
 							loop_counter++;
 							 continue;}
+						//double events (post)	 
 						else if(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50. && (energyL[iBar+1]>0 && energyR[iBar+1]>0) ) { 
 							mio_check=-1;//post	
 							post_counter++;
@@ -779,11 +841,30 @@ int main(int argc, char** argv) {
 							mean_en_sum=0;
 							h1_energyLR_POST[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
 							timeDiff=0.5*(timeL[iBar]+timeR[iBar] -(timeL[iBar+1]+timeR[iBar+1]) );
+							temp_energy1=energyL_ext;
+							if(temp_energy2!=temp_energy1){
+								h2_tREF_vs_eREF[index2] -> Fill(0.5*(energyL_ext+energyR_ext),0.5*(timeL_ext+timeR_ext) - timeL_ext);
+							    p1_tREF_vs_eREF[index2] -> Fill(0.5*(energyL_ext+energyR_ext),0.5*(timeL_ext+timeR_ext) - timeL_ext);
+								h2_tREF_vs_eREF2[index2] -> Fill(0.5*(energyL_ext+energyR_ext),0.5*(timeL_ext+timeR_ext) - timeR_ext);
+							    p1_tREF_vs_eREF2[index2] -> Fill(0.5*(energyL_ext+energyR_ext),0.5*(timeL_ext+timeR_ext) - timeR_ext);
+								temp_energy2=temp_energy1;
+							}
+							if(!opts.GetOpt<std::string>("Coincidence.status").compare("no") && useTrackInfo && nhits>0 && x>-100 && y>-100) {
+								if(iBar==6){
+									h2_xy_double_noCoin[index]-> Fill(x,y);
+								}
+							}
+							if(!opts.GetOpt<std::string>("Coincidence.status").compare("yes") && useTrackInfo && nhits>0 && x>-100 && y>-100) {
+								if(iBar==6){
+									h2_xy_double[index]-> Fill(x,y);
+								}
+							}
 						}
 						else if((iBar!=1)&&(totL[iBar-2]>-10 && totR[iBar-2]>-10 && totL[iBar-2]<50. && totR[iBar-2]<50.)&&(totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50. && totR[iBar-1]<50.) && 
 						        (energyL[iBar-2]>0 && energyR[iBar-2]>0 && energyL[iBar-1]>0 && energyR[iBar-1]>0 )) {
 							loop_counter++;
 							continue;}
+						// double events post
 						else if(totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50 && energyL[iBar-1]>0 && energyR[iBar-1]>0 ) { 
 							mio_check=2;//pre
 							pre_counter++;
@@ -804,6 +885,7 @@ int main(int argc, char** argv) {
 							timeDiff=0.5*(timeL[iBar-1]+timeR[iBar-1] -(timeL[iBar]+timeR[iBar]) );
 						} 	
 					}
+					// check on the bars 0 and 15 for double events
 					if(iBar==0 && (totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50 && totR[iBar+1]<50) && (totL[iBar+2]>-10 && totR[iBar+2]>-10 && totL[iBar+2]<50 && totR[iBar+2]<50) 
 				    	&& energyL[iBar+1]>0 && energyR[iBar+1]>0 && energyL[iBar+2]>0 && energyR[iBar+2]>0) {
 						loop_counter++;
@@ -849,7 +931,7 @@ int main(int argc, char** argv) {
 						h1_energyLR_PRE[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
 						timeDiff=0.5*(timeL[iBar]+timeR[iBar] -(timeL[iBar-1]+timeR[iBar-1]) );
 					}
-
+                    //single event
 					if(mio_check==1 && (energyL[iBar]>0 && energyR[iBar]>0) ) {
 						single_counter++;
 						if(vth==7) {single_counter7++;}
@@ -883,6 +965,24 @@ int main(int argc, char** argv) {
 	                anEvent.timeR = timeR[iBar];
 	                anEvent.t1fineL = t1fineL[iBar];
 	                anEvent.t1fineR = t1fineR[iBar];
+                    // variable for REF 
+                    if(totL_ext>-10 && totR_ext>-10 && totL_ext<100 && totR_ext<100 && energyL_ext>0 && energyR_ext>0){
+						anEvent.timeL_ext = timeL_ext;
+					    anEvent.timeR_ext = timeR_ext;
+					    anEvent.energyL_ext = energyL_ext;
+					    anEvent.energyR_ext = energyR_ext;
+					    anEvent.t1fineL_ext = t1fineL_ext;
+					    anEvent.t1fineR_ext = t1fineR_ext;
+					}
+					else {
+						anEvent.timeL_ext = -10;
+					    anEvent.timeR_ext = -10;
+					    anEvent.energyL_ext = -10;
+					    anEvent.energyR_ext = -10;
+					    anEvent.t1fineL_ext = -10;
+					    anEvent.t1fineR_ext = -10;
+					}
+					
 
 					anEvent.timeL_pre = -10;
 					anEvent.timeR_pre = -10;
@@ -992,7 +1092,7 @@ int main(int argc, char** argv) {
 			else {dead_counter++;}
 			loop_counter++;
      	}// -- end loop over bars
-
+        // some print used for debugging
 		pre_post_diff=abs(pre_counter+bar15_counter-post_counter-bar0_counter);
 		//std::cout<<"\n iteration"<<mio_counter<<") new: "<<pre_post_diff<<"\n  post counter: "<<post_counter<<"  post 0 counter: "<<bar0_counter<<"\n  pre counter: "<<pre_counter<<"  pre 15 counter: "<<bar15_counter<<std::endl;
 		if(pre_post_diff > pre_post_diff_old){
@@ -1057,6 +1157,11 @@ int main(int argc, char** argv) {
 		if(vth==7) {mio_counter7++;}
 		else if(vth==11) {mio_counter11++;}
 		else {mio_counter15++;}
+		/*if(useTrackInfo && nhits>0 && (x!=-999 && y!=-999)){
+			std::cout<<"entry: "<<entry<<" counter: "<<mio_counter<<"\nx: "<<x<<"\ty: "<<y<<" nhits: "<< nhits<<std::endl;
+			xy_counter++;
+			std::cout<<"xy_counter: "<<xy_counter<<std::endl;
+		}*/
     } // --- end loop over events
     
 	
@@ -1092,7 +1197,11 @@ int main(int argc, char** argv) {
 	std::cout<<"Threshold 15 started with "<<c_entry15<<" events.  Accepted "<<mio_counter15<<" events (" << 100.*mio_counter15/c_entry15 << "%).\n"<<std::endl; 
 
     std::cout<<"Total number of events with more than 3 active bars: "<<multi_counter<<" (" << 100.*multi_counter/mio_counter << "%).\n"<<std::endl;
-
+    if(useTrackInfo){
+		std::cout<<"Total number of events with xy info: "<<xy_counter0<<" (" << 100.*xy_counter0/nEntries << "%).\n"<<std::endl;
+		std::cout<<"Total number of accepted events with xy info: "<<xy_counter<<" (" << 100.*xy_counter/mio_counter << "%).\n"<<std::endl;
+	}
+	
     int bytes = outFile -> Write();
     std::cout << "============================================"  << std::endl;
     std::cout << "nr of  B written:  " << int(bytes)             << std::endl;
