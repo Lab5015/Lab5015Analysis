@@ -301,6 +301,14 @@ int main(int argc, char** argv) {
 	std::map<int,TH1F*> h1_energyLR_PRE_sum;
 	std::map<int,TH1F*> h1_energyLR_POST_sum;
 	std::map<int,TH1F*> h1_energyLR_PREPOST_sum;
+	std::map<int,TH1F*> h1_energyL_POST;
+	std::map<int,TH1F*> h1_energyR_POST;
+	std::map<int,TH1F*> h1_energyL_PRE;
+	std::map<int,TH1F*> h1_energyR_PRE;
+	std::map<int,TH1F*> h1_energyL_POST_sum;
+	std::map<int,TH1F*> h1_energyR_POST_sum;
+	std::map<int,TH1F*> h1_energyL_PRE_sum;
+	std::map<int,TH1F*> h1_energyR_PRE_sum;
 	std::map<int,TH1F*> h1_counter;
     std::map<int,TH2F*> h2_xy_double_noCoin;
 	std::map<int,TH2F*> h2_xy_double;
@@ -317,6 +325,13 @@ int main(int argc, char** argv) {
     std::map<int,TCanvas*> c;
     std::map<int,std::vector<float>*> rangesLR;
     std::map<int,bool> acceptEvent;
+
+
+    std::map<int,TH1F*> h1_events_type;
+    std::map<int,TH1F*> h1_events_type_REF;
+    std::map<int,TH1F*> h1_events_type_3;	
+
+	int nActiveBarsArray_ext;
 
     // -- Coincidence pre loop
     if( !opts.GetOpt<std::string>("Coincidence.status").compare("yes") &&
@@ -408,6 +423,7 @@ int main(int argc, char** argv) {
 	            }
 	            //if (nActiveBarsArray > 5 ) continue;
 	            if (nActiveBarsArray > 3 ) continue;
+				nActiveBarsArray_ext = nActiveBarsArray;
 	        }
 	
 	        energyL_ext = (*energy)[channelIdx[chL_ext]];
@@ -421,13 +437,14 @@ int main(int argc, char** argv) {
 	            c[index] -> cd();
 	            c[index] ->SetLogy();
 	            h1_energyLR_ext[index] = new TH1F(Form("h1_energy_external_barL-R_Vov%.2f_th%02.0f",Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+			    h1_events_type_REF[index] = new TH1F(Form("h1_events_type_REF_Vov%.2f_th%02.0f",Vov,vth),"",16,0.5,16.5);
 				if(useTrackInfo){
 					h2_xy_REF[index] = new TH2F(Form("h2_trackInfo_REF_Vov%.2f_th%02.0f",Vov,vth),Form("h2_trackInfo_REF_Vov%.2f_th%02.0f",Vov,vth),100,-100,100,100,-100,100);
 				}
 	        }
 	
 	        acceptEvent[entry] = true;
-	
+	        h1_events_type_REF[index] ->Fill(nActiveBarsArray_ext);
 	        h1_energyLR_ext[index] -> Fill(0.5*(energyL_ext + energyR_ext));
             
 			float totL_ext    = 0.001*(*tot)[channelIdx[chL_ext]];              
@@ -439,9 +456,7 @@ int main(int argc, char** argv) {
 		    }  
 	
         }
-
-
-      
+    
         std::cout << std::endl;
       
         if (!opts.GetOpt<std::string>("Input.sourceName").compare("Na22SingleBar") || !opts.GetOpt<std::string>("Input.sourceName").compare("Na22")){		
@@ -479,7 +494,7 @@ int main(int argc, char** argv) {
 	            index.second->GetXaxis()->SetRangeUser(0,1024);
 	  
 	            TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.2f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
-	            f_pre -> SetRange(max*0.70, max*1.5);
+	            f_pre -> SetRange(max*0.85, max*1.4);
 	            f_pre -> SetLineColor(kBlack);
                 f_pre -> SetLineWidth(2);
                 f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 0.1*max);
@@ -489,8 +504,8 @@ int main(int argc, char** argv) {
 	  
 	            if (f_pre->GetParameter(1)>20) rangesLR[index.first] -> push_back( 0.85*f_pre->GetParameter(1));
 	            else   rangesLR[index.first] -> push_back( 20 );
-	  
-
+	  			//rangesLR[index.first] -> push_back( 350 );
+	  			//rangesLR[index.first] -> push_back( 600 );
 	            rangesLR[index.first] -> push_back( 400 );
 	  
 	            std::cout << "Vov = " << Vov << "  vth1 = " << vth1 << "   vth2 = " << vth2 
@@ -565,6 +580,7 @@ int main(int argc, char** argv) {
 	int c_entry7=0;
 	int c_entry11=0;
 	int c_entry15=0;
+	int count_ref=0;
 	//--- 
 	int nEntries = tree->GetEntries();
     if( maxEntries > 0 ) nEntries = maxEntries;
@@ -682,7 +698,14 @@ int main(int argc, char** argv) {
         float energySumArray = 0;
         int   nActiveBarsArray = 0;
         int nBarsVeto[16];
-	  
+
+
+	    int index2( int(Vov*10000) + vth );
+		if(h1_events_type[index2]==NULL){
+			h1_events_type[index2] = new TH1F(Form("h1_events_type_Vov%.2f_th%02.0f",Vov,vth),"",16,0.5,16.5);
+			h1_events_type_3[index2] = new TH1F(Form("h1_events_type3_Vov%.2f_th%02.0f",Vov,vth),"",3,0.5,3.5);
+		}
+
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {
 	        nBarsVeto[iBar] = 0;
 	
@@ -716,6 +739,8 @@ int main(int argc, char** argv) {
 	            }
 	        }
         }// end loop over bars
+		h1_events_type[index2]->Fill(nActiveBarsArray);
+		h1_events_type_3[index2]->Fill(nActiveBarsArray);
         
         double mean_en_sum=0;
 		int active_counter=0;
@@ -724,11 +749,12 @@ int main(int argc, char** argv) {
 		pre_post_diff_old=abs(pre_counter+bar15_counter-post_counter-bar0_counter);
 		float temp_energy1=0;
 		float temp_energy2=0;
+		int temp_entry1=-1;
+		int temp_entry2=-1;
         for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar) {
             if (totL[iBar]>-10 && totR[iBar]>-10 && totL[iBar]<100 && totR[iBar]<100){  
                 if(print){std::cout<<"entro in "<<iBar<<std::endl;}
 	            int index( (10000*int(Vov*100.)) + (100*vth) + iBar );
-				int index2( int(Vov*10000) + vth );
 	            //--- create histograms, if needed
 	            if( h1_totL[index] == NULL ) {
 	                h1_qfineL[index] = new TH1F(Form("h1_qfine_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",512,-0.5,511.5);
@@ -739,6 +765,15 @@ int main(int argc, char** argv) {
 	  
 	                h1_energyL[index] = new TH1F(Form("h1_energy_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
 	                h1_energyR[index] = new TH1F(Form("h1_energy_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",map_energyBins[Vov],map_energyMins[Vov],map_energyMaxs[Vov]);
+
+					h1_energyL_PRE_sum[index] = new TH1F(Form("h1_energy_PRE_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyR_PRE_sum[index] = new TH1F(Form("h1_energy_PRE_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyL_POST_sum[index] = new TH1F(Form("h1_energy_POST_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyR_POST_sum[index] = new TH1F(Form("h1_energy_POST_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyL_PRE[index] = new TH1F(Form("h1_energy_PRE_ONLY_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyR_PRE[index] = new TH1F(Form("h1_energy_PRE_ONLY_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyL_POST[index] = new TH1F(Form("h1_energy_POST_ONLY_bar%02dL_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
+					h1_energyR_POST[index] = new TH1F(Form("h1_energy_POST_ONLY_bar%02dR_Vov%.2f_th%02.0f",iBar,Vov,vth),"",1012,0,2024);
 	  
 	                outTrees[index] = new TTree(Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth),Form("data_bar%02dL-R_Vov%.2f_th%02.0f",iBar,Vov,vth));
 	                outTrees[index] -> Branch("event",&anEvent);
@@ -791,12 +826,14 @@ int main(int argc, char** argv) {
 	                int maxActiveBars = 3;
 	                if (!opts.GetOpt<std::string>("Input.sourceName").compare("TB") && (vetoOtherBars && nActiveBarsArray > maxActiveBars)) continue; // to remove showering events
                     active_counter++;
-                    int mio_check=1;//controlla se è un evento singolo, pre, post o pre-post e somma energy hist
+                    int mio_check=0;//controlla se è un evento singolo, pre, post o pre-post e somma energy hist
 					mean_en_sum=0;
 					double timeDiff;
+					temp_entry1=entry;
+					anEvent.nClusters=-1;
 					if((iBar > 0) && (iBar < 15) ){
 						// triple events
-						if( (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50. && totR[iBar-1]<50.)&&
+						if( nActiveBarsArray==3 && (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50. && totR[iBar-1]<50.)&&
 							(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50.) &&
 						    (energyL[iBar-1]>0 && energyR[iBar-1]>0 && energyL[iBar+1]>0 && energyR[iBar+1]>0 ) ){
 								mio_check=3;//pre-post
@@ -823,7 +860,7 @@ int main(int argc, char** argv) {
 							loop_counter++;
 							 continue;}
 						//double events (post)	 
-						else if(totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50. && (energyL[iBar+1]>0 && energyR[iBar+1]>0) ) { 
+						else if(nActiveBarsArray==2 && totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50. && totR[iBar+1]<50. && (energyL[iBar+1]>0 && energyR[iBar+1]>0) ) { 
 							mio_check=-1;//post	
 							post_counter++;
 							if(vth==7) {post_counter7++;}
@@ -838,6 +875,10 @@ int main(int argc, char** argv) {
 							anEvent.energySum=mean_en_sum;
 							anEvent.nClusters=2;
 							h1_energyLR_POST_sum[index] -> Fill(mean_en_sum);
+		                    h1_energyL_POST[index] -> Fill(energyL[iBar]);
+							h1_energyR_POST[index] -> Fill(energyR[iBar]);
+							h1_energyL_POST_sum[index] -> Fill(energyL[iBar]+energyL[iBar+1]);
+							h1_energyR_POST_sum[index] -> Fill(energyR[iBar]+energyR[iBar+1]);
 							mean_en_sum=0;
 							h1_energyLR_POST[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
 							timeDiff=0.5*(timeL[iBar]+timeR[iBar] -(timeL[iBar+1]+timeR[iBar+1]) );
@@ -864,8 +905,8 @@ int main(int argc, char** argv) {
 						        (energyL[iBar-2]>0 && energyR[iBar-2]>0 && energyL[iBar-1]>0 && energyR[iBar-1]>0 )) {
 							loop_counter++;
 							continue;}
-						// double events post
-						else if(totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50 && energyL[iBar-1]>0 && energyR[iBar-1]>0 ) { 
+						// double events (pre)
+						else if(nActiveBarsArray==2 && totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50 && energyL[iBar-1]>0 && energyR[iBar-1]>0 ) { 
 							mio_check=2;//pre
 							pre_counter++;
 							if(vth==7) {pre_counter7++;}
@@ -878,8 +919,12 @@ int main(int argc, char** argv) {
 							}
 							if(print){std::cout<<"\nenergy wrote on histo: "<<mean_en_sum<<std::endl;}
 							anEvent.energySum=mean_en_sum;
-							anEvent.nClusters=2;
+							anEvent.nClusters=4; // to distinguish from post events, i should rename the label to anEvent.Type  
 							h1_energyLR_PRE_sum[index] -> Fill(mean_en_sum);
+							h1_energyL_PRE[index] -> Fill(energyL[iBar]);
+							h1_energyR_PRE[index] -> Fill(energyR[iBar]);
+							h1_energyL_PRE_sum[index] -> Fill(energyL[iBar]+energyL[iBar-1]);
+						    h1_energyR_PRE_sum[index] -> Fill(energyR[iBar]+energyR[iBar-1]);
 							mean_en_sum=0;
 							h1_energyLR_PRE[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
 							timeDiff=0.5*(timeL[iBar-1]+timeR[iBar-1] -(timeL[iBar]+timeR[iBar]) );
@@ -890,7 +935,7 @@ int main(int argc, char** argv) {
 				    	&& energyL[iBar+1]>0 && energyR[iBar+1]>0 && energyL[iBar+2]>0 && energyR[iBar+2]>0) {
 						loop_counter++;
 						continue;}
-					else if(iBar==0 && (totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50 && totR[iBar+1]<50)  && energyL[iBar+1]>0 && energyR[iBar+1]>0 ) {
+					else if(nActiveBarsArray==2 && iBar==0 && (totL[iBar+1]>-10 && totR[iBar+1]>-10 && totL[iBar+1]<50 && totR[iBar+1]<50)  && energyL[iBar+1]>0 && energyR[iBar+1]>0 ) {
 						mio_check=-1;//post
 						post_counter++;
 						if(vth==7) {post_counter7++;}
@@ -905,6 +950,10 @@ int main(int argc, char** argv) {
 						anEvent.energySum=mean_en_sum;
 						anEvent.nClusters=2;
 						h1_energyLR_POST_sum[index] -> Fill(mean_en_sum);
+						h1_energyL_POST[index] -> Fill(energyL[iBar]);
+						h1_energyR_POST[index] -> Fill(energyR[iBar]);
+						h1_energyL_POST_sum[index] -> Fill(energyL[iBar]+energyL[iBar+1]);
+						h1_energyR_POST_sum[index] -> Fill(energyR[iBar]+energyR[iBar+1]);
 						mean_en_sum=0;
 						h1_energyLR_POST[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
 						timeDiff=0.5*(timeL[iBar]+timeR[iBar] -(timeL[iBar+1]+timeR[iBar+1]) );
@@ -913,7 +962,7 @@ int main(int argc, char** argv) {
 					    (energyL[iBar-1]>0 && energyR[iBar-1]>0 && energyL[iBar-2]>0 && energyR[iBar-2]>0)  ) {
 						loop_counter++; 
 						continue;}
-					else if(iBar==15 && (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50) && energyL[iBar-1]>0 && energyR[iBar-1]>0 ) {
+					else if(nActiveBarsArray==2 && iBar==15 && (totL[iBar-1]>-10 && totR[iBar-1]>-10 && totL[iBar-1]<50 && totR[iBar-1]<50) && energyL[iBar-1]>0 && energyR[iBar-1]>0 ) {
 						mio_check=2;//pre
 						pre_counter++;
 						if(vth==7) {pre_counter7++;}
@@ -926,34 +975,37 @@ int main(int argc, char** argv) {
 						}
 						if(print){std::cout<<"\nenergy wrote on histo: "<<mean_en_sum<<std::endl;}
 						anEvent.energySum=mean_en_sum;
-						anEvent.nClusters=2;
+						anEvent.nClusters=4; // to distinguish from post events, i should rename the label to anEvent.Type
 						h1_energyLR_PRE_sum[index] -> Fill(mean_en_sum);
 						h1_energyLR_PRE[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
+						h1_energyL_PRE[index] -> Fill(energyL[iBar]);
+						h1_energyR_PRE[index] -> Fill(energyR[iBar]);
+						h1_energyL_PRE_sum[index] -> Fill(energyL[iBar]+energyL[iBar-1]);
+						h1_energyR_PRE_sum[index] -> Fill(energyR[iBar]+energyR[iBar-1]);
 						timeDiff=0.5*(timeL[iBar]+timeR[iBar] -(timeL[iBar-1]+timeR[iBar-1]) );
 					}
                     //single event
-					if(mio_check==1 && (energyL[iBar]>0 && energyR[iBar]>0) ) {
-						single_counter++;
-						if(vth==7) {single_counter7++;}
-						else if(vth==11) {single_counter11++;}
-						else {single_counter15++;}
-						h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
-						anEvent.energySum=0.5*(energyL[iBar]+energyR[iBar]);
-						anEvent.nClusters=1;
-						if(print){std::cout<<"\nsingle coincidence (n."<<single_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\n mean_en_sum: "<<0.5*(energyL[iBar]+energyR[iBar])<<std::endl;}
-					}
-					
-					h1_counter[index2]-> Fill(mio_check);
-                
-
-	                h1_qfineL[index] -> Fill( qfineL[iBar] );
-	                h1_totL[index] -> Fill( totL[iBar]  );
-	                h1_energyL[index] -> Fill( energyL[iBar] );
+					if(nActiveBarsArray==1 && (energyL[iBar]>0 && energyR[iBar]>0) ) {
+							single_counter++;
+							mio_check=1;
+							if(vth==7) {single_counter7++;}
+							else if(vth==11) {single_counter11++;}
+							else {single_counter15++;}
+							h1_energyLR[index] -> Fill(0.5*(energyL[iBar]+energyR[iBar]));
+							anEvent.energySum=0.5*(energyL[iBar]+energyR[iBar]);
+							anEvent.nClusters=1;
+							if(print){std::cout<<"\nsingle coincidence (n."<<single_counter<<") for entry: "<<entry<<" and bar: "<<iBar<<"\n mean_en_sum: "<<0.5*(energyL[iBar]+energyR[iBar])<<std::endl;}
+							h1_qfineL[index] -> Fill( qfineL[iBar] );
+	                		h1_totL[index] -> Fill( totL[iBar]  );
+	                		h1_energyL[index] -> Fill( energyL[iBar] );
 	  
-	                h1_qfineR[index] -> Fill( qfineR[iBar] );
-	                h1_totR[index] -> Fill( totR[iBar] );
-	                h1_energyR[index] -> Fill( energyR[iBar] );
+	                		h1_qfineR[index] -> Fill( qfineR[iBar] );
+	                		h1_totR[index] -> Fill( totR[iBar] );
+	                		h1_energyR[index] -> Fill( energyR[iBar] );
+				    }
 
+					h1_counter[index2]-> Fill(mio_check);
+                    
 	                anEvent.barID = iBar;
 	                anEvent.Vov = Vov;
 	                anEvent.vth1 = vth;
@@ -965,23 +1017,6 @@ int main(int argc, char** argv) {
 	                anEvent.timeR = timeR[iBar];
 	                anEvent.t1fineL = t1fineL[iBar];
 	                anEvent.t1fineR = t1fineR[iBar];
-                    // variable for REF 
-                    if(totL_ext>-10 && totR_ext>-10 && totL_ext<100 && totR_ext<100 && energyL_ext>0 && energyR_ext>0){
-						anEvent.timeL_ext = timeL_ext;
-					    anEvent.timeR_ext = timeR_ext;
-					    anEvent.energyL_ext = energyL_ext;
-					    anEvent.energyR_ext = energyR_ext;
-					    anEvent.t1fineL_ext = t1fineL_ext;
-					    anEvent.t1fineR_ext = t1fineR_ext;
-					}
-					else {
-						anEvent.timeL_ext = -10;
-					    anEvent.timeR_ext = -10;
-					    anEvent.energyL_ext = -10;
-					    anEvent.energyR_ext = -10;
-					    anEvent.t1fineL_ext = -10;
-					    anEvent.t1fineR_ext = -10;
-					}
 					
 
 					anEvent.timeL_pre = -10;
@@ -993,6 +1028,7 @@ int main(int argc, char** argv) {
 					anEvent.energyR_pre= -10;
 					anEvent.energyL_post = -10;
 					anEvent.energyR_post= -10;
+					
 					anEvent.timeDiff= -99999;
 
 					anEvent.t1fineL_post = -10;
@@ -1055,6 +1091,25 @@ int main(int argc, char** argv) {
 	                    anEvent.x = -999.;
 	                    anEvent.y = -999.;
 	                }
+
+					// variable for REF 
+                    if(mio_check!=0 && totL_ext>-10 && totR_ext>-10 && totL_ext<100 && totR_ext<100 && energyL_ext>0 && energyR_ext>0){
+						anEvent.timeL_ext = timeL_ext;
+					    anEvent.timeR_ext = timeR_ext;
+					    anEvent.energyL_ext = energyL_ext;
+					    anEvent.energyR_ext = energyR_ext;
+					    anEvent.t1fineL_ext = t1fineL_ext;
+					    anEvent.t1fineR_ext = t1fineR_ext;
+						count_ref++;
+					}
+					else {
+						anEvent.timeL_ext = -10;
+					    anEvent.timeR_ext = -10;
+					    anEvent.energyL_ext = -10;
+					    anEvent.energyR_ext = -10;
+					    anEvent.t1fineL_ext = -10;
+					    anEvent.t1fineR_ext = -10;
+					}
 
 					if(useMCP && iev_H4DAQ>-1){
 						std::cout << "Chek pre anEvent "<< std::endl;
@@ -1165,6 +1220,7 @@ int main(int argc, char** argv) {
     } // --- end loop over events
     
 	
+	
     int extrass=(mio_counter-(pre_counter+prepost_counter+single_counter));
 	int extrass7=(mio_counter7-(pre_counter7+prepost_counter7+single_counter7));
 	int extrass11=(mio_counter11-(pre_counter11+prepost_counter11+single_counter11));
@@ -1176,7 +1232,8 @@ int main(int argc, char** argv) {
 			 <<prepost_counter<<" (" << 100.*prepost_counter/mio_counter << "%) triple events"<<std::endl;
     
 	std::cout<<"\nExtra events = "<<extrass<<" (" << 100.* extrass/mio_counter << "%)\n"<<std::endl;
-
+	std::cout<<"\nEvents in reference module: "<<count_ref<<" ("<<100.* count_ref/mio_counter<<"%)\n"<<std::endl;
+    /*
 	std::cout<<"events with th 7: "<<mio_counter7<<" (" << 100.*mio_counter7/mio_counter << "%).\n"<<single_counter7<<" (" << 100.*single_counter7/mio_counter7 << "%) single events\n"<< post_counter7<<" ("
 	<< 100.*post_counter7/mio_counter7 <<"%) [post] \t"<< pre_counter7<<" ("<<100.*pre_counter7/mio_counter7 <<"%) [pre]   double events\n"
 	<<prepost_counter7<<" (" << 100.*prepost_counter7/mio_counter7 << "%) triple events"<<std::endl;
@@ -1195,7 +1252,7 @@ int main(int argc, char** argv) {
     std::cout<<"Threshold 7 started with "<<c_entry7<<" events.  Accepted "<<mio_counter7<<" events (" << 100.*mio_counter7/c_entry7 << "%)."<<std::endl;
 	std::cout<<"Threshold 11 started with "<<c_entry11<<" events.  Accepted "<<mio_counter11<<" events (" << 100.*mio_counter11/c_entry11 << "%)."<<std::endl;
 	std::cout<<"Threshold 15 started with "<<c_entry15<<" events.  Accepted "<<mio_counter15<<" events (" << 100.*mio_counter15/c_entry15 << "%).\n"<<std::endl; 
-
+    */
     std::cout<<"Total number of events with more than 3 active bars: "<<multi_counter<<" (" << 100.*multi_counter/mio_counter << "%).\n"<<std::endl;
     if(useTrackInfo){
 		std::cout<<"Total number of events with xy info: "<<xy_counter0<<" (" << 100.*xy_counter0/nEntries << "%).\n"<<std::endl;

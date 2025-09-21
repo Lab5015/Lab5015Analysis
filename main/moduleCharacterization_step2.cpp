@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
   
     //--- get parameters
     std::string plotDir = opts.GetOpt<std::string>("Output.plotDir");
-	plotDir.append("/z_my_analysis/a_cut_enRatio_2");
+	plotDir.append("/z_my_analysis/a_cut_enRatio_3");
     //system(Form("rm -r %s", plotDir.c_str())); // questo non va bene se stiamo lavorando in parallelo
     system(Form("mkdir -p %s",plotDir.c_str()));
     system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s",plotDir.c_str()));
@@ -231,7 +231,23 @@ int main(int argc, char** argv) {
     system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/CTR_REF_3LR",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/1hit",plotDir.c_str()));
     system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/1hit",plotDir.c_str()));
+	system(Form("mkdir -p %s/CTR_REF/all",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/all",plotDir.c_str()));
+	system(Form("mkdir -p %s/CTR_REF/all/raw",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/all/raw",plotDir.c_str()));
+	system(Form("mkdir -p %s/CTR_REF/all/energyCorr",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/all/energyCorr",plotDir.c_str()));
 
+	system(Form("mkdir -p %s/CTR_REF/cut_on_all",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/cut_on_all",plotDir.c_str()));
+	system(Form("mkdir -p %s/CTR_REF/cut_on_all/raw",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/cut_on_all/raw",plotDir.c_str()));
+	system(Form("mkdir -p %s/CTR_REF/cut_on_all/energyCorr",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/cut_on_all/energyCorr",plotDir.c_str()));
+
+	system(Form("mkdir -p %s/timeCorrelation_cut_all",plotDir.c_str()));
+    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/timeCorrelation_cut_all",plotDir.c_str()));
+	
 	system(Form("mkdir -p %s/modulePosition",plotDir.c_str()));
     system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/modulePosition",plotDir.c_str()));
 
@@ -405,6 +421,10 @@ int main(int argc, char** argv) {
     // -- energy correlation plots
 	std::map<double, TH2F*> h2_energy_correlation;
 	std::map<double, TProfile*> p1_energy_correlation;
+	std::map<double, TH2F*> h2_energy_correlation3L;
+	std::map<double, TProfile*> p1_energy_correlation3L;
+	std::map<double, TH2F*> h2_energy_correlation3R;
+	std::map<double, TProfile*> p1_energy_correlation3R;
 	// -- time correlation
 	std::map<double, TH2F*> h2_timeDiff_correlation;
 	std::map<double, TProfile*> p1_timeDiff_correlation;
@@ -413,6 +433,17 @@ int main(int argc, char** argv) {
 	std::map<double, TH2F*> h2_tR_REFvsER;
 	std::map<double, TProfile*> p1_tL_REFvsEL;
 	std::map<double, TProfile*> p1_tR_REFvsER;
+
+    std::map<double, TH2F*> h2_tL_REFvsEL_post;
+	std::map<double, TH2F*> h2_tR_REFvsER_post;
+	std::map<double, TProfile*> p1_tL_REFvsEL_post;
+	std::map<double, TProfile*> p1_tR_REFvsER_post;
+
+	std::map<double, TH2F*> h2_tL_REFvsEL_pre;
+	std::map<double, TH2F*> h2_tR_REFvsER_pre;
+	std::map<double, TProfile*> p1_tL_REFvsEL_pre;
+	std::map<double, TProfile*> p1_tR_REFvsER_pre;
+
 	std::map<double, TH2F*> h2_tL_REFvsEL_corr;
 	std::map<double, TH2F*> h2_tR_REFvsER_corr;
 	std::map<double, TProfile*> p1_tL_REFvsEL_corr;
@@ -508,9 +539,14 @@ int main(int argc, char** argv) {
 
 	std::map<int,std::vector<float>* >  ranges_all;
 	std::map<double, TH1F*> h1_deltaT_REF_raw_all;
+	std::map<double, TH1F*> h1_deltaT_REF_corr_all;
+
+	std::map<double, TH1F*> h1_deltaT_REF_raw_all_new;
+	std::map<double, TH1F*> h1_deltaT_REF_corr_all_new;
 
 	//this ranges are used for double hits selection
 	std::map<int,std::vector<float>*> ranges_doubleHits; 
+    std::map<int,std::vector<float>*> ranges_doubleHits4; 
 
     std::map<std::string, std::map<int, std::map<std::string,std::pair<float,float> > > > peaks;	//peaks[LRlabel][index][energyPeak]
     std::map<std::string, std::map<int, std::map<int,float> > > energyBin; // energyBin[LRlabel][index]
@@ -582,12 +618,15 @@ int main(int argc, char** argv) {
 	            ftemp->SetLineColor(1);
 	            ftemp->Draw("same");
 				float max_ext = ftemp->GetParameter(1);
-				TLine* line_ext = new TLine(0.85*max_ext, 0,0.85*max_ext,histo->GetMaximum());
+				TLine* line_ext = new TLine(0.85*max_ext, 0,0.85*max_ext,histo->GetMaximum()); // DUT
+				//TLine* line_ext = new TLine(350, 0,350,histo->GetMaximum());   // REF
+
 				line_ext->SetLineColor(kBlue);
 				line_ext->SetLineWidth(2);
 				line_ext->SetLineStyle(2);
 				line_ext->Draw("same");
-				line_ext = new TLine(400, 0,400,histo->GetMaximum());
+				line_ext = new TLine(400, 0,400,histo->GetMaximum());  // DUT
+				//line_ext = new TLine(600, 0,600,histo->GetMaximum());  // REF
 				line_ext->SetLineColor(kBlue);
 				line_ext->SetLineWidth(2);
 				line_ext->SetLineStyle(2);
@@ -1055,8 +1094,9 @@ int main(int argc, char** argv) {
 	        }// end loop over L, R, L-R labels
 	        
 			ranges_doubleHits[index] = new std::vector<float>;
+			ranges_doubleHits4[index] = new std::vector<float>;
 			// -- loop over PRE ,POST, PREPOST labels
-			for(auto PPLabel : PPLabels){
+		 	for(auto PPLabel : PPLabels){
 				std::string label1(Form("%s_bar%02dL-R_%s",PPLabel.c_str(),iBar,stepLabel.c_str()));
 				std::string label2(Form("%s_ONLY_bar%02dL-R_%s",PPLabel.c_str(),iBar,stepLabel.c_str()));
 				
@@ -1080,7 +1120,7 @@ int main(int argc, char** argv) {
 	            histo -> SetLineColor(kRed);
 	            histo -> SetLineWidth(2);
 	            histo -> Draw();
-				if(PPLabel == "POST"){ //-----start fit-----
+				if(PPLabel == "POST" || PPLabel == "PRE"){ //-----start fit-----
 					float max = histo->GetBinCenter(histo->GetMaximumBin());
 					histo->GetXaxis()->SetRangeUser(0, 2024);
 					f_landau1[index] = new TF1(Form("f_landau_POST_bar%02dL-R_Vov%.2f_vth1_%02.0f", iBar,Vov,vth1),"[0]*TMath::Landau(x,[1],[2])", 0,2000.);
@@ -1103,19 +1143,35 @@ int main(int argc, char** argv) {
 					f_landau1[index] -> SetLineColor(kBlack);
 					f_landau1[index] -> SetLineWidth(2);
 					f_landau1[index] -> Draw("same");
-					//std::cout<<f_landau1[index]->GetParameter(0)<<"  "<<f_landau1[index]->GetParameter(1)<<"  "<<std::abs(f_landau1[index]->GetParameter(2))<<std::endl;
-					ranges_doubleHits[index]->push_back( f_landau1[index]->GetParameter(1) - 2.0 * std::abs(f_landau1[index]->GetParameter(2)));
-					//ranges_doubleHits[index]->push_back(100.);
+					if(PPLabel== "POST"){
+						//std::cout<<f_landau1[index]->GetParameter(0)<<"  "<<f_landau1[index]->GetParameter(1)<<"  "<<std::abs(f_landau1[index]->GetParameter(2))<<std::endl;
+						ranges_doubleHits[index]->push_back( f_landau1[index]->GetParameter(1) - 2.0 * std::abs(f_landau1[index]->GetParameter(2)));
+						//ranges_doubleHits[index]->push_back(100.);
 
-					ranges_doubleHits[index]->push_back(std::min(f_landau1[index]->GetParameter(1)*2.5, 1400.));
-					//std::cout<<" "<<std::endl;
-					for(auto range: (*ranges_doubleHits[index])){
-						TLine* line = new TLine(range,0.,range, histo->GetMaximum());
-						line -> SetLineWidth(2);
-						line -> SetLineStyle(7);
-						line -> Draw("same");
+						ranges_doubleHits[index]->push_back(std::min(f_landau1[index]->GetParameter(1)*2.5, 1400.));
+						//std::cout<<" "<<std::endl;
+						for(auto range: (*ranges_doubleHits[index])){
+							TLine* line = new TLine(range,0.,range, histo->GetMaximum());
+							line -> SetLineWidth(2);
+							line -> SetLineStyle(7);
+							line -> Draw("same");
+						}
 					}
-				}//-----end fit-----
+					else if(PPLabel== "PRE"){
+						//std::cout<<f_landau1[index]->GetParameter(0)<<"  "<<f_landau1[index]->GetParameter(1)<<"  "<<std::abs(f_landau1[index]->GetParameter(2))<<std::endl;
+						ranges_doubleHits4[index]->push_back( f_landau1[index]->GetParameter(1) - 2.0 * std::abs(f_landau1[index]->GetParameter(2)));
+						//ranges_doubleHits[index]->push_back(100.);
+
+						ranges_doubleHits4[index]->push_back(std::min(f_landau1[index]->GetParameter(1)*2.5, 1400.));
+						//std::cout<<" "<<std::endl;
+						for(auto range: (*ranges_doubleHits4[index])){
+							TLine* line = new TLine(range,0.,range, histo->GetMaximum());
+							line -> SetLineWidth(2);
+							line -> SetLineStyle(7);
+							line -> Draw("same");
+						}
+					}
+				}//-----end fit-----  
 
 				latex -> Draw();
 				outFile -> cd();
@@ -1150,7 +1206,7 @@ int main(int argc, char** argv) {
 	            delete c;
 	            delete latex;
 
-				if(PPLabel == "POST") {
+				/*if(PPLabel == "POST") {
 					// --- linear plots for energy of double hits
 					c = new TCanvas(Form("c_energy_%s_linear",label1.c_str()),Form("c_energy_%s_linear",label1.c_str()));
 					
@@ -1193,7 +1249,7 @@ int main(int argc, char** argv) {
 					delete fitFunc_cut;
 					delete line_cut;
 
-				}
+				}*/
 			    
 
                 if(PPLabel != "PREPOST") {
@@ -1226,7 +1282,7 @@ int main(int argc, char** argv) {
 			}//end loop over PP labels
 
 			//histo sum for energy sharing 
-			/*
+			
 			ranges_all[index] = new std::vector<float>;
 			TH1F* histo1;
 			TH1F* histo2;
@@ -1236,7 +1292,7 @@ int main(int argc, char** argv) {
 			TLegend* legend;
 
 			std::string label(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));
-			std::cout<<label<<std::endl;
+			//std::cout<<label<<std::endl;
 			latex = new TLatex(0.40,0.85,Form("#splitline{energy sum for bar %02dL-R}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
 			latex -> SetNDC();
 	        latex -> SetTextFont(42);
@@ -1330,15 +1386,17 @@ int main(int argc, char** argv) {
 			histo2->GetListOfFunctions()->Clear();
 
 			histo3->SetLineColor(kMagenta);
-			histo2->GetListOfFunctions()->Clear();
+			histo3->GetListOfFunctions()->Clear();
 
 			histo4->SetLineColor(kBlue);
+			histo4->GetListOfFunctions()->Clear();
+
 			c = new TCanvas(Form("c_energy_sum_contributions_bar%02dL-R_%s",iBar,stepLabel.c_str()),Form("c_energy_sum_contributions_bar%02dL-R_%s",iBar,stepLabel.c_str()));
 			gPad -> SetLogy();
 			histo_sum -> SetTitle(";energy [a.u.];entries");
 	        histo_sum -> SetLineColor(kRed);
 	        histo_sum -> SetLineWidth(2);
-			histo2->GetListOfFunctions()->Clear();
+			histo_sum->GetListOfFunctions()->Clear();
 	        histo_sum -> Draw();
 
 			histo1 -> Draw("same");
@@ -1346,6 +1404,13 @@ int main(int argc, char** argv) {
 			histo3 -> Draw("same");
 			histo4 -> Draw("same");
             latex  -> Draw("same");
+
+			for(auto range: (*ranges_all[index])){
+				TLine* line = new TLine(range,0.,range, histo_sum->GetMaximum());
+				line -> SetLineWidth(2);
+				line -> SetLineStyle(7);
+				line -> Draw("same");
+			}
 
 			legend->AddEntry(histo_sum, "tot", "f"); 
             legend->AddEntry(histo1, Form("bar %02d",iBar), "f");
@@ -1360,7 +1425,7 @@ int main(int argc, char** argv) {
 	        
 			delete c;
 	        delete latex;
-			*/
+			
 			
         }// -- end loop over bars
 
@@ -1473,7 +1538,7 @@ int main(int argc, char** argv) {
 
     } // -- end loop over stepLabels
 
-    /*if(opts.GetOpt<int>("Channels.array")==1){ // REF module has only one th at 30 DAC for run  6289
+    if(opts.GetOpt<int>("Channels.array")==1){ // REF module has only one th at 30 DAC for run  6289
 		TH1F* histo1;
 		TH1F* histo2;
 		TH1F* histo3;
@@ -1508,14 +1573,645 @@ int main(int argc, char** argv) {
 		latex -> Draw();
 		c -> Print(Form("%s/topology/c_events_type_Vov3.50_th30.png",plotDir.c_str()));
 	    c -> Print(Form("%s/topology/c_events_type_Vov3.50_th30.pdf",plotDir.c_str()));
-	}*/
+	}
 
 
     // ---  end 1st plots
-  
+
+    std::map<double, TF1*> fitFunc_timeL_new;
+	std::map<double, TF1*> fitFunc_timeR_new;
+	std::map<double, TF1*> fitFunc_timeL_pre_new;
+	std::map<double, TF1*> fitFunc_timeR_pre_new;
+	std::map<double, TF1*> fitFunc_timeL_post_new;
+	std::map<double, TF1*> fitFunc_timeR_post_new;
+
+	std::map<double, TH2F*> h2_tL_REFvsEL_new;
+	std::map<double, TH2F*> h2_tR_REFvsER_new;
+	std::map<double, TProfile*> p1_tL_REFvsEL_new;
+	std::map<double, TProfile*> p1_tR_REFvsER_new;
+
+    std::map<double, TH2F*> h2_tL_REFvsEL_post_new;
+	std::map<double, TH2F*> h2_tR_REFvsER_post_new;
+	std::map<double, TProfile*> p1_tL_REFvsEL_post_new;
+	std::map<double, TProfile*> p1_tR_REFvsER_post_new;
+
+	std::map<double, TH2F*> h2_tL_REFvsEL_pre_new;
+	std::map<double, TH2F*> h2_tR_REFvsER_pre_new;
+	std::map<double, TProfile*> p1_tL_REFvsEL_pre_new;
+	std::map<double, TProfile*> p1_tR_REFvsER_pre_new;
+
+    std::map<int,std::map<int,bool> > accept_new;
+
+	// --- loop 1.5
+	for(auto mapIt : trees){
+        ModuleEventClass* anEvent = new ModuleEventClass();
+      
+        mapIt.second -> SetBranchAddress("event",&anEvent);
+      
+        int nEntries = mapIt.second->GetEntries();
+
+        for(int entry = 0; entry < nEntries; ++entry){
+	        if( entry%100000 == 0 ) {
+	            std::cout << ">>> loop 1.5 : " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	            //TrackProcess(cpu, mem, vsz, rss);
+	        }
+	        mapIt.second -> GetEntry(entry);
+
+			bool barFound = std::find(barList.begin(), barList.end(), anEvent->barID) != barList.end() ;
+	        if (!barFound) continue;
+			int index1( (10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+			accept_new[index1][entry] = false;
+            int energyBinAverage=0;
+			if(!ranges_all[index1]) continue;
+			energyBinAverage = FindBin(anEvent->energySum,ranges_all[index1])+1;
+			if(energyBinAverage < 1 ) continue;
+            double index2( (100000000*anEvent->nClusters)+(10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+			double index2_new ((10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID);
+	        accept_new[index1][entry] = true;
+
+			if(h1_deltaT_REF_raw_all_new[index2_new]==NULL){
+				h1_deltaT_REF_raw_all_new[index2_new] = new TH1F(Form("h1_deltaT_REF_raw_new_bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage),"",2000,-24000,24000);
+			}
+			if(fabs(anEvent->timeR-anEvent->timeL)<10000 && anEvent->energyR_ext>0 && anEvent->energyL_ext>0){
+                double t_ave,t_mean1,t_mean2,t_mean3,energy1,energy2,energy3;
+				double t_REF = 0.5*(static_cast<double>(anEvent->timeL_ext)+static_cast<double>(anEvent->timeR_ext));
+				
+				if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){
+					energy1 = 0.5*(anEvent->energyL+anEvent->energyR);
+					energy2 = 0.5*(anEvent->energyL_post+anEvent->energyR_post);
+
+					t_mean1 = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+					t_mean2 = 0.5*(static_cast<double>(anEvent->timeL_post) + static_cast<double>(anEvent->timeR_post));
+					t_ave = (energy1*t_mean1 + energy2*t_mean2)/(energy1+energy2);
+					if(fabs(t_ave - t_REF)<10000){
+                   		h1_deltaT_REF_raw_all_new[index2_new]->Fill(t_ave - t_REF);
+				  	}
+				}
+				else if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0){
+					energy1 = 0.5*(anEvent->energyL+anEvent->energyR);
+					energy2 = 0.5*(anEvent->energyL_pre+anEvent->energyR_pre);
+
+					t_mean1 = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+					t_mean2 = 0.5*(static_cast<double>(anEvent->timeL_pre) + static_cast<double>(anEvent->timeR_pre));
+					t_ave = (energy1*t_mean1 + energy2*t_mean2)/(energy1+energy2);
+					if(fabs(t_ave - t_REF)<10000){
+                   		h1_deltaT_REF_raw_all_new[index2_new]->Fill(t_ave - t_REF);
+					}
+				}
+				/*else if(anEvent->nClusters==1){
+					t_ave = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+				}
+				else if(anEvent->nClusters==3 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0 && anEvent->energyL_post>0 && anEvent->energyR_post>0){
+					energy1 = 0.5*(anEvent->energyL+anEvent->energyR);
+					energy2 = 0.5*(anEvent->energyL_pre+anEvent->energyR_pre);
+					energy3 = 0.5*(anEvent->energyL_post+anEvent->energyR_post);
+
+					t_mean1 = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+					t_mean2 = 0.5*(static_cast<double>(anEvent->timeL_pre) + static_cast<double>(anEvent->timeR_pre));
+					t_mean3 = 0.5*(static_cast<double>(anEvent->timeL_post) + static_cast<double>(anEvent->timeR_post));
+					t_ave = (energy1*t_mean1 + energy2*t_mean2 + energy3*t_mean3)/(energy1 + energy2 + energy3);
+					if(fabs(t_ave - t_REF)<10000){
+                        h1_deltaT_REF_raw_all_new[index2_new]->Fill(t_ave - t_REF);
+					}
+				}*/
+				
+			}
+            if(h2_tL_REFvsEL_new[index2]==NULL){
+				std::string labelL(Form("bar%02dL_Vov%.2f_th%02d_energyBin%02d_type%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage,anEvent->nClusters));
+				std::string labelR(Form("bar%02dR_Vov%.2f_th%02d_energyBin%02d_type%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage,anEvent->nClusters));
+
+				h2_tL_REFvsEL_new[index2] = new TH2F(Form("h2_tL_REFvsEL_%s",labelL.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tL_REFvsEL_new[index2] = new TProfile(Form("p1_tL_REFvsEL_%s",labelL.c_str()),"",50,0,1000);
+				h2_tR_REFvsER_new[index2] = new TH2F(Form("h2_tR_REFvsER_%s",labelR.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tR_REFvsER_new[index2] = new TProfile(Form("p1_tR_REFvsER_%s",labelR.c_str()),"",50,0,1000);
+
+				h2_tL_REFvsEL_pre_new[index2] = new TH2F(Form("h2_tL_REFvsEL_pre%s",labelL.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tL_REFvsEL_pre_new[index2] = new TProfile(Form("p1_tL_REFvsEL_pre%s",labelL.c_str()),"",50,0,1000);
+				h2_tR_REFvsER_pre_new[index2] = new TH2F(Form("h2_tR_REFvsER_pre%s",labelR.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tR_REFvsER_pre_new[index2] = new TProfile(Form("p1_tR_REFvsER_pre%s",labelR.c_str()),"",50,0,1000);
+
+				h2_tL_REFvsEL_post_new[index2] = new TH2F(Form("h2_tL_REFvsEL_post_%s",labelL.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tL_REFvsEL_post_new[index2] = new TProfile(Form("p1_tL_REFvsEL_post_%s",labelL.c_str()),"",50,0,1000);
+				h2_tR_REFvsER_post_new[index2] = new TH2F(Form("h2_tR_REFvsER_post_%s",labelR.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tR_REFvsER_post_new[index2] = new TProfile(Form("p1_tR_REFvsER_post_%s",labelR.c_str()),"",50,0,1000);
+		    } 
+			if(fabs(anEvent->timeL - anEvent->timeR)<10000 && anEvent->energyL_ext>0 && anEvent->energyR_ext>0){
+				double time_ave_REF = 0.5*(static_cast<double>(anEvent->timeL_ext)+static_cast<double>(anEvent->timeR_ext));
+				if((anEvent->timeL - time_ave_REF) >3000){  
+					h2_tL_REFvsEL_new[index2] -> Fill(anEvent->energyL, anEvent->timeL - time_ave_REF);
+				    p1_tL_REFvsEL_new[index2] -> Fill(anEvent->energyL, anEvent->timeL - time_ave_REF);	
+				}
+				if((anEvent->timeR - time_ave_REF) >3000){  
+					h2_tR_REFvsER_new[index2] -> Fill(anEvent->energyR, anEvent->timeR - time_ave_REF);
+				    p1_tR_REFvsER_new[index2] -> Fill(anEvent->energyR, anEvent->timeR - time_ave_REF);	
+				}
+				if(anEvent->nClusters==2 || anEvent->nClusters==3){
+					if(anEvent->barID==15) continue;
+					if((anEvent->timeL_post - time_ave_REF) >3000){  
+						h2_tL_REFvsEL_post_new[index2] -> Fill(anEvent->energyL_post, anEvent->timeL_post - time_ave_REF);
+				    	p1_tL_REFvsEL_post_new[index2] -> Fill(anEvent->energyL_post, anEvent->timeL_post - time_ave_REF);	
+					}
+					if((anEvent->timeR_post - time_ave_REF) >3000){  
+						h2_tR_REFvsER_post_new[index2] -> Fill(anEvent->energyR_post, anEvent->timeR_post - time_ave_REF);
+				    	p1_tR_REFvsER_post_new[index2] -> Fill(anEvent->energyR_post, anEvent->timeR_post - time_ave_REF);
+					}
+				}
+				if(anEvent->nClusters==4 || anEvent->nClusters==3){
+					if(anEvent->barID==0) continue;
+					if((anEvent->timeL_pre - time_ave_REF) >3000){ 
+						h2_tL_REFvsEL_pre_new[index2] -> Fill(anEvent->energyL_pre, anEvent->timeL_pre - time_ave_REF);
+				    	p1_tL_REFvsEL_pre_new[index2] -> Fill(anEvent->energyL_pre, anEvent->timeL_pre - time_ave_REF);	
+					}
+					if((anEvent->timeR_pre - time_ave_REF) >3000){  
+						h2_tR_REFvsER_pre_new[index2] -> Fill(anEvent->energyR_pre, anEvent->timeR_pre - time_ave_REF);
+				    	p1_tR_REFvsER_pre_new[index2] -> Fill(anEvent->energyR_pre, anEvent->timeR_pre - time_ave_REF);
+					}
+				}
+			}
+		}
+	}
+	std::map<double, std::vector<float>> fitRanges;
+    std::cout<<"\n "<<std::endl; 
+	std::cout<<"Drawing 1.5 plots ... "<<std::endl;
+    for(auto stepLabel : stepLabels){
+        float Vov = map_Vovs[stepLabel];
+        float vth1 = map_ths[stepLabel];
+		for(int iBar = 0; iBar < 16; ++iBar) {
+	        bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
+            if (!barFound) continue;      
+	  
+	        std::string labelLR(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));          
+	        TLine* lineL;
+			TLine* lineR; 
+	        int index1( (10000*int(Vov*100.)) + (100*vth1) + iBar );
+			//std::cout<<"########\nindex1: "<<index1<<"  Vov: "<<Vov<<"  vth1: "<<vth1<<"  iBar: "<<iBar<<std::endl;
+            int nEnergyBins;
+			if( !ranges_all[index1]) continue;
+			nEnergyBins = ranges_all[index1]->size()-1;
+			for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin){
+			    double index2_new((10000000*iEnergyBin)+index1);
+				//std::cout<<"index2_new: "<<index2_new<<"  iEnergyBin: "<< iEnergyBin<<"  Vov: "<<Vov<<"  vth1: "<<vth1<<"  iBar: "<<iBar<<std::endl;
+            	c = new TCanvas(Form("c_deltaT_REF_raw_%s",labelLR.c_str()),Form("c_deltaT_REF_raw_%s",labelLR.c_str()));
+				histo = h1_deltaT_REF_raw_all_new[index2_new];
+				if(histo){
+					histo -> SetLineWidth(2);
+					histo -> SetLineColor(kAzure);
+					histo -> SetMarkerColor(kAzure);
+					TF1* fitFunc = new TF1(Form("fitFunc_deltaT_raw_REF_%s",labelLR.c_str()),"gaus",-10000, 10000);
+					drawDeltaT(c, histo, fitFunc, Form("raw "), "raw","");
+
+					latex = new TLatex(0.14,0.88,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+					latex -> SetNDC();
+					latex -> SetTextFont(42);
+					latex -> SetTextSize(0.04);
+					latex -> SetTextColor(kRed);
+					latex -> Draw("same");
+
+					outFile -> cd();
+					histo -> Write();
+					c -> Print(Form("%s/CTR_REF/cut_on_all/raw/c_deltaT_REF_raw_%s.png",plotDir.c_str(),labelLR.c_str()));
+					c -> Print(Form("%s/CTR_REF/cut_on_all/raw/c_deltaT_REF_raw_%s.pdf",plotDir.c_str(),labelLR.c_str()));
+					delete c;
+				}
+				for(int i = 1; i <= 4; i++){
+					double index2((100000000*i)+index2_new);
+					//std::cout<<"index2: "<<index2<<"  i: "<<i<<"  iEnergyBin: "<< iEnergyBin<<"  Vov: "<<Vov<<"  vth1: "<<vth1<<"  iBar: "<<iBar<<std::endl;
+                    std::string LabelL(Form("bar%02dL_%s_type%02d",iBar,stepLabel.c_str(),i));
+					std::string LabelR(Form("bar%02dR_%s_type%02d",iBar,stepLabel.c_str(),i));
+					// --- draw timeL-time_REF vs energyL
+					float xminL,xmaxL,xminR,xmaxR;
+					if(i==1){
+						fitRanges[index2].push_back(350);
+						fitRanges[index2].push_back(950);
+						fitRanges[index2].push_back(350);
+						fitRanges[index2].push_back(900);
+					}
+					else if (i==2 || i==4){
+						fitRanges[index2].push_back(100);
+						fitRanges[index2].push_back(800);
+						fitRanges[index2].push_back(50);
+						fitRanges[index2].push_back(600);
+					}
+					else if(i==3){
+						fitRanges[index2].push_back(200);
+						fitRanges[index2].push_back(900);
+						fitRanges[index2].push_back(200);
+						fitRanges[index2].push_back(900);
+					}
+					c = new TCanvas(Form("c_tL_REFvsEL_%s",LabelL.c_str()),Form("c_tL_REFvsEL_%s",LabelL.c_str()));
+					h2 = h2_tL_REFvsEL_new[index2];
+					xminL = fitRanges[index2].at(0);
+					xmaxL = fitRanges[index2].at(1);
+					xminR =	fitRanges[index2].at(2);
+					xmaxR = fitRanges[index2].at(3);
+					if(h2){
+					h2 -> GetYaxis()->SetRangeUser(2000, 10000);
+                    h2 -> SetTitle(Form(";energy_{L} [a.u.]; time_{L} - time_{REF} [ps]"));
+					h2->Draw("colz");
+					prof = p1_tL_REFvsEL_new[index2];
+					prof -> SetMarkerSize(0.4);
+					prof -> Draw("psame");
+					//fitFunc_timeL_new[index2] = new TF1(Form("fitFunc_timeL_%s",LabelL.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",xminL,xmaxL);
+					fitFunc_timeL_new[index2] = new TF1(Form("fitFunc_timeL_%s",LabelL.c_str()),"pol3",xminL,xmaxL);
+					prof->Fit(fitFunc_timeL_new[index2],"QRS");
+					fitFunc_timeL_new[index2] -> SetLineColor(kRed);
+					fitFunc_timeL_new[index2] -> SetLineWidth(2);
+					fitFunc_timeL_new[index2] -> Draw("same");
+
+					latex = new TLatex(0.40,0.8,Form("#splitline{bar %02dL type%02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,i,Vov,int(vth1)));
+					latex -> SetNDC();
+					latex -> SetTextFont(42);
+					latex -> SetTextSize(0.04);
+					latex -> SetTextColor(kRed);
+					latex -> Draw("same");
+
+					lineL = new TLine(xminL,2000,xminL,10000);
+					lineL -> SetLineWidth(2);
+	                lineL -> SetLineStyle(7);
+	                lineL -> Draw("same");
+					lineL = new TLine(xmaxL,2000,xmaxL,10000);
+					lineL -> SetLineWidth(2);
+	                lineL -> SetLineStyle(7);
+	                lineL -> Draw("same");
+                    if(i==2||i==4){
+                     	c->Print(Form("%s/timeCorrelation_cut_all/c_tL_REFvsEL_%s.png",plotDir.c_str(),LabelL.c_str()));
+						c->Print(Form("%s/timeCorrelation_cut_all/c_tL_REFvsEL_%s.pdf",plotDir.c_str(),LabelL.c_str()));
+					}
+					
+					delete c;}
+					//else { std::cout<<" h2_tL_REFvsEL_new["<<index2<<"] not found "<<std::endl;}
+
+					// --- draw timeR-time_REF vs energyR
+					c = new TCanvas(Form("c_tR_REFvsER_%s",LabelR.c_str()),Form("c_tR_REFvsER_%s",LabelR.c_str()));
+					h2 = h2_tR_REFvsER_new[index2];
+					if(h2){
+					h2 -> GetYaxis()->SetRangeUser(2000, 10000);
+                    h2 -> SetTitle(Form(";energy_{R} [a.u.]; time_{R} - time_{REF} [ps]"));
+					h2->Draw("colz");
+					prof = p1_tR_REFvsER_new[index2];
+					prof -> SetMarkerSize(0.4);
+					prof -> Draw("psame");
+					//fitFunc_timeR_new[index2] = new TF1(Form("fitFunc_timeR_%s",LabelR.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",xminR,xmaxR);
+					fitFunc_timeR_new[index2] = new TF1(Form("fitFunc_timeR_%s",LabelR.c_str()),"pol3",xminR,xmaxR);
+					prof->Fit(fitFunc_timeR_new[index2],"QRS");
+					fitFunc_timeR_new[index2] -> SetLineColor(kRed);
+					fitFunc_timeR_new[index2] -> SetLineWidth(2);
+					fitFunc_timeR_new[index2] -> Draw("same");
+
+					latex = new TLatex(0.40,0.8,Form("#splitline{bar %02dR type%02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,i,Vov,int(vth1)));
+					latex -> SetNDC();
+					latex -> SetTextFont(42);
+					latex -> SetTextSize(0.04);
+					latex -> SetTextColor(kRed);
+					latex -> Draw("same");
+
+					lineR = new TLine(xminR,2000,xminR,10000);
+					lineR -> SetLineWidth(2);
+	                lineR -> SetLineStyle(7);
+	                lineR -> Draw("same");
+
+					lineR = new TLine(xmaxR,2000,xmaxR,10000);
+					lineR -> SetLineWidth(2);
+	                lineR -> SetLineStyle(7);
+	                lineR -> Draw("same");
+                    if(i==2||i==4){
+						c->Print(Form("%s/timeCorrelation_cut_all/c_tR_REFvsER_%s.png",plotDir.c_str(),LabelR.c_str()));
+						c->Print(Form("%s/timeCorrelation_cut_all/c_tR_REFvsER_%s.pdf",plotDir.c_str(),LabelR.c_str()));
+					}
+					delete c;}
+					//else { std::cout<<" h2_tR_REFvsER_new["<<index2<<"] not found "<<std::endl;}
+
+					if(i==2 || i==3){
+						// --- draw timeL-time_REF vs energyL (post)
+						c = new TCanvas(Form("c_tL_REFvsEL_post_%s",LabelL.c_str()),Form("c_tL_REFvsEL_post_%s",LabelL.c_str()));
+					    h2 = h2_tL_REFvsEL_post_new[index2];
+						if(h2){
+						h2 -> GetYaxis()->SetRangeUser(2000, 10000);
+                    	h2 -> SetTitle(Form(";energy_{L} [a.u.]; time_{L} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tL_REFvsEL_post_new[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+						//fitFunc_timeL_post_new[index2] = new TF1(Form("fitFunc_timeL_post_%s",LabelL.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",xminL,xmaxL);
+						fitFunc_timeL_post_new[index2] = new TF1(Form("fitFunc_timeL_post_%s",LabelL.c_str()),"pol3",xminL,xmaxL);
+						prof->Fit(fitFunc_timeL_post_new[index2],"QRS");
+						fitFunc_timeL_post_new[index2] -> SetLineColor(kRed);
+						fitFunc_timeL_post_new[index2] -> SetLineWidth(2);
+						fitFunc_timeL_post_new[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{post bar %02dL type%02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,i,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> SetTextColor(kRed);
+						latex -> Draw("same");
+						
+						lineL = new TLine(xminL,2000,xminL,10000);
+						lineL -> SetLineWidth(2);
+	                	lineL -> SetLineStyle(7);
+	                	lineL -> Draw("same");
+						lineL = new TLine(xmaxL,2000,xmaxL,10000);
+						lineL -> SetLineWidth(2);
+	                	lineL -> SetLineStyle(7);
+	                	lineL -> Draw("same");
+						c->Print(Form("%s/timeCorrelation_cut_all/c_tL_REFvsEL_post_%s.png",plotDir.c_str(),LabelL.c_str()));
+						c->Print(Form("%s/timeCorrelation_cut_all/c_tL_REFvsEL_post_%s.pdf",plotDir.c_str(),LabelL.c_str()));
+						delete c;}
+						else { std::cout<<" h2_tL_REFvsEL_post_new["<<index2<<"] not found "<<std::endl;}
+						// --- draw timeR-time_REF vs energyR (post)
+						c = new TCanvas(Form("c_tR_REFvsER_post_%s",LabelR.c_str()),Form("c_tR_REFvsER_post_%s",LabelR.c_str()));
+						h2 = h2_tR_REFvsER_post_new[index2];
+						if(h2){
+						h2 -> GetYaxis()->SetRangeUser(2000, 10000);
+                    	h2 -> SetTitle(Form(";energy_{R} [a.u.]; time_{R} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tR_REFvsER_post_new[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+						//fitFunc_timeR_post_new[index2] = new TF1(Form("fitFunc_timeR_post_%s",LabelR.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",xminR,xmaxR);
+						fitFunc_timeR_post_new[index2] = new TF1(Form("fitFunc_timeR_post_%s",LabelR.c_str()),"pol3",xminR,xmaxR);
+						prof->Fit(fitFunc_timeR_post_new[index2],"QRS");
+						fitFunc_timeR_post_new[index2] -> SetLineColor(kRed);
+						fitFunc_timeR_post_new[index2] -> SetLineWidth(2);
+						fitFunc_timeR_post_new[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{post bar %02dR type%02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,i,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> SetTextColor(kRed);
+						latex -> Draw("same");
+
+						lineR = new TLine(xminR,2000,xminR,10000);
+						lineR -> SetLineWidth(2);
+	                	lineR -> SetLineStyle(7);
+	                	lineR -> Draw("same");
+						lineR = new TLine(xmaxR,2000,xmaxR,10000);
+						lineR -> SetLineWidth(2);
+	                	lineR -> SetLineStyle(7);
+	                	lineR -> Draw("same");
+                        if(i==2){
+							c->Print(Form("%s/timeCorrelation_cut_all/c_tR_REFvsER_post_%s.png",plotDir.c_str(),LabelR.c_str()));
+							c->Print(Form("%s/timeCorrelation_cut_all/c_tR_REFvsER_post_%s.pdf",plotDir.c_str(),LabelR.c_str()));
+						}
+						delete c;}
+						//else { std::cout<<" h2_tR_REFvsER_post_new["<<index2<<"] not found "<<std::endl;}
+					}
+					if(i==4 || i==3){
+						// --- draw timeL-time_REF vs energyL (pre)
+						c = new TCanvas(Form("c_tL_REFvsEL_pre_%s",LabelL.c_str()),Form("c_tL_REFvsEL_pre_%s",LabelL.c_str()));
+					    h2 = h2_tL_REFvsEL_pre_new[index2];
+						if(h2){
+						h2 -> GetYaxis()->SetRangeUser(2000, 10000);
+                    	h2 -> SetTitle(Form(";energy_{L} [a.u.]; time_{L} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tL_REFvsEL_pre_new[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+						//fitFunc_timeL_pre_new[index2] = new TF1(Form("fitFunc_timeL_pre_%s",LabelL.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",xminL,xmaxL);
+						fitFunc_timeL_pre_new[index2] = new TF1(Form("fitFunc_timeL_pre_%s",LabelL.c_str()),"pol3",xminL,xmaxL);
+						prof->Fit(fitFunc_timeL_pre_new[index2],"QRS");
+						fitFunc_timeL_pre_new[index2] -> SetLineColor(kRed);
+						fitFunc_timeL_pre_new[index2] -> SetLineWidth(2);
+						fitFunc_timeL_pre_new[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{pre bar %02dL type%02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,i,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> SetTextColor(kRed);
+						latex -> Draw("same");
+
+						lineL = new TLine(xminL,2000,xminL,10000);
+						lineL -> SetLineWidth(2);
+	                	lineL -> SetLineStyle(7);
+	                	lineL -> Draw("same");
+                        lineL = new TLine(xmaxL,2000,xmaxL,10000);
+						lineL -> SetLineWidth(2);
+	                	lineL -> SetLineStyle(7);
+	                	lineL -> Draw("same");
+						c->Print(Form("%s/timeCorrelation_cut_all/c_tL_REFvsEL_pre_%s.png",plotDir.c_str(),LabelL.c_str()));
+						c->Print(Form("%s/timeCorrelation_cut_all/c_tL_REFvsEL_pre_%s.pdf",plotDir.c_str(),LabelL.c_str()));
+						delete c;}
+						else { std::cout<<" h2_tL_REFvsEL_pre_new["<<index2<<"] not found "<<std::endl;}
+						// --- draw timeR-time_REF vs energyR (post)
+						c = new TCanvas(Form("c_tR_REFvsER_pre_%s",LabelR.c_str()),Form("c_tR_REFvsER_pre_%s",LabelR.c_str()));
+						h2 = h2_tR_REFvsER_pre_new[index2];
+						if(h2){
+						h2 -> GetYaxis()->SetRangeUser(2000, 10000);
+                    	h2 -> SetTitle(Form(";energy_{R} [a.u.]; time_{R} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tR_REFvsER_pre_new[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+						//fitFunc_timeR_pre_new[index2] = new TF1(Form("fitFunc_timeR_pre_%s",LabelR.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",xminR,xmaxR);
+						fitFunc_timeR_pre_new[index2] = new TF1(Form("fitFunc_timeR_pre_%s",LabelR.c_str()),"pol3",xminR,xmaxR);
+						prof->Fit(fitFunc_timeR_pre_new[index2],"QRS");
+						fitFunc_timeR_pre_new[index2] -> SetLineColor(kRed);
+						fitFunc_timeR_pre_new[index2] -> SetLineWidth(2);
+						fitFunc_timeR_pre_new[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{pre bar %02dR type%02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,i,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> SetTextColor(kRed);
+						latex -> Draw("same");
+
+						lineR = new TLine(xminR,2000,xminR,10000);
+						lineR -> SetLineWidth(2);
+	                	lineR -> SetLineStyle(7);
+	                	lineR -> Draw("same");
+						lineR = new TLine(xmaxR,2000,xmaxR,10000);
+						lineR -> SetLineWidth(2);
+	                	lineR -> SetLineStyle(7);
+	                	lineR -> Draw("same");
+                        if(i==4){
+							c->Print(Form("%s/timeCorrelation_cut_all/c_tR_REFvsER_pre_%s.png",plotDir.c_str(),LabelR.c_str()));
+							c->Print(Form("%s/timeCorrelation_cut_all/c_tR_REFvsER_pre_%s.pdf",plotDir.c_str(),LabelR.c_str()));
+						}
+						delete c;}
+						//else { std::cout<<" h2_tR_REFvsER_pre_new["<<index2<<"] not found "<<std::endl;}
+					}
+				}
+			}
+		}
+	}
+
+	// --- loop 1.75
+	for(auto mapIt : trees){
+        ModuleEventClass* anEvent = new ModuleEventClass();
+      
+        mapIt.second -> SetBranchAddress("event",&anEvent);
+      
+        int nEntries = mapIt.second->GetEntries();
+
+        for(int entry = 0; entry < nEntries; ++entry){
+	        if( entry%100000 == 0 ) {
+	            std::cout << ">>> loop 1.75 : " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	            //TrackProcess(cpu, mem, vsz, rss);
+	        }
+	        mapIt.second -> GetEntry(entry);
+
+			bool barFound = std::find(barList.begin(), barList.end(), anEvent->barID) != barList.end() ;
+	        if (!barFound) continue;
+			int index1( (10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
+            if(!ranges_all[index1]) continue;
+			if(!accept_new[index1][entry]) continue;
+			//if (anEvent->barID>=4){std::cout<<"line 1949 "<<std::endl;}
+            int energyBinAverage=0;
+			
+			energyBinAverage = FindBin(anEvent->energySum,ranges_all[index1])+1;
+            double index2_new ((10000000*energyBinAverage)+index1);
+            double index2( (100000000*anEvent->nClusters)+index2_new);
+			
+
+            if(h1_deltaT_REF_corr_all_new[index2_new]==NULL){
+				h1_deltaT_REF_corr_all_new[index2_new] = new TH1F(Form("h1_deltaT_REF_corr_new_bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage),"",2000,-24000,24000);
+			}
+			if(fabs(anEvent->timeR-anEvent->timeL)<10000 && anEvent->energyL_ext>0 && anEvent->energyR_ext>0){
+				double t_ave,t_mean1,t_mean2,t_mean3,energy1,energy2,energy3;
+				double t_REF = 0.5*(static_cast<double>(anEvent->timeL_ext)+static_cast<double>(anEvent->timeR_ext));
+				double tL, tR, tL_pre, tL_post, tR_pre, tR_post, corr;
+				bool check = false;
+
+				if(!fitFunc_timeL_new[index2] || !fitFunc_timeR_new[index2]) continue;
+			
+                
+				/*if(anEvent->nClusters==1 && anEvent->energyL>fitRanges[index2].at(0) && anEvent->energyR < fitRanges[index2].at(1) && anEvent->energyL>fitRanges[index2].at(2) && anEvent->energyR < fitRanges[index2].at(3)) {
+					corr = fitFunc_timeL_new[index2]->Eval(anEvent->energyL) - fitFunc_timeL_new[index2]->Eval(400);
+					tL = static_cast<double>(anEvent->timeL) - corr;
+					corr = fitFunc_timeR_new[index2]->Eval(anEvent->energyR) - fitFunc_timeR_new[index2]->Eval(400);
+					tR = static_cast<double>(anEvent->timeR) - corr;
+					t_ave = 0.5*(tL + tR);
+					check = true;
+			    }*/
+
+				if(anEvent->nClusters==4 && anEvent->energyL>fitRanges[index2].at(0) && anEvent->energyR < fitRanges[index2].at(1) && anEvent->energyL>fitRanges[index2].at(2) && anEvent->energyR < fitRanges[index2].at(3)){
+					if(!fitFunc_timeL_pre_new[index2] || !fitFunc_timeR_pre_new[index2]) continue;
+                    energy1 = 0.5*(anEvent->energyL + anEvent->energyR);
+					corr = fitFunc_timeL_new[index2]->Eval(anEvent->energyL) - fitFunc_timeL_new[index2]->Eval(400);
+					tL = static_cast<double>(anEvent->timeL) - corr;
+					corr = fitFunc_timeR_new[index2]->Eval(anEvent->energyR) - fitFunc_timeR_new[index2]->Eval(400);
+					tR = static_cast<double>(anEvent->timeR) - corr;
+					t_mean1 = 0.5*(tL + tR);
+                    
+					energy2 = 0.5*(anEvent->energyL_pre + anEvent->energyR_pre);
+					corr = fitFunc_timeL_pre_new[index2]->Eval(anEvent->energyL_pre) - fitFunc_timeL_pre_new[index2]->Eval(400);
+					tL_pre = static_cast<double>(anEvent->timeL_pre) - corr;
+					corr = fitFunc_timeR_pre_new[index2]->Eval(anEvent->energyR_pre) - fitFunc_timeR_pre_new[index2]->Eval(400);
+					tR_pre = static_cast<double>(anEvent->timeR_pre) - corr;
+					t_mean2 = 0.5*(tL_pre + tR_pre);
+
+					t_ave = (energy1*t_mean1 + energy2*t_mean2)/(energy1+energy2);
+					check = true;
+				}
+
+				if(anEvent->nClusters==2 && anEvent->energyL>fitRanges[index2].at(0) && anEvent->energyR < fitRanges[index2].at(1) && anEvent->energyL>fitRanges[index2].at(2) && anEvent->energyR < fitRanges[index2].at(3)){
+					if(!fitFunc_timeL_post_new[index2] || !fitFunc_timeR_post_new[index2]) continue;
+                    energy1 = 0.5*(anEvent->energyL + anEvent->energyR);
+					corr = fitFunc_timeL_new[index2]->Eval(anEvent->energyL) - fitFunc_timeL_new[index2]->Eval(400);
+					tL = static_cast<double>(anEvent->timeL) - corr;
+					corr = fitFunc_timeR_new[index2]->Eval(anEvent->energyR) - fitFunc_timeR_new[index2]->Eval(400);
+					tR = static_cast<double>(anEvent->timeR) - corr;
+					t_mean1 = 0.5*(tL + tR);
+                    
+					energy2 = 0.5*(anEvent->energyL_post + anEvent->energyR_post);
+					corr = fitFunc_timeL_post_new[index2]->Eval(anEvent->energyL_post) - fitFunc_timeL_post_new[index2]->Eval(400);
+					tL_post = static_cast<double>(anEvent->timeL_post) - corr;
+					corr = fitFunc_timeR_post_new[index2]->Eval(anEvent->energyR_post) - fitFunc_timeR_post_new[index2]->Eval(400);
+					tR_post = static_cast<double>(anEvent->timeR_post) - corr;
+					t_mean2 = 0.5*(tL_post + tR_post);
+
+					t_ave = (energy1*t_mean1 + energy2*t_mean2)/(energy1+energy2);
+					check = true;
+				}
+
+				/*if(anEvent->nClusters==3 && anEvent->energyL>fitRanges[index2].at(0) && anEvent->energyR < fitRanges[index2].at(1) && anEvent->energyL>fitRanges[index2].at(2) && anEvent->energyR < fitRanges[index2].at(3)){
+					if(!fitFunc_timeL_post_new[index2] || !fitFunc_timeR_post_new[index2]) continue;
+					if(!fitFunc_timeL_pre_new[index2] || !fitFunc_timeR_pre_new[index2]) continue;
+                    energy1 = 0.5*(anEvent->energyL + anEvent->energyR);
+					corr = fitFunc_timeL_new[index2]->Eval(anEvent->energyL) - fitFunc_timeL_new[index2]->Eval(400);
+					tL = static_cast<double>(anEvent->timeL) - corr;
+					corr = fitFunc_timeR_new[index2]->Eval(anEvent->energyR) - fitFunc_timeR_new[index2]->Eval(400);
+					tR = static_cast<double>(anEvent->timeR) - corr;
+					t_mean1 = 0.5*(tL + tR);
+                    
+					energy2 = 0.5*(anEvent->energyL_post + anEvent->energyR_post);
+					corr = fitFunc_timeL_post_new[index2]->Eval(anEvent->energyL_post) - fitFunc_timeL_post_new[index2]->Eval(400);
+					tL_post = static_cast<double>(anEvent->timeL_post) - corr;
+					corr = fitFunc_timeR_post_new[index2]->Eval(anEvent->energyR_post) - fitFunc_timeR_post_new[index2]->Eval(400);
+					tR_post = static_cast<double>(anEvent->timeR_post) - corr;
+					t_mean2 = 0.5*(tL_post + tR_post);
+
+					energy3 = 0.5*(anEvent->energyL_pre + anEvent->energyR_pre);
+					corr = fitFunc_timeL_pre_new[index2]->Eval(anEvent->energyL_pre) - fitFunc_timeL_pre_new[index2]->Eval(400);
+					tL_pre = static_cast<double>(anEvent->timeL_pre) - corr;
+					corr = fitFunc_timeR_pre_new[index2]->Eval(anEvent->energyR_pre) - fitFunc_timeR_pre_new[index2]->Eval(400);
+					tR_pre = static_cast<double>(anEvent->timeR_pre) - corr;
+					t_mean3 = 0.5*(tL_pre + tR_pre);
+
+					t_ave = (energy1*t_mean1 + energy2*t_mean2 + energy3*t_mean3)/(energy1+energy2+energy3);
+					check = true;
+				}*/
+				if(check){
+           			h1_deltaT_REF_corr_all_new[index2_new] -> Fill(t_ave - t_REF);
+				}
+				
+				
+			}
+
+		}
+	}  
+
+	std::cout<<"\n "<<std::endl; 
+	std::cout<<"Drawing 1.75 plots ... "<<std::endl;
+    for(auto stepLabel : stepLabels){
+        float Vov = map_Vovs[stepLabel];
+        float vth1 = map_ths[stepLabel];
+		for(int iBar = 0; iBar < 16; ++iBar) {
+	        bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
+            if (!barFound) continue;      
+	  
+	        std::string labelLR(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));          
+	  
+	        int index1( (10000*int(Vov*100.)) + (100*vth1) + iBar );
+            int nEnergyBins;
+			if( !ranges_all[index1]) continue;
+			nEnergyBins = ranges_all[index1]->size()-1;
+			for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin){
+			    double index2_new ((10000000*iEnergyBin)+index1);
+            	c = new TCanvas(Form("c_deltaT_REF_corr_%s",labelLR.c_str()),Form("c_deltaT_REF_corr_%s",labelLR.c_str()));
+				histo = h1_deltaT_REF_corr_all_new[index2_new];
+				if(histo){
+					histo -> SetLineWidth(2);
+					histo -> SetLineColor(kAzure+2);
+					histo -> SetMarkerColor(kAzure+2);
+					TF1* fitFunc = new TF1(Form("fitFunc_deltaT_corr_REF_%s",labelLR.c_str()),"gaus",-10000, 10000);
+					drawDeltaT(c, histo, fitFunc, Form("energy corrected "), "en.Corr","");
+
+					latex = new TLatex(0.14,0.88,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+					latex -> SetNDC();
+					latex -> SetTextFont(42);
+					latex -> SetTextSize(0.04);
+					latex -> SetTextColor(kRed);
+					latex -> Draw("same");
+
+					outFile -> cd();
+					histo -> Write();
+					c -> Print(Form("%s/CTR_REF/cut_on_all/energyCorr/c_deltaT_REF_raw_%s.png",plotDir.c_str(),labelLR.c_str()));
+					c -> Print(Form("%s/CTR_REF/cut_on_all/energyCorr/c_deltaT_REF_raw_%s.pdf",plotDir.c_str(),labelLR.c_str()));
+					delete c;
+				}
+			}
+		}
+	}
+
+
     //------------------------
     //--- 2nd loop over events
     std::map<int,std::map<int,bool> > accept;
+
     int accepted2=0;
 	std::map<double,int> g_index;
     for(auto mapIt : trees){
@@ -1553,9 +2249,9 @@ int main(int argc, char** argv) {
 				energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits[index1])+1;
 				if(energyBinAverage < 1 ) continue;// selezione eventi doppi "POST"
 			}
-			else if(anEvent->nClusters==2 && anEvent->energyL_post<0 && anEvent->energyR_post<0){
-				energyBinAverage = -1;
-				continue; // escludo eventi "PRE"
+			else if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0){
+				energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits4[index1])+1;
+				if(energyBinAverage < 1 ) continue; // selezione eventi doppi "PRE"
 			}
 			else if(anEvent->nClusters==3){
 				energyBinAverage=1; 
@@ -1565,7 +2261,8 @@ int main(int argc, char** argv) {
             double index2( (100000000*anEvent->nClusters)+(10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
 	  
 	        accept[index1][entry] = true;
-	        
+
+	        //double index4((10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
 
 	        if( h1_energyRatio[index2] == NULL ){// h1 per energy ratio(L/R),tot(L/R) ,fase , carica e deltaT_raw per una baretta 
 	            std::string labelLR_energyBin(Form("bar%02dL-R_Vov%.2f_th%02d_energyBin%02d_%02dHits",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage,anEvent->nClusters));
@@ -1595,6 +2292,10 @@ int main(int argc, char** argv) {
 				
 				h2_energy_correlation[index2]= new TH2F(Form("h2_energy_correlation_%s",labelLR_energyBin.c_str()),"",500,0,1000,500,0,1000);
 				p1_energy_correlation[index2]= new TProfile(Form("p1_energy_correleation_%s",labelLR_energyBin.c_str()),"",100,0,1000);
+				h2_energy_correlation3L[index2]= new TH2F(Form("h2_energy_correlation3L_%s",labelLR_energyBin.c_str()),"",1000,0,2000,500,0,1000);
+				p1_energy_correlation3L[index2]= new TProfile(Form("p1_energy_correleation3L_%s",labelLR_energyBin.c_str()),"",80,0,2000);
+				h2_energy_correlation3R[index2]= new TH2F(Form("h2_energy_correlation3R_%s",labelLR_energyBin.c_str()),"",500,0,1000,1000,0,2000);
+				p1_energy_correlation3R[index2]= new TProfile(Form("p1_energy_correleation3R_%s",labelLR_energyBin.c_str()),"",40,0,1000);
 			}
 
 			if(p1_tL_eL[index2]==NULL){
@@ -1619,6 +2320,11 @@ int main(int argc, char** argv) {
 				h1_energyLR_ext[index3] = new TH1F(Form("h1_energyLR_ext_Vov%.2f_th%02d",anEvent->Vov,anEvent->vth1),"",512,0,1024);
 
 			}
+
+            if(h1_deltaT_REF_raw_all[index1]==NULL){
+				h1_deltaT_REF_raw_all[index1] = new TH1F(Form("h1_deltaT_REF_raw_bar%02dL-R_Vov%.2f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth1,energyBinAverage),"",2000,-24000,24000);
+			}
+
             // reference module 
 			if (fabs(anEvent->timeR_ext-anEvent->timeL_ext)<10000 && anEvent->energyR_ext>0 && anEvent->energyL_ext>0){
 				h1_energyRatio_REF[index3] -> Fill( anEvent->energyR_ext / anEvent->energyL_ext );
@@ -1643,6 +2349,43 @@ int main(int argc, char** argv) {
 		            h1_qT1Mean[index2] -> Fill( 0.5 * (anEvent->qT1R + anEvent->qT1L) );
 	            }
 	        }
+
+			if(fabs(anEvent->timeR-anEvent->timeL)<10000 && anEvent->energyR_ext>0 && anEvent->energyL_ext>0){
+                double t_ave,t_mean1,t_mean2,t_mean3,energy1,energy2,energy3;
+				double t_REF = 0.5*(static_cast<double>(anEvent->timeL_ext)+static_cast<double>(anEvent->timeR_ext));
+				if(anEvent->nClusters==1){
+					t_ave = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+				}
+				else if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){
+					energy1 = 0.5*(anEvent->energyL+anEvent->energyR);
+					energy2 = 0.5*(anEvent->energyL_post+anEvent->energyR_post);
+
+					t_mean1 = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+					t_mean2 = 0.5*(static_cast<double>(anEvent->timeL_post) + static_cast<double>(anEvent->timeR_post));
+					t_ave = (energy1*t_mean1 + energy2*t_mean2)/(energy1+energy2);
+				}
+				else if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0){
+					energy1 = 0.5*(anEvent->energyL+anEvent->energyR);
+					energy2 = 0.5*(anEvent->energyL_pre+anEvent->energyR_pre);
+
+					t_mean1 = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+					t_mean2 = 0.5*(static_cast<double>(anEvent->timeL_pre) + static_cast<double>(anEvent->timeR_pre));
+					t_ave = (energy1*t_mean1 + energy2*t_mean2)/(energy1+energy2);
+				}
+				/*else if(anEvent->nClusters==3 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0 && anEvent->energyL_post>0 && anEvent->energyR_post>0){
+					energy1 = 0.5*(anEvent->energyL+anEvent->energyR);
+					energy2 = 0.5*(anEvent->energyL_pre+anEvent->energyR_pre);
+					energy3 = 0.5*(anEvent->energyL_post+anEvent->energyR_post);
+
+					t_mean1 = 0.5*(static_cast<double>(anEvent->timeL)+static_cast<double>(anEvent->timeR));
+					t_mean2 = 0.5*(static_cast<double>(anEvent->timeL_pre) + static_cast<double>(anEvent->timeR_pre));
+					t_mean3 = 0.5*(static_cast<double>(anEvent->timeL_post) + static_cast<double>(anEvent->timeR_post));
+					t_ave = (energy1*t_mean1 + energy2*t_mean2 + energy3*t_mean3)/(energy1 + energy2 + energy3);
+				}*/
+				if(fabs(t_ave - t_REF)<10000){
+                   h1_deltaT_REF_raw_all[index1]->Fill(t_ave - t_REF);
+				}
+			}
 
 			/*if(anEvent->nClusters==2){
 				p1_tL_eL[index2] -> Fill(anEvent->energyL,anEvent->timeL);
@@ -1695,6 +2438,16 @@ int main(int argc, char** argv) {
 				}
                 																 
 			} // --- double hits (post)
+			if(anEvent->nClusters==3){
+				if(anEvent->barID==0 || anEvent->barID==15) continue;
+				double E_mean=0.5*(anEvent->energyL+anEvent->energyR);
+				double E_mean_post=0.5*(anEvent->energyL_post+anEvent->energyR_post); 
+				double E_mean_pre=0.5*(anEvent->energyL_pre+anEvent->energyR_pre);
+				h2_energy_correlation3L[index2]->Fill(E_mean + E_mean_post,E_mean_pre); 
+				p1_energy_correlation3L[index2]->Fill(E_mean + E_mean_post,E_mean_pre); 
+				h2_energy_correlation3R[index2]->Fill( E_mean_post,E_mean_pre + E_mean); 
+				p1_energy_correlation3R[index2]->Fill( E_mean_post,E_mean_pre + E_mean);
+			}
  
 	    } // end loop over entries
     }
@@ -1705,8 +2458,7 @@ int main(int argc, char** argv) {
 		//std::cout<<"data tree: "<<mapIt.first<<" entries: "<<mapIt.second->GetEntries()<<std::endl;
 		totEntries+=mapIt.second->GetEntries();
 	}
-	std::cout<<"\ntotal events at start for new selection: "<<totEntries<<std::endl;
-      
+	std::cout<<"\ntotal events at start for new selection: "<<totEntries<<std::endl;      
   
     //------------------
     //--- draw 2nd plots
@@ -1723,8 +2475,10 @@ int main(int argc, char** argv) {
 	std::map<double, TF1*> fitFunc_timeAve_enCorr;
     std::map<double, TF1*> fitFunc_timeL;
 	std::map<double, TF1*> fitFunc_timeR;
-	std::map<double, TF1*> fitFunc_timeL_2;
-	std::map<double, TF1*> fitFunc_timeR_2;
+	std::map<double, TF1*> fitFunc_timeL_pre;
+	std::map<double, TF1*> fitFunc_timeR_pre;
+	std::map<double, TF1*> fitFunc_timeL_post;
+	std::map<double, TF1*> fitFunc_timeR_post;
 	std::map<double,TF1*> fitFunc_energyRatioCorr_bars;
 	std::map<double,TF1*> fitFunc_energyRatioCorr_bars_w;
   
@@ -1890,8 +2644,31 @@ int main(int argc, char** argv) {
 			std::string labelBars(Form("bars%02d-%02d_%s",iBar,iBar+1,stepLabel.c_str()));
 	  
 	        int index1( (10000*int(Vov*100.)) + (100*vth1) + iBar );
+            c = new TCanvas(Form("c_deltaT_REF_raw_%s",labelLR.c_str()),Form("c_deltaT_REF_raw_%s",labelLR.c_str()));
+			histo = h1_deltaT_REF_raw_all[index1];
+			if(histo){
+				histo -> SetLineWidth(2);
+				histo -> SetLineColor(kAzure);
+				histo -> SetMarkerColor(kAzure);
+				TF1* fitFunc = new TF1(Form("fitFunc_deltaT_raw_REF_%s",labelLR.c_str()),"gaus",-10000, 10000);
+				drawDeltaT(c, histo, fitFunc, Form("raw "), "raw","");
+
+				latex = new TLatex(0.14,0.88,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+				latex -> SetNDC();
+				latex -> SetTextFont(42);
+				latex -> SetTextSize(0.04);
+				latex -> SetTextColor(kRed);
+				latex -> Draw("same");
+
+				outFile -> cd();
+				histo -> Write();
+				c -> Print(Form("%s/CTR_REF/all/raw/c_deltaT_REF_raw_%s.png",plotDir.c_str(),labelLR.c_str()));
+				c -> Print(Form("%s/CTR_REF/all/raw/c_deltaT_REF_raw_%s.pdf",plotDir.c_str(),labelLR.c_str()));
+				delete c;
+			}
+
 	  
-	        for(int i=1; i<=3;i++){
+	        for(int i=1; i<=4;i++){
 				int nEnergyBins;
 				if(i==1){
 				    if( !ranges["L-R"][index1]) continue;
@@ -1901,19 +2678,26 @@ int main(int argc, char** argv) {
 				    if( !ranges_doubleHits[index1]) continue;
 					nEnergyBins = ranges_doubleHits[index1]->size()-1;
 				}
+			    else if(i==4){
+				    if( !ranges_doubleHits4[index1]) continue;
+					nEnergyBins = ranges_doubleHits4[index1]->size()-1;
+				}
 				else{ nEnergyBins = 1;}
 
 				for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin){
 					//if (ranges["L-R"][index1]->at(iEnergyBin)<0) continue;
 					double index2( 100000000*i+(10000000*iEnergyBin+index1) );
-			  
 					if (!h1_energyRatio[index2]) continue;
-					std::string labelLR_energyBin;
+					std::string labelLR_energyBin = Form("%s_energyBin%02d",labelLR.c_str(),iEnergyBin);
 					std::string labelBars_energyBin;
 					if(i==1){labelLR_energyBin = Form("%s_energyBin%02d_S",labelLR.c_str(),iEnergyBin);}
 					else if(i==2){
 						labelLR_energyBin = Form("%s_energyBin%02d_D",labelLR.c_str(),iEnergyBin);
 						labelBars_energyBin = Form("%s_energyBin%02d_D",labelBars.c_str(),iEnergyBin);
+					}
+					else if(i==4){
+						labelLR_energyBin = Form("%s_energyBin%02d_DII",labelLR.c_str(),iEnergyBin);
+						labelBars_energyBin = Form("%s_energyBin%02d_DII",labelBars.c_str(),iEnergyBin);
 					}
 					else if(i==3){labelLR_energyBin = Form("%s_energyBin%02d_T",labelLR.c_str(),iEnergyBin);}
 			  
@@ -2421,6 +3205,46 @@ int main(int argc, char** argv) {
 					    delete c;
 					    delete latex;	
 					}
+					if(i==3){
+						// --- draw energy correlation
+						c = new TCanvas(Form("c_energyCorrelation3L_%s",labelLR_energyBin.c_str()),Form("c_energyCorrelation3L_%s",labelLR_energyBin.c_str()));
+						if(!p1_energy_correlation3L[index2]) continue;
+					    c -> SetGridy();
+			  
+					    h2 = h2_energy_correlation3L[index2]; 
+					    h2 -> SetTitle(Form(";bar %02d + bar %02d energy [a.u.];bar %02d energy [a.u.]",iBar,iBar+1,iBar-1));
+					    h2 -> Draw("colz");
+					    prof = p1_energy_correlation3L[index2];
+						prof -> SetMarkerSize(0.4);
+					    prof -> Draw("psame");			           
+					    latex = new TLatex(0.40,0.85,Form("V_{OV} = %.2f V, th. = %d DAC",Vov,int(vth1)));
+					    latex -> SetNDC();
+					    latex -> SetTextFont(42);
+					    latex -> SetTextSize(0.04);
+					    latex -> SetTextColor(kRed);
+					    latex -> Draw("same");
+			  
+					    c -> Print(Form("%s/energyCorrelation/c_energyCorrelation3L_%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
+						c -> Print(Form("%s/energyCorrelation/c_energyCorrelation3L_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+					    delete c;
+
+					    c = new TCanvas(Form("c_energyCorrelation3R_%s",labelLR_energyBin.c_str()),Form("c_energyCorrelation3R_%s",labelLR_energyBin.c_str()));
+						if(!p1_energy_correlation3R[index2]) continue;
+					    c -> SetGridy();
+			  
+					    h2 = h2_energy_correlation3R[index2]; 
+					    h2 -> SetTitle(Form(";bar %02d energy [a.u.];bar %02d + bar %02d energy [a.u.]",iBar+1,iBar,iBar-1));
+					    h2 -> Draw("colz");
+					    prof = p1_energy_correlation3R[index2];
+						prof -> SetMarkerSize(0.4);
+					    prof -> Draw("psame");			           
+					    latex -> Draw("same");
+			  
+					    c -> Print(Form("%s/energyCorrelation/c_energyCorrelation3R_%s.png",plotDir.c_str(),labelLR_energyBin.c_str()));
+						c -> Print(Form("%s/energyCorrelation/c_energyCorrelation3R_%s.pdf",plotDir.c_str(),labelLR_energyBin.c_str()));
+					    delete c;
+					    delete latex;	
+					}
 			  
 				} // --- end loop over energy bins
 
@@ -2437,6 +3261,10 @@ int main(int argc, char** argv) {
 	int accepted3=0;
 	std::map<double,double> xMax_h2_tL_REFvseL;
 	std::map<double,double> xMax_h2_tR_REFvseR;
+	std::map<double,double> xMax_h2_tL_REFvseL_post;
+	std::map<double,double> xMax_h2_tR_REFvseR_post;
+	std::map<double,double> xMax_h2_tL_REFvseL_pre;
+	std::map<double,double> xMax_h2_tR_REFvseR_pre;
 	std::map<double,double> xMax_h2_tAve_REFvsE;
 	std::map<double, std::vector<int> > cut_ev_counterL; 
 	std::map<double, std::vector<int> > cut_ev_counterR;
@@ -2463,14 +3291,11 @@ int main(int argc, char** argv) {
 	        int energyBinAverage=0;
 			if(anEvent->nClusters==1) {energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;	}
 			else if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits[index1])+1;}
-			else if(anEvent->nClusters==2 && anEvent->energyL_post<0 && anEvent->energyR_post<0){
-				energyBinAverage = -1;
-				continue; // escludo eventi "PRE"
-			}
+			else if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits4[index1])+1;}
 			else if(anEvent->nClusters==3){	energyBinAverage=1;}
 
 	        double index2( (100000000*anEvent->nClusters)+(10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth1) + anEvent->barID );
-
+            
 			if(!fitFunc_energyRatio[index2]) continue;
 	        float energyRatioMean = fitFunc_energyRatio[index2]->GetParameter(1);
 	        float energyRatioSigma = fitFunc_energyRatio[index2]->GetParameter(2);
@@ -2478,7 +3303,7 @@ int main(int argc, char** argv) {
             float totRatioMean = fitFunc_totRatio[index2]->GetParameter(1);
 	        float totRatioSigma = fitFunc_totRatio[index2]->GetParameter(2);
 	  
-	        if( fabs(anEvent->totR/anEvent->totL-totRatioMean) > 3.*totRatioSigma  ||  (anEvent->totR/anEvent->totL)>5 || (anEvent->totR/anEvent->totL)<0 ) {
+	        if( (fabs(anEvent->totR/anEvent->totL-totRatioMean) > 3.*totRatioSigma  ||  (anEvent->totR/anEvent->totL)>5 || (anEvent->totR/anEvent->totL)<0) && anEvent->nClusters!=4) {
 	            accept[index1][entry] = false;
 	            continue;
 	        }
@@ -2515,6 +3340,16 @@ int main(int argc, char** argv) {
 				p1_tL_REFvsEL[index2] = new TProfile(Form("p1_tL_REFvsEL_%s",labelL.c_str()),"",50,0,1000);
 				h2_tR_REFvsER[index2] = new TH2F(Form("h2_tR_REFvsER_%s",labelR.c_str()),"",500,0,1000,2000,-24000,24000);
 				p1_tR_REFvsER[index2] = new TProfile(Form("p1_tR_REFvsER_%s",labelR.c_str()),"",50,0,1000);
+
+				h2_tL_REFvsEL_pre[index2] = new TH2F(Form("h2_tL_REFvsEL_pre%s",labelL.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tL_REFvsEL_pre[index2] = new TProfile(Form("p1_tL_REFvsEL_pre%s",labelL.c_str()),"",50,0,1000);
+				h2_tR_REFvsER_pre[index2] = new TH2F(Form("h2_tR_REFvsER_pre%s",labelR.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tR_REFvsER_pre[index2] = new TProfile(Form("p1_tR_REFvsER_pre%s",labelR.c_str()),"",50,0,1000);
+
+				h2_tL_REFvsEL_post[index2] = new TH2F(Form("h2_tL_REFvsEL_post_%s",labelL.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tL_REFvsEL_post[index2] = new TProfile(Form("p1_tL_REFvsEL_post_%s",labelL.c_str()),"",50,0,1000);
+				h2_tR_REFvsER_post[index2] = new TH2F(Form("h2_tR_REFvsER_post_%s",labelR.c_str()),"",500,0,1000,2000,-24000,24000);
+				p1_tR_REFvsER_post[index2] = new TProfile(Form("p1_tR_REFvsER_post_%s",labelR.c_str()),"",50,0,1000);
 
 				h2_tL_wREFvsEL[index2] = new TH2F(Form("h2_tL_wREFvsEL_%s",labelL.c_str()),"",500,0,1000,2000,-24000,24000);
 				p1_tL_wREFvsEL[index2] = new TProfile(Form("p1_tL_wREFvsEL_%s",labelL.c_str()),"",80,0,1000);
@@ -2639,8 +3474,8 @@ int main(int argc, char** argv) {
 				    h2_tL_REFvsE_REF[index2] -> Fill(E_mean_REF, anEvent->timeL - time_ave_REF);
 				    h2_tR_REFvsE_REF[index2] -> Fill(E_mean_REF, anEvent->timeR - time_ave_REF);
 
-				    h2_tL_wREFvsEL[index2] ->Fill(anEvent->energyL, anEvent->timeL - time_ave_wREF);
-				    p1_tL_wREFvsEL[index2] ->Fill(anEvent->energyL, anEvent->timeL - time_ave_wREF);
+				    h2_tL_wREFvsEL[index2] -> Fill(anEvent->energyL, anEvent->timeL - time_ave_wREF);
+				    p1_tL_wREFvsEL[index2] -> Fill(anEvent->energyL, anEvent->timeL - time_ave_wREF);
 
 				    h2_tR_wREFvsER[index2] ->Fill(anEvent->energyR, anEvent->timeR - time_ave_wREF);
 				    p1_tR_wREFvsER[index2] ->Fill(anEvent->energyR, anEvent->timeR - time_ave_wREF);
@@ -2650,15 +3485,45 @@ int main(int argc, char** argv) {
 				        p1_tL_REFvsEL[index2] -> Fill(anEvent->energyL, anEvent->timeL - time_ave_REF);
 					    cut_ev_counterL[index2][0]++;
 				    }
-				    else if((anEvent->timeL - time_ave_REF) <= 3500) cut_ev_counterL[index2][1]++;
+					else if((anEvent->timeL - time_ave_REF) <= 3500) cut_ev_counterL[index2][1]++;
+
+					if((anEvent->timeL_post - time_ave_REF) >3500){ 
+					    h2_tL_REFvsEL_post[index2] -> Fill(anEvent->energyL_post, anEvent->timeL_post - time_ave_REF);
+				        p1_tL_REFvsEL_post[index2] -> Fill(anEvent->energyL_post, anEvent->timeL_post - time_ave_REF);
+				    }
                     if((anEvent->timeR - time_ave_REF) >3500){
 				        h2_tR_REFvsER[index2] -> Fill(anEvent->energyR, anEvent->timeR - time_ave_REF);
 				        p1_tR_REFvsER[index2] -> Fill(anEvent->energyR, anEvent->timeR - time_ave_REF);
 					    cut_ev_counterR[index2][0]++;
 			        }
 				    else if((anEvent->timeR - time_ave_REF) <= 3500) cut_ev_counterR[index2][1]++;
+
+					if((anEvent->timeR_post - time_ave_REF) >3500){
+				        h2_tR_REFvsER_post[index2] -> Fill(anEvent->energyR_post, anEvent->timeR_post - time_ave_REF);
+				        p1_tR_REFvsER_post[index2] -> Fill(anEvent->energyR_post, anEvent->timeR_post - time_ave_REF);
+			        }
 				}
 				
+			}
+			if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0 && anEvent->energyR_ext>0 && anEvent->energyL_ext>0){
+				double time_ave_REF = 0.5*(static_cast<double>(anEvent->timeL_ext)+static_cast<double>(anEvent->timeR_ext));// time REF module 
+
+				if((anEvent->timeL - time_ave_REF) >3500){ 
+					    h2_tL_REFvsEL[index2] -> Fill(anEvent->energyL, anEvent->timeL - time_ave_REF);
+				        p1_tL_REFvsEL[index2] -> Fill(anEvent->energyL, anEvent->timeL - time_ave_REF);
+				    }
+				 if((anEvent->timeR - time_ave_REF) >3500){
+				        h2_tR_REFvsER[index2] -> Fill(anEvent->energyR, anEvent->timeR - time_ave_REF);
+				        p1_tR_REFvsER[index2] -> Fill(anEvent->energyR, anEvent->timeR - time_ave_REF);
+			        }
+				if((anEvent->timeR_pre - time_ave_REF) >3500){
+				        h2_tR_REFvsER_pre[index2] -> Fill(anEvent->energyR_pre, anEvent->timeR_pre - time_ave_REF);
+				        p1_tR_REFvsER_pre[index2] -> Fill(anEvent->energyR_pre, anEvent->timeR_pre - time_ave_REF);
+			        }
+				if((anEvent->timeL_pre - time_ave_REF) >3500){ ;
+					    h2_tL_REFvsEL_pre[index2] -> Fill(anEvent->energyL_pre, anEvent->timeL_pre - time_ave_REF);
+				        p1_tL_REFvsEL_pre[index2] -> Fill(anEvent->energyL_pre, anEvent->timeL_pre - time_ave_REF);
+				    }
 			}
 	    }
       
@@ -2700,11 +3565,11 @@ int main(int argc, char** argv) {
 		float fitXMin = fitFunc_energyRatio_REF[index3]->GetParameter(1) - 1.*fitFunc_energyRatio_REF[index3]->GetParameter(2);
 		float fitXMax = fitFunc_energyRatio_REF[index3]->GetParameter(1) + 1.*fitFunc_energyRatio_REF[index3]->GetParameter(2);
 
-		/*fitFunc_energyRatioCorrection_REF[index3] = new TF1(Form("fitFunc_energyRatioCorr_%s",extLabel.c_str()),"pol3",fitXMin,fitXMax);
+		fitFunc_energyRatioCorrection_REF[index3] = new TF1(Form("fitFunc_energyRatioCorr_%s",extLabel.c_str()),"pol3",fitXMin,fitXMax);
 		prof -> Fit(fitFunc_energyRatioCorrection_REF[index3],"QRS+");
 		fitFunc_energyRatioCorrection_REF[index3] -> SetLineColor(kRed);
 		fitFunc_energyRatioCorrection_REF[index3] -> SetLineWidth(2);
-		fitFunc_energyRatioCorrection_REF[index3] -> Draw("same");*/
+		fitFunc_energyRatioCorrection_REF[index3] -> Draw("same");
 	
 		c -> Print(Form("%s/externalBar/c_deltaT_vs_energyRatio__%s.png",plotDir.c_str(),extLabel.c_str()));
 		c -> Print(Form("%s/externalBar/c_deltaT_vs_energyRatio__%s.pdf",plotDir.c_str(),extLabel.c_str()));
@@ -2717,7 +3582,7 @@ int main(int argc, char** argv) {
 		prof -> GetYaxis() -> SetRangeUser(-500,500);
 		prof -> Draw("psame");
 		latex -> Draw("same");
-		//fitFunc_energyRatioCorrection_REF[index3] -> Draw("same");
+		fitFunc_energyRatioCorrection_REF[index3] -> Draw("same");
 		TLine *line = new TLine(fitXMin,-500,fitXMin,500);
 		line -> SetLineColor(kBlue);
 		line -> SetLineWidth(2);
@@ -2731,7 +3596,6 @@ int main(int argc, char** argv) {
 		c -> Print(Form("%s/externalBar/c_deltaT_vs_energyRatio_p_%s.png",plotDir.c_str(),extLabel.c_str()));
 		c -> Print(Form("%s/externalBar/c_deltaT_vs_energyRatio_p_%s.pdf",plotDir.c_str(),extLabel.c_str()));
 		delete c;
-        if(vth1==15) std::cout<<"line 2503, REF "<<std::endl;
 
         for(int iBar = 0; iBar < 16; ++iBar){
 	
@@ -2745,7 +3609,7 @@ int main(int argc, char** argv) {
 	
 	        int nEnergyBins = ranges["L-R"][index1]->size()-1;
 	
-	        for(int i=1;i<=3;i++){//loop over single double triple 
+	        for(int i=1;i<=4;i++){//loop over single double triple 
 				for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin) {
 					//if (ranges["L-R"][index1]->at(iEnergyBin)<0) continue;
 					double  index2((100000000*i)+10000000*iEnergyBin+index1 );
@@ -2759,6 +3623,10 @@ int main(int argc, char** argv) {
 					else if(i==2){
 						labelLR_energyBin = Form("%s_energyBin%02d_D",labelLR.c_str(),iEnergyBin);
 						labelBars_energyBin = Form("%s_energyBin%02d_D",labelBars.c_str(),iEnergyBin);
+					}
+					else if(i==4){
+						labelLR_energyBin = Form("%s_energyBin%02d_DII",labelLR.c_str(),iEnergyBin);
+						labelBars_energyBin = Form("%s_energyBin%02d_DII",labelBars.c_str(),iEnergyBin);
 					}
 					else if(i==3){labelLR_energyBin = Form("%s_energyBin%02d_T",labelLR.c_str(),iEnergyBin);}
 			
@@ -3243,7 +4111,39 @@ int main(int argc, char** argv) {
 						
 						delete latex;
 						delete c;
-                        
+
+						// --- draw timeL-time_REF vs energyL (post)
+						c = new TCanvas(Form("c_tL_REFvsEL_post_bar%02dL_%s_D",iBar,stepLabel.c_str()),Form("c_tL_REFvsEL_post_bar%02dL_%s_D",iBar,stepLabel.c_str()));
+						h2 = h2_tL_REFvsEL_post[index2];
+						bx,by,bz;
+						h2->GetMaximumBin(bx,by,bz);
+						xMax = h2->GetXaxis()->GetBinCenter(bx);
+						xMax_h2_tL_REFvseL_post[index2] = xMax;
+						h2 -> GetYaxis()->SetRangeUser(0, 10000);
+                        h2 -> SetTitle(Form(";energy_{L} [a.u.]; time_{L} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tL_REFvsEL_post[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+						fitFunc_timeL_post[index2] = new TF1(Form("fitFunc_timeL_post_bar%02d_%s",iBar,stepLabel.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",80,800);
+						prof->Fit(fitFunc_timeL_post[index2],"QRS");
+						fitFunc_timeL_post[index2] -> SetLineColor(kRed);
+						fitFunc_timeL_post[index2] -> SetLineWidth(2);
+						fitFunc_timeL_post[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{post bar %02dL}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+					    latex -> SetNDC();
+					    latex -> SetTextFont(42);
+					    latex -> SetTextSize(0.04);
+					    latex -> SetTextColor(kRed);
+					    latex -> Draw("same");
+						line_80->Draw("same");
+						line_800->Draw("same");
+
+						c->Print(Form("%s/timeCorrelation/c_tL_REFvsEL_post_bar%02dL_%s_D.png",plotDir.c_str(),iBar,stepLabel.c_str()));
+						c->Print(Form("%s/timeCorrelation/c_tL_REFvsEL_post_bar%02dL_%s_D.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
+						delete c;
+						
 						// --- draw timeR-time_REF vs energyR
 						c = new TCanvas(Form("c_tR_REFvsER_bar%02dR_%s_D",iBar,stepLabel.c_str()),Form("c_tR_REFvsER_bar%02dR_%s_D",iBar,stepLabel.c_str()));
 						h2 = h2_tR_REFvsER[index2];
@@ -3281,7 +4181,6 @@ int main(int argc, char** argv) {
 						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_bar%02dR_%s_D.png",plotDir.c_str(),iBar,stepLabel.c_str()));
 						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_bar%02dR_%s_D.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
 						delete c;
-                        if(vth1==15 && iBar>13) std::cout<<"line 2856: "<<index2<<std::endl;
                         
 						// --- profile tR_eR
 						c = new TCanvas(Form("c_tR_REFvsER_p_bar%02dR_%s_D",iBar,stepLabel.c_str()),Form("c_tR_REFvsER_p_bar%02dR_%s_D",iBar,stepLabel.c_str()));
@@ -3312,9 +4211,38 @@ int main(int argc, char** argv) {
 						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_p_bar%02dR_%s_D.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
 						delete line_h;
 						delete line_v;
-						delete line_80;
-						delete line_800;
 						delete latex;
+						delete c;
+
+						// --- draw timeR-time_REF vs energyR (post)
+						c = new TCanvas(Form("c_tR_REFvsER_post_bar%02dR_%s_D",iBar,stepLabel.c_str()),Form("c_tR_REFvsER_post_bar%02dR_%s_D",iBar,stepLabel.c_str()));
+						h2 = h2_tR_REFvsER_post[index2];
+						h2->GetMaximumBin(bx,by,bz);
+						xMax = h2->GetXaxis()->GetBinCenter(bx);
+						xMax_h2_tR_REFvseR_post[index2] = xMax;
+						h2 -> GetYaxis()->SetRangeUser(0, 10000);
+                        h2 -> SetTitle(Form(";energy_{R} [a.u.];time_{R} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tR_REFvsER_post[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+
+						fitFunc_timeR_post[index2] = new TF1(Form("fitFunc_timeR_post_bar%02dR_%s",iBar,stepLabel.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",80,600);
+						prof->Fit(fitFunc_timeR_post[index2],"QRS");
+						fitFunc_timeR_post[index2] -> SetLineColor(kRed);
+						fitFunc_timeR_post[index2] -> SetLineWidth(2);
+						fitFunc_timeR_post[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{post bar %02dR}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+					    latex -> SetNDC();
+					    latex -> SetTextFont(42);
+					    latex -> SetTextSize(0.04);
+					    latex -> SetTextColor(kRed);
+					    latex -> Draw("same");
+                        line_80->Draw("same");
+						line_800->Draw("same");
+						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_post_bar%02dR_%s_D.png",plotDir.c_str(),iBar,stepLabel.c_str()));
+						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_post_bar%02dR_%s_D.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
 						delete c;
 
 						// --- tL-REF(W) vs EL
@@ -3396,6 +4324,148 @@ int main(int argc, char** argv) {
 						c->Print(Form("%s/timeCorrelation/vs_eREF/c_tR_wREFvsER_bar%02dR_%s_D.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
 						delete c;
 					}
+					if(i==4){
+						if(iBar==0) continue;
+            			// --- draw timeL-time_REF vs energyL
+						c = new TCanvas(Form("c_tL_REFvsEL_bar%02dL_%s_DII",iBar,stepLabel.c_str()),Form("c_tL_REFvsEL_bar%02dL_%s_DII",iBar,stepLabel.c_str()));
+						h2 = h2_tL_REFvsEL[index2];
+						if(!h2){
+							std::cout<<"h2_tL_REFvsEL["<<index2<<"] not found"<<std::endl; 
+							continue;} 
+						int bx,by,bz;
+						h2->GetMaximumBin(bx,by,bz);
+						double xMax = h2->GetXaxis()->GetBinCenter(bx);
+						xMax_h2_tL_REFvseL[index2] = xMax;
+						h2 -> GetYaxis()->SetRangeUser(2500, 10000);
+           				 h2 -> SetTitle(Form(";energy_{L} [a.u.]; time_{L} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tL_REFvsEL[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+						fitFunc_timeL[index2] = new TF1(Form("fitFunc_timeL_bar%02d_%s",iBar,stepLabel.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",80,800);
+						prof->Fit(fitFunc_timeL[index2],"QRS");
+						fitFunc_timeL[index2] -> SetLineColor(kRed);
+						fitFunc_timeL[index2] -> SetLineWidth(2);
+						fitFunc_timeL[index2] -> Draw("same");
+						TLine* line_80 = new TLine(80,2500,80,10000);
+						line_80 -> SetLineColor(kBlack);
+						line_80 -> SetLineWidth(2);
+						line_80 -> SetLineStyle(2);
+						line_80 -> Draw("same");
+
+						TLine* line_800 = new TLine(800,2500,800,10000);
+						line_800 -> SetLineColor(kBlack);
+						line_800 -> SetLineWidth(2);
+						line_800 -> SetLineStyle(2);
+						line_800 -> Draw("same");
+
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{bar %02dL}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> SetTextColor(kRed);
+						latex -> Draw("same");
+
+						c->Print(Form("%s/timeCorrelation/c_tL_REFvsEL_bar%02dL_%s_DII.png",plotDir.c_str(),iBar,stepLabel.c_str()));
+						c->Print(Form("%s/timeCorrelation/c_tL_REFvsEL_bar%02dL_%s_DII.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
+						delete c;
+						// --- draw timeL-time_REF vs energyL (pre)
+						c = new TCanvas(Form("c_tL_REFvsEL_pre_bar%02dL_%s_D",iBar,stepLabel.c_str()),Form("c_tL_REFvsEL_pre_bar%02dL_%s_D",iBar,stepLabel.c_str()));
+						h2 = h2_tL_REFvsEL_pre[index2];
+						bx,by,bz;
+						h2->GetMaximumBin(bx,by,bz);
+						xMax = h2->GetXaxis()->GetBinCenter(bx);
+						xMax_h2_tL_REFvseL_pre[index2] = xMax;
+						h2 -> GetYaxis()->SetRangeUser(2500, 10000);
+           			    h2 -> SetTitle(Form(";energy_{L} [a.u.]; time_{L} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tL_REFvsEL_pre[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+						fitFunc_timeL_pre[index2] = new TF1(Form("fitFunc_timeL_pre_bar%02d_%s",iBar,stepLabel.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",80,800);
+						prof->Fit(fitFunc_timeL_pre[index2],"QRS");
+						fitFunc_timeL_pre[index2] -> SetLineColor(kRed);
+						fitFunc_timeL_pre[index2] -> SetLineWidth(2);
+						fitFunc_timeL_pre[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{pre bar %02dL}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> SetTextColor(kRed);
+						latex -> Draw("same");
+						line_80->Draw("same");
+						line_800->Draw("same");
+
+						c->Print(Form("%s/timeCorrelation/c_tL_REFvsEL_pre_bar%02dL_%s_D.png",plotDir.c_str(),iBar,stepLabel.c_str()));
+						c->Print(Form("%s/timeCorrelation/c_tL_REFvsEL_pre_bar%02dL_%s_D.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
+						delete c;
+           				// --- draw timeR-time_REF vs energyR
+						c = new TCanvas(Form("c_tR_REFvsER_bar%02dR_%s_DII",iBar,stepLabel.c_str()),Form("c_tR_REFvsER_bar%02dR_%s_DII",iBar,stepLabel.c_str()));
+						h2 = h2_tR_REFvsER[index2];
+						h2->GetMaximumBin(bx,by,bz);
+						xMax = h2->GetXaxis()->GetBinCenter(bx);
+						xMax_h2_tR_REFvseR[index2] = xMax;
+						h2 -> GetYaxis()->SetRangeUser(2500, 10000);
+            			h2 -> SetTitle(Form(";energy_{R} [a.u.];time_{R} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tR_REFvsER[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+
+						fitFunc_timeR[index2] = new TF1(Form("fitFunc_timeR_bar%02dR_%s",iBar,stepLabel.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",80,600);
+						prof->Fit(fitFunc_timeR[index2],"QRS");
+						fitFunc_timeR[index2] -> SetLineColor(kRed);
+						fitFunc_timeR[index2] -> SetLineWidth(2);
+						fitFunc_timeR[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{bar %02dR}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> Draw("same");
+						line_800 = new TLine(600,2500,600,10000);
+						line_800 -> SetLineColor(kBlack);
+						line_800 -> SetLineWidth(2);
+						line_800 -> SetLineStyle(2);
+						line_800 -> Draw("same");
+						line_80->Draw("same");
+
+						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_bar%02dR_%s_DII.png",plotDir.c_str(),iBar,stepLabel.c_str()));
+						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_bar%02dR_%s_DII.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
+						delete c;
+						// --- draw timeR-time_REF vs energyR (pre)
+						c = new TCanvas(Form("c_tR_REFvsER_pre_bar%02dR_%s_D",iBar,stepLabel.c_str()),Form("c_tR_REFvsER_pre_bar%02dR_%s_D",iBar,stepLabel.c_str()));
+						h2 = h2_tR_REFvsER_pre[index2];
+						h2->GetMaximumBin(bx,by,bz);
+						xMax = h2->GetXaxis()->GetBinCenter(bx);
+						xMax_h2_tR_REFvseR_pre[index2] = xMax;
+						h2 -> GetYaxis()->SetRangeUser(2500, 10000);
+          			    h2 -> SetTitle(Form(";energy_{R} [a.u.];time_{R} - time_{REF} [ps]"));
+						h2->Draw("colz");
+						prof = p1_tR_REFvsER_pre[index2];
+						prof -> SetMarkerSize(0.4);
+						prof -> Draw("psame");
+
+						fitFunc_timeR_pre[index2] = new TF1(Form("fitFunc_timeR_pre_bar%02dR_%s",iBar,stepLabel.c_str()),"[0]/x + [1]/(x*x) - [2]*x - [3]*x*x",80,600);
+						prof->Fit(fitFunc_timeR_pre[index2],"QRS");
+						fitFunc_timeR_pre[index2] -> SetLineColor(kRed);
+						fitFunc_timeR_pre[index2] -> SetLineWidth(2);
+						fitFunc_timeR_pre[index2] -> Draw("same");
+
+						latex = new TLatex(0.40,0.8,Form("#splitline{pre bar %02dR}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+						latex -> SetNDC();
+						latex -> SetTextFont(42);
+						latex -> SetTextSize(0.04);
+						latex -> SetTextColor(kRed);
+						latex -> Draw("same");
+            			//line_80->Draw("same");
+						//line_800->Draw("same");
+						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_pre_bar%02dR_%s_D.png",plotDir.c_str(),iBar,stepLabel.c_str()));
+						c->Print(Form("%s/timeCorrelation/c_tR_REFvsER_pre_bar%02dR_%s_D.pdf",plotDir.c_str(),iBar,stepLabel.c_str()));
+						delete c;
+					}
 				}
 			}
         }
@@ -3429,10 +4499,7 @@ int main(int argc, char** argv) {
 	        int energyBinAverage=0;
 			if(anEvent->nClusters==1) {energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;	}
 			else if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits[index1])+1;}
-			else if(anEvent->nClusters==2 && anEvent->energyL_post<0 && anEvent->energyR_post<0){
-				energyBinAverage = -1;
-				continue; // escludo eventi "PRE"
-			}
+			else if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits4[index1])+1;}
 			else if(anEvent->nClusters==3){	energyBinAverage=1;}
 
 	        double  index2((100000000*anEvent->nClusters)+10000000*energyBinAverage+index1 );     
@@ -3440,7 +4507,7 @@ int main(int argc, char** argv) {
 	  
 	        float t1fineMean = 0.5 * ( anEvent->t1fineR + anEvent->t1fineL );
 	  
-	        if( !fitFunc_energyRatioCorr[index2] ) continue;
+	        if( !fitFunc_energyRatioCorr[index2]) continue;
 	  
 	        float energyRatioCorr = fitFunc_energyRatioCorr[index2]->Eval(anEvent->energyR/anEvent->energyL) - fitFunc_energyRatioCorr[index2]->Eval(fitFunc_energyRatio[index2]->GetParameter(1));
 	  
@@ -3477,12 +4544,17 @@ int main(int argc, char** argv) {
 				h2_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3] = new TH2F(Form("h2_deltaT_energyRatioCorr_vs_t1fineMean_REF_Vov%.2f_th%02d",anEvent->Vov,anEvent->vth1),"",100,0,1000,2000,-12000,12000);
 				p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3] = new TProfile(Form("p1_deltaT_energyRatioCorr_vs_t1fineMean_REF_Vov%.2f_th%02d",anEvent->Vov,anEvent->vth1),"",50,0,1000);
 			}
-	  
-          /*float enRatioCorr_REF = fitFunc_energyRatioCorrection_REF[index3]->Eval(anEvent->energyR_ext/anEvent->energyL_ext) - fitFunc_energyRatioCorrection_REF[index3]->Eval(fitFunc_energyRatio_REF[index3]->GetParameter(1)); 
+			if(h1_deltaT_REF_corr_all[index1]==NULL){
+				h1_deltaT_REF_corr_all[index1] = new TH1F(Form("h1_deltaT_REF_corr_all_bar%02d_Vov%.2f_th%02d",anEvent->barID,anEvent->Vov,anEvent->vth1),"",2000,-12000,12000);
+			}
+			float enRatioCorr_REF;
+	        if(fitFunc_energyRatioCorrection_REF[index3]){
+				enRatioCorr_REF = fitFunc_energyRatioCorrection_REF[index3]->Eval(anEvent->energyR_ext/anEvent->energyL_ext) - fitFunc_energyRatioCorrection_REF[index3]->Eval(fitFunc_energyRatio_REF[index3]->GetParameter(1)); 
+			}
 			long long deltaT_REF = anEvent->timeL_ext - anEvent->timeR_ext;
 			float t1fineMean_REF = 0.5 * ( anEvent->t1fineR_ext + anEvent->t1fineL_ext );
 
-            if(fabs(deltaT_REF - enRatioCorr_REF)<10000 ){
+            if(fabs(deltaT_REF - enRatioCorr_REF)<10000 && fitFunc_energyRatioCorrection_REF[index3]){
 				float enMin = fitFunc_energyRatio_REF[index3]->GetParameter(1) - 1.*fitFunc_energyRatio_REF[index3]->GetParameter(2);
 				float enMax = fitFunc_energyRatio_REF[index3]->GetParameter(1) + 1.*fitFunc_energyRatio_REF[index3]->GetParameter(2);
 				if(anEvent->energyR_ext/anEvent->energyL_ext > enMin && anEvent->energyR_ext/anEvent->energyL_ext < enMax){
@@ -3490,7 +4562,7 @@ int main(int argc, char** argv) {
 				    h2_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3] -> Fill( t1fineMean_REF, deltaT_REF - enRatioCorr_REF );
 				    p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3] -> Fill( t1fineMean_REF, deltaT_REF - enRatioCorr_REF );
 				}	
-			}*/
+			}
 
 			if (fabs(deltaT - energyRatioCorr)<10000 ) {
 				accepted4++;
@@ -3535,6 +4607,7 @@ int main(int argc, char** argv) {
 				if(check_L && check_R){
                     time_ave = 0.5*(tL_corr+tR_corr);
 					h1_deltaT_corr_REF[index2] -> Fill(time_ave - time_ave_REF);
+					h1_deltaT_REF_corr_all[index1]->Fill(time_ave - time_ave_REF);
 				}
 
 				double energy = 0.5*(anEvent->energyL + anEvent->energyR);
@@ -3579,7 +4652,8 @@ int main(int argc, char** argv) {
 			    double t_ave, t_ave_post;
 			    if((anEvent->timeL-time_ave_REF) > 3500 &&(anEvent->timeL_post-time_ave_REF) > 3500 && (anEvent->timeR-time_ave_REF) > 3500 && (anEvent->timeR_post-time_ave_REF) > 3500){
 				    if(anEvent->barID==15) continue;
-					if(!fitFunc_timeL[index2+1] || !fitFunc_timeR[index2+1]) continue;
+					if(!fitFunc_timeL[index2] || !fitFunc_timeR[index2]) continue;
+					if(!fitFunc_timeL_post[index2] || !fitFunc_timeR_post[index2]) continue;
 				    xMax = xMax_h2_tL_REFvseL[index2];
 				    corr = fitFunc_timeL[index2]->Eval(anEvent->energyL) - fitFunc_timeL[index2]->Eval(xMax);
 				    tL_corr = static_cast<double>(anEvent->timeL) - corr;
@@ -3588,12 +4662,12 @@ int main(int argc, char** argv) {
 				    corr = fitFunc_timeR[index2]->Eval(anEvent->energyR) - fitFunc_timeR[index2]->Eval(xMax);
 				    tR_corr = static_cast<double>(anEvent->timeR) - corr;
 
-					xMax = xMax_h2_tL_REFvseL[index2+1];
-				    corr = fitFunc_timeL[index2+1]->Eval(anEvent->energyL_post) - fitFunc_timeL[index2+1]->Eval(xMax);
+					xMax = xMax_h2_tL_REFvseL_post[index2];
+				    corr = fitFunc_timeL_post[index2]->Eval(anEvent->energyL_post) - fitFunc_timeL_post[index2]->Eval(xMax);
 				    tL_post_corr =static_cast<double>(anEvent->timeL_post) - corr;
 
-					xMax = xMax_h2_tR_REFvseR[index2+1];
-				    corr = fitFunc_timeR[index2+1]->Eval(anEvent->energyR_post) - fitFunc_timeR[index2+1]->Eval(xMax);
+					xMax = xMax_h2_tR_REFvseR_post[index2];
+				    corr = fitFunc_timeR_post[index2]->Eval(anEvent->energyR_post) - fitFunc_timeR_post[index2]->Eval(xMax);
 				    tR_post_corr =static_cast<double>(anEvent->timeR_post) - corr;
 
                     t_ave = 0.5*(tL_corr + tR_corr);
@@ -3607,7 +4681,8 @@ int main(int argc, char** argv) {
 					   (anEvent->energyL<800 && anEvent->energyR<600 && anEvent->energyL_post<800 && anEvent->energyR_post<600)){
 			           
 						h1_deltaT_corr_REF[index2] -> Fill((energy*t_ave + energy_post*t_ave_post)/(energy + energy_post) - time_ave_REF);
-						
+						h1_deltaT_REF_corr_all[index1]->Fill((energy*t_ave + energy_post*t_ave_post)/(energy + energy_post) - time_ave_REF);
+
 						h1_deltaT_LR_corr_REF[index2] -> Fill(0.5*(tL_ave + tR_ave) - time_ave_REF);
 						h1_deltaT_LR_corr_REF_w[index2] -> Fill(0.5*(tL_ave + tR_ave) - time_ave_REF_w);
 						/*if(entry%100000==0){
@@ -3625,6 +4700,44 @@ int main(int argc, char** argv) {
 					}
 			    }
 		    }
+			if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0 && anEvent->energyL_ext>0 && anEvent->energyR_ext>0){
+                double time_ave_REF = 0.5*(static_cast<double>(anEvent->timeL_ext)+static_cast<double>(anEvent->timeR_ext));
+				if((anEvent->timeL-time_ave_REF) > 3500 &&(anEvent->timeL_post-time_ave_REF) > 3500 && (anEvent->timeR-time_ave_REF) > 3500 && (anEvent->timeR_post-time_ave_REF) > 3500){
+					if(anEvent->barID==0) continue;
+					double tL_corr, tL_pre_corr, tR_corr, tR_pre_corr;
+			    	
+			    	double xMax;
+			    	double corr;
+			    	double t_ave, t_ave_pre;
+					if(!fitFunc_timeL[index2] || !fitFunc_timeR[index2]) continue;
+					if(!fitFunc_timeL_pre[index2] || !fitFunc_timeR_pre[index2]) continue;
+                    xMax = xMax_h2_tL_REFvseL[index2];
+				    corr = fitFunc_timeL[index2]->Eval(anEvent->energyL) - fitFunc_timeL[index2]->Eval(xMax);
+				    tL_corr = static_cast<double>(anEvent->timeL) - corr;
+
+					xMax = xMax_h2_tR_REFvseR[index2];
+				    corr = fitFunc_timeR[index2]->Eval(anEvent->energyR) - fitFunc_timeR[index2]->Eval(xMax);
+				    tR_corr = static_cast<double>(anEvent->timeR) - corr;
+
+					xMax = xMax_h2_tL_REFvseL_pre[index2];
+				    corr = fitFunc_timeL_pre[index2]->Eval(anEvent->energyL_pre) - fitFunc_timeL_pre[index2]->Eval(xMax);
+				    tL_pre_corr =static_cast<double>(anEvent->timeL_pre) - corr;
+
+					xMax = xMax_h2_tR_REFvseR_pre[index2];
+				    corr = fitFunc_timeR_pre[index2]->Eval(anEvent->energyR_pre) - fitFunc_timeR_pre[index2]->Eval(xMax);
+				    tR_pre_corr =static_cast<double>(anEvent->timeR_post) - corr;
+
+					t_ave = 0.5*(tL_corr + tR_corr);
+				    t_ave_pre = 0.5*(tL_pre_corr + tR_pre_corr);
+				    double energy = 0.5*(anEvent->energyL + anEvent->energyR);
+				    double energy_pre = 0.5*(anEvent->energyL_pre + anEvent->energyR_pre);
+					if((anEvent->energyL>80 && anEvent->energyR>80 && anEvent->energyL_pre>80 && anEvent->energyR_pre>80) &&
+					   (anEvent->energyL<800 && anEvent->energyR<600 && anEvent->energyL_pre<800 && anEvent->energyR_pre<600)){
+
+						h1_deltaT_REF_corr_all[index1]->Fill((energy*t_ave + energy_pre*t_ave_pre)/(energy + energy_pre) - time_ave_REF);
+					   }
+				}
+			}
 	    }
         std::cout << std::endl;
     }
@@ -3641,7 +4754,7 @@ int main(int argc, char** argv) {
 		std::string extLabel(Form("externalBar_L-R_%s",stepLabel.c_str())); 
 		int index3( (10000*int(Vov*100.)) + (100*vth1) + 99 );
         // -- energy corr deltaT
-	/*	
+		
 		c = new TCanvas(Form("c_deltaT_energyRatioCorr_%s",extLabel.c_str()),Form("c_deltaT_energyRatioCorr_%s",extLabel.c_str()));
 			  
 		histo = h1_deltaT_eneryRatioCorr_REF[index3];
@@ -3679,7 +4792,7 @@ int main(int argc, char** argv) {
 		c -> Print(Form("%s/externalBar/c_deltaT_energyRatioCorr_vs_t1fineMean__%s.pdf",plotDir.c_str(),extLabel.c_str()));
 		delete c;
 		delete latex;
-    */
+    
         
 		for(int iBar = 0; iBar < 16; ++iBar) {
 	        bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
@@ -3691,6 +4804,29 @@ int main(int argc, char** argv) {
 	        std::string labelLR(Form("bar%02dL-R_%s",iBar,stepLabel.c_str()));
 	  
 	        int nEnergyBins = ranges["L-R"][index1]->size()-1;
+
+			c = new TCanvas(Form("c_deltaT_REF_corr_%s",labelLR.c_str()),Form("c_deltaT_REF_corr_%s",labelLR.c_str()));
+			histo = h1_deltaT_REF_corr_all[index1];
+			if(histo){
+				histo -> SetLineWidth(2);
+				histo -> SetLineColor(kAzure);
+				histo -> SetMarkerColor(kAzure);
+				TF1* fitFunc = new TF1(Form("fitFunc_deltaT_corr_REF_%s",labelLR.c_str()),"gaus",-10000, 10000);
+				drawDeltaT(c, histo, fitFunc, Form("energy corrected "), "en.Corr","");
+
+				latex = new TLatex(0.16,0.88,Form("#splitline{bar %02d}{V_{OV} = %.2f V, th. = %d DAC}",iBar,Vov,int(vth1)));
+				latex -> SetNDC();
+				latex -> SetTextFont(42);
+				latex -> SetTextSize(0.04);
+				latex -> SetTextColor(kRed);
+				latex -> Draw("same");
+
+				outFile -> cd();
+				histo -> Write();
+				c -> Print(Form("%s/CTR_REF/all/energyCorr/c_deltaT_REF_corr_%s.png",plotDir.c_str(),labelLR.c_str()));
+				c -> Print(Form("%s/CTR_REF/all/energyCorr/c_deltaT_REF_corr_%s.pdf",plotDir.c_str(),labelLR.c_str()));
+				delete c;
+			}
 	  
 	        for(int i=1;i<=3;i++){//loop over single double triple 
 				for(int iEnergyBin = 1; iEnergyBin <= nEnergyBins; ++iEnergyBin){
@@ -4015,10 +5151,7 @@ int main(int argc, char** argv) {
 	        int energyBinAverage=0;
 			if(anEvent->nClusters==1) {energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;	}
 			else if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits[index1])+1;}
-			else if(anEvent->nClusters==2 && anEvent->energyL_post<0 && anEvent->energyR_post<0){
-				energyBinAverage = -1;
-				continue; // escludo eventi "PRE"
-			}
+			else if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits4[index1])+1;}
 			else if(anEvent->nClusters==3){	energyBinAverage=1;}
 
 	        double  index2( (100000000*anEvent->nClusters)+10000000*energyBinAverage+index1 );     
@@ -4040,14 +5173,19 @@ int main(int argc, char** argv) {
 	        float t1fineCorr = p1_deltaT_energyRatioCorr_vs_t1fineMean[index2]->GetBinContent(t1fineBin) - p1_deltaT_energyRatioCorr_vs_t1fineMean[index2]->GetBinContent( t1fineBin2 );
 
 			float deltaT_corr = deltaT  - energyRatioCorr - t1fineCorr;
-            /*
-			float t1fineMean_REF = 0.5* ( anEvent->t1fineR_ext + anEvent->t1fineL_ext );
-	        int t1fineBin_REF = p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->FindBin(t1fineMean_REF);
-	        int t1fineBin2_REF = p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->FindBin(h1_t1fineMean_REF[index3]->GetMean());
-	        float t1fineCorr_REF = p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->GetBinContent(t1fineBin_REF) - p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->GetBinContent( t1fineBin2_REF );
-			float enRatioCorr_REF = fitFunc_energyRatioCorrection_REF[index3]->Eval(anEvent->energyR_ext/anEvent->energyL_ext) - fitFunc_energyRatioCorrection_REF[index3]->Eval(fitFunc_energyRatio_REF[index3]->GetParameter(1)); 
-			long long deltaT_REF = anEvent->timeL_ext - anEvent->timeR_ext; 
-			float deltaT_corr_REF = deltaT_REF - enRatioCorr_REF - t1fineCorr_REF;*/
+			long long deltaT_REF;
+			float deltaT_corr_REF;
+			float enRatioCorr_REF;
+            if(p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]){
+				float t1fineMean_REF = 0.5* ( anEvent->t1fineR_ext + anEvent->t1fineL_ext );
+	        	int t1fineBin_REF = p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->FindBin(t1fineMean_REF);
+	        	int t1fineBin2_REF = p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->FindBin(h1_t1fineMean_REF[index3]->GetMean());
+	        	float t1fineCorr_REF = p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->GetBinContent(t1fineBin_REF) - p1_deltaT_energyRatioCorr_vs_t1fineMean_REF[index3]->GetBinContent( t1fineBin2_REF );
+				enRatioCorr_REF = fitFunc_energyRatioCorrection_REF[index3]->Eval(anEvent->energyR_ext/anEvent->energyL_ext) - fitFunc_energyRatioCorrection_REF[index3]->Eval(fitFunc_energyRatio_REF[index3]->GetParameter(1)); 
+				deltaT_REF = anEvent->timeL_ext - anEvent->timeR_ext; 
+				deltaT_corr_REF = deltaT_REF - enRatioCorr_REF - t1fineCorr_REF;
+			}
+			
               
 			long long deltaT_post=0;
 			float energyRatioCorr_post=0;
@@ -4056,6 +5194,7 @@ int main(int argc, char** argv) {
 			int t1fineBin2_post=0;
 			float t1fineCorr_post=0;
 			float deltaT_post_corr=0;
+
 			if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){
 				deltaT_post = anEvent->timeR_post - anEvent->timeL_post;
 				if( !fitFunc_energyRatioCorr[index2+1] )	continue;
@@ -4100,13 +5239,13 @@ int main(int argc, char** argv) {
 				h1_deltaT_eneryRatioCorr_pasheCorr_REF[index3] = new TH1F(Form("h1_deltaT_eneryRatioCorr_pasheCorr_REF_Vov%.2f_th%02d",anEvent->Vov,anEvent->vth1),"",2000,-12000.,12000.);
 			}
 
-			/*if(fabs(deltaT_REF - enRatioCorr_REF)<10000 && anEvent->energyL_ext>0 && anEvent->energyR_ext>0){
+			if(fabs(deltaT_REF - enRatioCorr_REF)<10000 && anEvent->energyL_ext>0 && anEvent->energyR_ext>0 && fitFunc_energyRatio_REF[index3]){
                 float enMin = fitFunc_energyRatio_REF[index3]->GetParameter(1) - 1.*fitFunc_energyRatio_REF[index3]->GetParameter(2);
                 float enMax = fitFunc_energyRatio_REF[index3]->GetParameter(1) + 1.*fitFunc_energyRatio_REF[index3]->GetParameter(2);
                 if(anEvent->energyR_ext/anEvent->energyL_ext > enMin && anEvent->energyR_ext/anEvent->energyL_ext < enMax){
                     h1_deltaT_eneryRatioCorr_pasheCorr_REF[index3] ->Fill(deltaT_corr_REF);
                 }	
-            }*/
+            }
 
 
 			if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){
@@ -4114,8 +5253,8 @@ int main(int argc, char** argv) {
 					float E_mean_post = 0.5 * (anEvent->energyL_post + anEvent->energyR_post);
 					h2_deltaTave_vs_energyRatio[index2] -> Fill((anEvent->energyL+anEvent->energyR)/(anEvent->energyL_post+anEvent->energyR_post), 0.5*(deltaT_corr + deltaT_post_corr));
 				    p1_deltaTave_vs_energyRatio[index2] -> Fill((anEvent->energyL+anEvent->energyR)/(anEvent->energyL_post+anEvent->energyR_post), 0.5*(deltaT_corr + deltaT_post_corr));
-					
-					h1_deltaT_energyRatioPhaseCorr_bars[index2] -> Fill(0.5*(deltaT_corr + deltaT_post_corr));   
+					if(E_mean/E_mean_post>0.5 && E_mean/E_mean_post<2){
+					h1_deltaT_energyRatioPhaseCorr_bars[index2] -> Fill(0.5*(deltaT_corr + deltaT_post_corr));}
 			}
 	  
 	  
@@ -4167,7 +5306,7 @@ int main(int argc, char** argv) {
 		int index3( (10000*int(Vov*100.)) + (100*vth1) + 99 );
 
 		// -- energy corr phase corr deltaT
-		/*
+		
 		c = new TCanvas(Form("c_deltaT_energyRatioPhaseCorr_%s",extLabel.c_str()),Form("c_deltaT_energyRatioPhaseCorr_%s",extLabel.c_str()));
 			  
 		histo = h1_deltaT_eneryRatioCorr_pasheCorr_REF[index3];
@@ -4184,7 +5323,7 @@ int main(int argc, char** argv) {
 		c -> Print(Form("%s/externalBar/c_deltaT_energyRatioPhaseCorr__%s.pdf",plotDir.c_str(),extLabel.c_str()));
 		c -> Print(Form("%s/externalBar/c_deltaT_energyRatioPhaseCorr__%s.png",plotDir.c_str(),extLabel.c_str()));
 		delete c;
-       */
+       
         for(int iBar = 0; iBar < 16; ++iBar) {
 	        bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
 	        if (!barFound) continue; 
@@ -4488,10 +5627,7 @@ int main(int argc, char** argv) {
 	       int energyBinAverage=0;
 			if(anEvent->nClusters==1) {energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;	}
 			else if(anEvent->nClusters==2 && anEvent->energyL_post>0 && anEvent->energyR_post>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits[index1])+1;}
-			else if(anEvent->nClusters==2 && anEvent->energyL_post<0 && anEvent->energyR_post<0){
-				energyBinAverage = -1;
-				continue; // escludo eventi "PRE"
-			}
+			else if(anEvent->nClusters==4 && anEvent->energyL_pre>0 && anEvent->energyR_pre>0){energyBinAverage = FindBin(anEvent->energySum,ranges_doubleHits4[index1])+1;}
 			else if(anEvent->nClusters==3){	energyBinAverage=1;}
 			
 
@@ -4567,8 +5703,8 @@ int main(int argc, char** argv) {
 
 					if(!fitFunc_energyRatioCorr_bars_ave[index2]) continue;
 					float energyRatioCorr_bars_ave = fitFunc_energyRatioCorr_bars_ave[index2]->Eval(E_mean/E_mean_post) - fitFunc_energyRatioCorr_bars_ave[index2]->Eval(1.);
-					
-					h1_deltaT_energyRatioCorr_ave_bars[index2] -> Fill(0.5*(deltaT_corr + deltaT_post_corr) - energyRatioCorr_bars_ave);   
+					if(0.5<E_mean/E_mean_post && E_mean/E_mean_post < 2.){
+					h1_deltaT_energyRatioCorr_ave_bars[index2] -> Fill(0.5*(deltaT_corr + deltaT_post_corr) - energyRatioCorr_bars_ave);}
 			}
 
 
