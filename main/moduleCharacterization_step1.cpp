@@ -62,7 +62,10 @@ int main(int argc, char** argv) {
     int useTrackInfo = opts.GetOpt<int>("Input.useTrackInfo");
 	int useMCP = opts.GetOpt<int>("Input.useMCP");
     float my_step1 = opts.GetOpt<float>("Input.vov") ;
-	std::string inputDirH4 = opts.GetOpt<std::string>("Input.inputDirH4");
+
+    int DUTasic = opts.GetOpt<int>("Channels.DUTasic");
+    int REFasic = opts.GetOpt<int>("Channels.REFasic");
+    std::string inputDirH4 = opts.GetOpt<std::string>("Input.inputDirH4");
     std::string discCalibrationFile = opts.GetOpt<std::string>("Input.discCalibration");
     TOFHIRThresholdZero thrZero(discCalibrationFile,1);
 
@@ -159,14 +162,19 @@ int main(int argc, char** argv) {
     int chR[16];
   
     for(unsigned int iBar = 0; iBar < channelMapping.size()/2; ++iBar){
-        if(opts.GetOpt<int>("Channels.array")==0){
-            chL[iBar] = channelMapping[iBar*2+0];
-            chR[iBar] = channelMapping[iBar*2+1];
-        }
-        if(opts.GetOpt<int>("Channels.array")==1){
-            chL[iBar] = channelMapping[iBar*2+0]+64;
-            chR[iBar] = channelMapping[iBar*2+1]+64;
-        }
+
+       chL[iBar] = channelMapping[iBar*2+0]+32*DUTasic;
+       chR[iBar] = channelMapping[iBar*2+1]+32*DUTasic;
+
+
+        //if(opts.GetOpt<int>("Channels.array")==0){
+        //    chL[iBar] = channelMapping[iBar*2+0];
+        //    chR[iBar] = channelMapping[iBar*2+1];
+        //}
+        //if(opts.GetOpt<int>("Channels.array")==1){
+        //    chL[iBar] = channelMapping[iBar*2+0]+64;
+        //    chR[iBar] = channelMapping[iBar*2+1]+64;
+        //}
         std::cout << "Bar: " << iBar << "   chL: "<< chL[iBar] << "    chR: " <<chR[iBar] <<std::endl;
     }
   
@@ -403,12 +411,15 @@ int main(int argc, char** argv) {
 
 
 	            for(int iBar = 0; iBar < int(channelMapping.size())/2; ++iBar) {
-	                int chL_iext = channelMapping[iBar*2+0];// module under test is array1, coincidence channel in array0 
-	                int chR_iext = channelMapping[iBar*2+1];// module under test is array1, coincidence channel in array0 
-	                if (opts.GetOpt<int>("Channels.array")==0) {
-	                    int chL_iext = channelMapping[iBar*2+0]+64;// module under test is array0, coincidence channel in array1
-	                    int chR_iext = channelMapping[iBar*2+1]+64;// module under test is array0, coincidence channel in array1
-	                }
+		        int chL_iext = channelMapping[iBar*2+0] + REFasic*32;
+                        int chR_iext = channelMapping[iBar*2+1] + REFasic*32;
+    
+	               // int chL_iext = channelMapping[iBar*2+0];// module under test is array1, coincidence channel in array0 
+	               // int chR_iext = channelMapping[iBar*2+1];// module under test is array1, coincidence channel in array0 
+	               // if (opts.GetOpt<int>("Channels.array")==0) {
+	               //     int chL_iext = channelMapping[iBar*2+0]+64;// module under test is array0, coincidence channel in array1
+	               //     int chR_iext = channelMapping[iBar*2+1]+64;// module under test is array0, coincidence channel in array1
+	               // }
 	                float energyL_iext = (*energy)[channelIdx[chL_iext]];              
 	                float energyR_iext = (*energy)[channelIdx[chR_iext]]; 
 	                float totL_iext    = 0.001*(*tot)[channelIdx[chL_iext]];              
@@ -482,13 +493,7 @@ int main(int argc, char** argv) {
                 if(!opts.GetOpt<std::string>("Input.vth").compare("vth1"))  { vth = vth1;}
                 if(!opts.GetOpt<std::string>("Input.vth").compare("vth2"))  { vth = vth2;}
 	  
-	            if( opts.GetOpt<int>("Channels.array") == 0){
-	            //	    index.second->GetXaxis()->SetRangeUser(50,900);
-	                index.second->GetXaxis()->SetRangeUser(200,900);
-	            }
-	            if( opts.GetOpt<int>("Channels.array") == 1){
-	                index.second->GetXaxis()->SetRangeUser(200,900);
-	            }
+	            index.second->GetXaxis()->SetRangeUser(200,900);
 
 	            float max = index.second->GetBinCenter(index.second->GetMaximumBin());
 	            index.second->GetXaxis()->SetRangeUser(0,1024);
@@ -496,17 +501,17 @@ int main(int argc, char** argv) {
 	            TF1* f_pre = new TF1(Form("fit_energy_coincBar_Vov%.2f_vth1_%02.0f",Vov,vth), "[0]*TMath::Landau(x,[1],[2])", 0, 1000.); 
 	            f_pre -> SetRange(max*0.85, max*1.4);
 	            f_pre -> SetLineColor(kBlack);
-                f_pre -> SetLineWidth(2);
-                f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 0.1*max);
+                    f_pre -> SetLineWidth(2);
+                    f_pre -> SetParameters(index.second->Integral(index.second->GetMaximumBin(), index.second->GetNbinsX())/10, max, 0.1*max);
 	            f_pre -> SetParLimits(1, 0, 9999);
 	            f_pre -> SetParLimits(2, 0, 9999);
 	            index.second->Fit(f_pre, "QRS+");      
 	  
-	            if (f_pre->GetParameter(1)>20) rangesLR[index.first] -> push_back( 0.85*f_pre->GetParameter(1));
+	            if (f_pre->GetParameter(1)>20) rangesLR[index.first] -> push_back( 0.7*f_pre->GetParameter(1));
 	            else   rangesLR[index.first] -> push_back( 20 );
 	  			//rangesLR[index.first] -> push_back( 350 );
 	  			//rangesLR[index.first] -> push_back( 600 );
-	            rangesLR[index.first] -> push_back( 400 );
+	            rangesLR[index.first] -> push_back( 600 );
 	  
 	            std::cout << "Vov = " << Vov << "  vth1 = " << vth1 << "   vth2 = " << vth2 
 		                  << "    Coincidence bar - energy range:  " << rangesLR[index.first]->at(0) << " - " << rangesLR[index.first]->at(1)<< std::endl;

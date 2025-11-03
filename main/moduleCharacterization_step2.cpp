@@ -191,104 +191,59 @@ int main(int argc, char** argv) {
 	plotDir.append("/z_my_analysis/a_cut_enRatio_3");
     //system(Form("rm -r %s", plotDir.c_str())); // questo non va bene se stiamo lavorando in parallelo
     system(Form("mkdir -p %s",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s",plotDir.c_str()));
     system(Form("mkdir -p %s/tot/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/tot/",plotDir.c_str()));
     system(Form("mkdir -p %s/totRatio/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/totRatio/",plotDir.c_str()));
     system(Form("mkdir -p %s/energy/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energy/",plotDir.c_str()));
 
 	system(Form("mkdir -p %s/energy/A_energySum",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energy/A_energySum/",plotDir.c_str()));
 	system(Form("mkdir -p %s/energy/chL_double",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energy/chL_double/",plotDir.c_str()));
 	system(Form("mkdir -p %s/energy/chR_double",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energy/chR_double/",plotDir.c_str()));
 
 	system(Form("mkdir -p %s/raw_deltaT",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/raw_deltaT",plotDir.c_str()));
 	system(Form("mkdir -p %s/energyCorrelation",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energyCorrelation",plotDir.c_str()));
 	system(Form("mkdir -p %s/timeCorrelation",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/timeCorrelation",plotDir.c_str()));
 	system(Form("mkdir -p %s/timeCorrelation/w_REF",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/timeCorrelation/w_REF",plotDir.c_str()));
 	system(Form("mkdir -p %s/timeCorrelation/vs_eREF",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/timeCorrelation/vs_eREF",plotDir.c_str()));
 	system(Form("mkdir -p %s/timeCorrelation/tREF_vs_eREF",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/timeCorrelation/tREF_vs_eREF",plotDir.c_str()));
 
 	system(Form("mkdir -p %s/CTR_REF",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/CTR_REF_raw",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/CTR_REF_raw",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/CTR_REF_1Bar",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/CTR_REF_1Bar",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/CTR_REF_2LR",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/CTR_REF_2LR",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/CTR_REF_3LR",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/CTR_REF_3LR",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/1hit",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/1hit",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/all",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/all",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/all/raw",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/all/raw",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/all/energyCorr",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/all/energyCorr",plotDir.c_str()));
 
 	system(Form("mkdir -p %s/CTR_REF/cut_on_all",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/cut_on_all",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/cut_on_all/raw",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/cut_on_all/raw",plotDir.c_str()));
 	system(Form("mkdir -p %s/CTR_REF/cut_on_all/energyCorr",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_REF/cut_on_all/energyCorr",plotDir.c_str()));
 
 	system(Form("mkdir -p %s/timeCorrelation_cut_all",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/timeCorrelation_cut_all",plotDir.c_str()));
 	
 	system(Form("mkdir -p %s/modulePosition",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/modulePosition",plotDir.c_str()));
 
     system(Form("mkdir -p %s/externalBar",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/externalBar",plotDir.c_str()));
 
 	system(Form("mkdir -p %s/topology/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/topology/",plotDir.c_str()));
 
     system(Form("mkdir -p %s/energyRatio/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energyRatio/",plotDir.c_str()));
     system(Form("mkdir -p %s/t1fine/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/t1fine/",plotDir.c_str()));
     system(Form("mkdir -p %s/qT1/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/qT1/",plotDir.c_str()));
     system(Form("mkdir -p %s/energyRatioCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energyRatioCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/energyRatioCorr_totRatioCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/energyRatioCorr_totRatioCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/totRatioCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/totRatioCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/phaseCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/phaseCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/positionCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/positionCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/CTR_energyRatioCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_energyRatioCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/CTR_totRatioCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_totRatioCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/CTR_energyRatioCorr_totRatioCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_energyRatioCorr_totRatioCorr/",plotDir.c_str()));  
     system(Form("mkdir -p %s/CTR_energyRatioCorr_phaseCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_energyRatioCorr_phaseCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/CTR_totRatioCorr_phaseCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_totRatioCorr_phaseCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/CTR_energyRatioCorr_totRatioCorr_phaseCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_energyRatioCorr_totRatioCorr_phaseCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/CTR_energyRatioCorr_phaseCorr_posCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_energyRatioCorr_phaseCorr_posCorr/",plotDir.c_str()));
     system(Form("mkdir -p %s/CTR_totRatioCorr_phaseCorr_posCorr/",plotDir.c_str()));
-    system(Form("cp -n /eos/home-f/ftonetto/www/index.php %s/CTR_totRatioCorr_phaseCorr_posCorr/",plotDir.c_str()));  
     
 
   
@@ -955,12 +910,7 @@ int main(int argc, char** argv) {
 	                ranges[LRLabel][index] -> push_back( histo -> GetBinCenter(500) );
 	                */
 	    
-	                if( opts.GetOpt<int>("Channels.array") == 1){
-	                    histo->GetXaxis()->SetRangeUser(minE[std::make_pair(iBar, Vov)], 950);
-	                }
-	                if( opts.GetOpt<int>("Channels.array") == 0){
-	                    histo->GetXaxis()->SetRangeUser(minE[std::make_pair(iBar, Vov)], 950);
-	                }
+	                histo->GetXaxis()->SetRangeUser(minE[std::make_pair(iBar, Vov)], 950);
 	                float max = histo->GetBinCenter(histo->GetMaximumBin());
 	                histo->GetXaxis()->SetRangeUser(0,1024);
 	    
@@ -1538,42 +1488,42 @@ int main(int argc, char** argv) {
 
     } // -- end loop over stepLabels
 
-    if(opts.GetOpt<int>("Channels.array")==1){ // REF module has only one th at 30 DAC for run  6289
-		TH1F* histo1;
-		TH1F* histo2;
-		TH1F* histo3;
-
-		histo1 = (TH1F*)( inFile->Get(Form("h1_events_type_Vov1.25_th07")) );
-		if( !histo1 ){ 
-	    	std::cout<<"h1_events_type_Vov1.25_th07 not found"<<std::endl;
-			//continue;
-		}
-		histo2 = (TH1F*)( inFile->Get(Form("h1_events_type_Vov1.25_th11")) );
-		if( !histo2 ){ 
-	    	std::cout<<"h1_events_type_Vov1.25_th11 not found"<<std::endl;
-			//continue;
-		}
-		histo3 = (TH1F*)( inFile->Get(Form("h1_events_type_Vov1.25_th15")) );
-		if( !histo3 ){ 
-	    	std::cout<<"h1_events_type_Vov1.25_th15 not found"<<std::endl;
-			//continue;
-		}
-    	histo1->Add(histo2);
-		histo1->Add(histo3);
-		c = new TCanvas(Form("c_events_type_Vov3.50_th30"),Form("c_events_type_Vov3.50_th30"));
-    	histo1 -> SetTitle(";nHits;events");
-		histo1 -> SetLineColor(kBlue);
-		histo1 -> SetLineWidth(2);
-		histo1 -> Draw();
-		latex = new TLatex(0.40,0.85,Form("#splitline{events distribution}{V_{OV} = 3.50 V, th. = 30 DAC}"));
-		latex -> SetNDC();
-		latex -> SetTextFont(42);
-		latex -> SetTextSize(0.04);
-		latex -> SetTextColor(kRed);
-		latex -> Draw();
-		c -> Print(Form("%s/topology/c_events_type_Vov3.50_th30.png",plotDir.c_str()));
-	    c -> Print(Form("%s/topology/c_events_type_Vov3.50_th30.pdf",plotDir.c_str()));
-	}
+//    if(opts.GetOpt<int>("Channels.REFasic")==7){ // REF module has only one th at 30 DAC for run  6289
+//		TH1F* histo1;
+//		TH1F* histo2;
+//		TH1F* histo3;
+//
+//		histo1 = (TH1F*)( inFile->Get(Form("h1_events_type_Vov1.25_th07")) );
+//		if( !histo1 ){ 
+//	    	std::cout<<"h1_events_type_Vov1.25_th07 not found"<<std::endl;
+//			//continue;
+//		}
+//		histo2 = (TH1F*)( inFile->Get(Form("h1_events_type_Vov1.25_th11")) );
+//		if( !histo2 ){ 
+//	    	std::cout<<"h1_events_type_Vov1.25_th11 not found"<<std::endl;
+//			//continue;
+//		}
+//		histo3 = (TH1F*)( inFile->Get(Form("h1_events_type_Vov1.25_th15")) );
+//		if( !histo3 ){ 
+//	    	std::cout<<"h1_events_type_Vov1.25_th15 not found"<<std::endl;
+//			//continue;
+//		}
+//    	histo1->Add(histo2);
+//		histo1->Add(histo3);
+//		c = new TCanvas(Form("c_events_type_Vov3.50_th30"),Form("c_events_type_Vov3.50_th30"));
+//    	histo1 -> SetTitle(";nHits;events");
+//		histo1 -> SetLineColor(kBlue);
+//		histo1 -> SetLineWidth(2);
+//		histo1 -> Draw();
+//		latex = new TLatex(0.40,0.85,Form("#splitline{events distribution}{V_{OV} = 3.50 V, th. = 30 DAC}"));
+//		latex -> SetNDC();
+//		latex -> SetTextFont(42);
+//		latex -> SetTextSize(0.04);
+//		latex -> SetTextColor(kRed);
+//		latex -> Draw();
+//		c -> Print(Form("%s/topology/c_events_type_Vov3.50_th30.png",plotDir.c_str()));
+//	    c -> Print(Form("%s/topology/c_events_type_Vov3.50_th30.pdf",plotDir.c_str()));
+//	}
 
 
     // ---  end 1st plots
