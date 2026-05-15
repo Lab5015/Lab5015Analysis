@@ -86,6 +86,8 @@ public:
   float totR_ref;
   long long timeL_ref;
   long long timeR_ref;
+  long long timeL_ref_cor;
+  long long timeR_ref_cor;
   unsigned short t1fineL_ref;
   unsigned short t1fineR_ref;
   float qT1L_ref;

@@ -412,6 +412,8 @@ int main(int argc, char** argv)
   float totR_ref = -10;
   long long timeL_ref = -10;
   long long timeR_ref = -10;
+  long long timeL_ref_cor = -10;
+  long long timeR_ref_cor = -10;
   unsigned short t1fineL_ref = -10;
   unsigned short t1fineR_ref = -10; 
   float energyL_ref = -10;
@@ -634,6 +636,8 @@ int main(int argc, char** argv)
 		anEvent.totR_ref = totR_ref;
 		anEvent.timeL_ref = timeL_ref;
 		anEvent.timeR_ref = timeR_ref;
+		anEvent.timeL_ref_cor = timeL_ref_cor;
+		anEvent.timeR_ref_cor = timeR_ref_cor;
 		anEvent.t1fineL_ref = t1fineL_ref;
 		anEvent.t1fineR_ref = t1fineR_ref;
 	      }
