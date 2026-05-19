@@ -81,10 +81,8 @@ for key in f.GetListOfKeys():
 # - make plots of mean and sigma parameters from the fit vs bar
 for quantity, thr_dict in data.items():
     for thr, bars in thr_dict.items():
-        plot_vs_bar( outdir, {"" : data[quantity][thr] }, thr=thr, title=f"thr {thr}", ykey="sigma", ekey="esigma", plotlabel=f"sigma_vs_bar_{quantity}_th{thr:02d}", plotdir=quantity)
-        plot_vs_bar( outdir, {"" : data[quantity][thr] }, thr=thr, title=f"thr {thr}", ykey="mean", ekey="emean", plotlabel=f"mean_vs_bar_{quantity}_th{thr:02d}", ylim=None, plotdir=quantity, ylabel=r"$\mu$ [ps]")
-
-import sys
+        plot_vs_bar( outdir, {"" : data[quantity][thr] }, title=f"thr {thr}", ykey="sigma", ekey="esigma", plotlabel=f"sigma_vs_bar_{quantity}_th{thr:02d}", plotdir=quantity)
+        plot_vs_bar( outdir, {"" : data[quantity][thr] }, title=f"thr {thr}", ykey="mean", ekey="emean", plotlabel=f"mean_vs_bar_{quantity}_th{thr:02d}", ylim=None, plotdir=quantity, ylabel=r"$\mu$ [ps]")
         
 # - compute triplet sigmas as a cross check
 derived = defaultdict(lambda: defaultdict(dict))
@@ -107,7 +105,7 @@ for thr in common_thrs:
         derived["sR"][thr][bar]   = {"sigma": vals["sR"][0],   "esigma": vals["sR"][1]  }
         derived["sDiff"][thr][bar]= {"sigma": sigma23/2.0,     "esigma": esigma23/2.0   }
 for thr in common_thrs:
-    plot_vs_bar( outdir,  {"REF avg" : derived["sRef"][thr], "DUT L": derived["sL"][thr], "DUT R": derived["sR"][thr]}, thr=thr, title=f"thr {thr}", ykey="sigma", ekey="esigma", plotlabel=f"th{thr:02d}_triplet_vs_bar", plotdir="triplet_check")
+    plot_vs_bar( outdir,  {"REF avg" : derived["sRef"][thr], "DUT L": derived["sL"][thr], "DUT R": derived["sR"][thr]}, title=f"thr {thr}", ykey="sigma", ekey="esigma", plotlabel=f"triplet_vs_bar_th{thr:02d}", plotdir="triplet_check")
     
 # - compute average DUT bar time resolution 
 derived["sAve"] = defaultdict(lambda: defaultdict(dict))
@@ -118,16 +116,26 @@ for thr in data[q_dut].keys():
         val, err = compute_sigma_differences(data,  q_dut, derived, "sRef", thr, bar)
         derived["sAve"][thr][bar] = {"sigma": val, "esigma": err}
 
-# - tDiff vs tAvg comparison 
+# - tDiff vs tAvg comparison
+plotname = f"tDiff_tAvg_vs_bar_th{thRef:02d}"
 if args.dm_id and args.dm_id in dm.keys():
     dm_key = args.dm_id
     derived["sDiff_moduleChar"] = defaultdict(lambda: defaultdict(dict))
     bars_sorted = sorted(common_bars)
     for i, bar in enumerate(bars_sorted):
         derived["sDiff_moduleChar"][thRef][bar] = { "sigma": dm[dm_key][i], "esigma": 0 }
-    plot_vs_bar( outdir,  {"tDiff": derived["sDiff"][thRef], "tAvg": derived["sAve"][thRef], "tDiff moduleChar": derived["sDiff_moduleChar"][thRef]}, thr=thRef, title="", ykey="sigma", ekey="esigma", plotlabel=f"th{thRef:02d}_tDiff_tAvg_vs_bar")
+    plot_vs_bar( outdir,  {"tDiff": derived["sDiff"][thRef], "tAvg": derived["sAve"][thRef], "tDiff moduleChar": derived["sDiff_moduleChar"][thRef]}, title="", ykey="sigma", ekey="esigma", plotlabel=plotname)
 else:
     if dm_key not in dm.keys():
         print("[WARNING] Missing time resolution values from moduleCharacterization tDiff for the specified DM ID \n")
-    plot_vs_bar( outdir, {"tDiff": derived["sDiff"][thRef], "tAvg": derived["sAve"][thRef]}, thr=thRef, title="", ykey="sigma", ekey="esigma", plotlabel=f"th{thRef:02d}_tDiff_tAvg_vs_bar")
+    plot_vs_bar( outdir, {"tDiff": derived["sDiff"][thRef], "tAvg": derived["sAve"][thRef]}, title="", ykey="sigma", ekey="esigma", plotlabel=plotname)
     
+print("\n - Time resolution values: \n")
+for bar in derived["sDiff"][thRef]:
+    sdiff = derived["sDiff"][thRef][bar]
+    smod  = derived["sDiff_moduleChar"][thRef][bar]
+    save  = derived["sAve"][thRef][bar]
+    print( f"Bar {bar:2d} | "
+           f"time difference referenceChar : {sdiff['sigma']:.0f} ± {sdiff['esigma']:.0f} ps | "
+           f"time difference moduleChar    : {smod['sigma']:.0f} ± {smod['esigma']:.0f} ps | "
+           f"time average referenceChar    : {save['sigma']:.0f} ± {save['esigma']:.0f} ps" )

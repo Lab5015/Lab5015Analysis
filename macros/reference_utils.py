@@ -53,7 +53,7 @@ def compute_sigma_differences(data1, qt1, data2, qt2, thr, bar):
     err = safe_sqrt(piece_dut_ref + piece_ref)
     return (val, err)
 
-def plot_vs_bar(outdir, series_dict, thr, title, plotlabel, ykey, ekey, ylabel=r"$\sigma$ [ps]", ylim=(0,100), plotdir=None):
+def plot_vs_bar(outdir, series_dict, title, plotlabel, ykey, ekey, ylabel=r"$\sigma$ [ps]", ylim=(0,100), plotdir=None):
     if plotdir:
         plot_dir = os.path.join(outdir, plotdir)
         os.makedirs(plot_dir, exist_ok=True)
@@ -64,14 +64,15 @@ def plot_vs_bar(outdir, series_dict, thr, title, plotlabel, ykey, ekey, ylabel=r
         bars = sorted(values_dict.keys())
         y = np.array([values_dict[b][ykey] for b in bars])
         yerr = np.array([values_dict[b][ekey] for b in bars])
-        ax.errorbar( bars, y, yerr=yerr, marker='o', linestyle='-', capsize=3, label=label)
+        ax.errorbar( bars, y, yerr=yerr, marker='o', linestyle='-', capsize=3, **({'label': label} if label else {}) )
     ax.set_xlabel("Bar")
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     ax.grid()
     if ylim:
         ax.set_ylim(*ylim)
-    ax.legend()
+    if label != "":
+        ax.legend()
     # Stats 
     text_lines = []
     for label, values_dict in series_dict.items():
@@ -81,5 +82,5 @@ def plot_vs_bar(outdir, series_dict, thr, title, plotlabel, ykey, ekey, ylabel=r
         text_lines.append(f"{label}: mean={mean:.0f}, RMS={rms:.0f}")
     text = "\n\n".join(text_lines)        
     ax.text( 0.55, 0.65, text, transform=ax.transAxes, fontsize=20, bbox=dict(facecolor='white', alpha=0.7, edgecolor='none') )
-    plt.savefig(os.path.join(plot_dir, f"{plotlabel}_th{thr:02d}.png"))
+    plt.savefig(os.path.join(plot_dir, f"{plotlabel}.png"))
     plt.close()

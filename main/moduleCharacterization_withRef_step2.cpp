@@ -250,7 +250,7 @@ int main(int argc, char** argv)
       for(int entry = 0; entry < nEntries; ++entry)
 	{
 	  if( entry%100000 == 0 ) {
-	    std::cout << ">>> 3rd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	    std::cout << ">>> 1st loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
 	  }
 	  mapIt.second -> GetEntry(entry);      
 	  if (!barSet.count(anEvent->barID)) continue;
@@ -407,7 +407,7 @@ int main(int argc, char** argv)
       for(int entry = 0; entry < nEntries; ++entry)
 	{
 	  if( entry%100000 == 0 ) {
-	    std::cout << ">>> 4th loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	    std::cout << ">>> 2nd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
 	  }
 	  mapIt.second -> GetEntry(entry);      
 	  if (!barSet.count(anEvent->barID)) continue;
@@ -518,7 +518,7 @@ int main(int argc, char** argv)
       for(int entry = 0; entry < nEntries; ++entry)
 	{
 	  if( entry%100000 == 0 ) {
-	    std::cout << ">>> 5th loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	    std::cout << ">>> 3rd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
 	  }
 	  mapIt.second -> GetEntry(entry);      
 	  if (!barSet.count(anEvent->barID)) continue;
