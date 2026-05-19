@@ -162,8 +162,6 @@ TF1* FitAndSaveProfile(TFile* outFile, TProfile* prof, const std::string& plotdi
   return f;
 }
 
-
-
 bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double deltaTR, double deltaTL_AveRef, double deltaTR_AveRef, std::map<std::string, std::map<int, std::vector<float>*> > ranges, int index1, double energyAve)
 {
     if (std::abs(deltaTL) > 5000 || std::abs(deltaTR) > 5000 || std::abs(deltaTL_AveRef) > 5000 || std::abs(deltaTR_AveRef) > 5000)
@@ -181,4 +179,46 @@ bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double delt
     if (energyAve < ranges.at("L-R")[index1]->at(0) || energyAve > ranges.at("L-R")[index1]->at(1))
         return false;
     return true;
+}
+
+std::string GetQuantityFromFilename(const std::string& name)
+{
+    // name of the kind of c_<obj>_<quantity>_barXX...
+    std::regex re("^c_[^_]+_(.+?)_bar");
+    std::smatch match;
+    if (!std::regex_search(name, match, re))
+        return "UNKNOWN";
+    std::string quantity = match[1];
+    // remove vs_...
+    size_t pos = quantity.find("vs_");
+    if (pos != std::string::npos)
+        quantity = quantity.substr(0, pos);
+    // remove underscores
+    while (!quantity.empty() && quantity.back() == '_')
+        quantity.pop_back();
+    return quantity;
+}
+
+void SortPlotsByQuantity(const std::string& plotDir)
+{
+    DIR* dir = opendir(plotDir.c_str());
+    if (!dir) {
+      std::cerr << "Cannot open directory: " << plotDir << std::endl;
+      return; }
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr)
+    {
+        std::string fileName = entry->d_name;
+        if (fileName == "." || fileName == "..")
+            continue;
+        if (fileName.find(".png") == std::string::npos)
+            continue;
+        std::string quantity = GetQuantityFromFilename(fileName);
+        std::string targetDir = plotDir + "/" + quantity;
+        mkdir(targetDir.c_str(), 0755);
+        std::string oldPath = plotDir + "/" + fileName;
+        std::string newPath = targetDir + "/" + fileName;
+        rename(oldPath.c_str(), newPath.c_str());
+    }
+    closedir(dir);
 }

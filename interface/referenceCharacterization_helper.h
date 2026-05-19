@@ -6,6 +6,11 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <regex>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 // ROOT
 #include "TH1F.h"
@@ -57,5 +62,8 @@ TF1* FitAndSaveHisto(TFile* outFile, TH1F* histo, const std::string& plotdirecto
 TF1* FitAndSaveProfile(TFile* outFile, TProfile* prof, const std::string& plotdirectory, int saveFlag=1);
 
 bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double deltaTR, double deltaTL_AveRef, double deltaTR_AveRef, std::map<std::string, std::map<int, std::vector<float>*> > ranges, int index1, double energyAve);
+
+std::string GetQuantityFromFilename(const std::string& name);
+void SortPlotsByQuantity(const std::string& plotDir);
 
 #endif // REFERENCECHARACTERIZATION_HELPER_H

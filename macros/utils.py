@@ -1,7 +1,8 @@
 #! /usr/bin/env python
-import os
 import numpy as np
 import argparse
+import re
+from collections import defaultdict
 from scipy.interpolate import interp1d
 from ctypes import c_double, c_float
 import CMS_lumi, tdrstyle
@@ -10,7 +11,6 @@ from slewRate import *
 from SiPM import *
 from moduleDict import *
 from calibration_utils import *
-from draw_functions import *
 
 cms_colors = [
     ROOT.TColor.GetColor("#3f90da"),
