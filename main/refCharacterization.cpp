@@ -372,7 +372,7 @@ int main(int argc, char** argv)
 	  int index1( (10000*int(anEvent->Vov*100.)) + (100*anEvent->vth) + anEvent->barID );
 	  if( !accept[index1][entry] ) continue;
 	  int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
-	  int barForAmpWalk = usePerBarAmpWalk ? fixedAmpBar : anEvent->barID;
+	  int barForAmpWalk = usePerBarAmpWalk ? anEvent->barID : fixedAmpBar;
 	  double index2 = 10000000*energyBinAverage + 10000*int(anEvent->Vov*100.) + 100*anEvent->vth + barForAmpWalk;
 	  if (!f_LAve_eLRef[index2]) {
 	    std::cout << "NULL f_LAve at index2=" << index2 << std::endl;

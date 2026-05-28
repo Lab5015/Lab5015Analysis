@@ -39,7 +39,7 @@ def sigma_triplet(sigma12, sigma23, sigma13, err12=0., err23=0., err13=0., sigma
     err_sRef = err(sRef, sigma12, err12, sigma23, err23, sigma13, err13)
     err_sL   = err(sL,   sigma12, err12, sigma23, err23, sigma13, err13)
     err_sR   = err(sR,   sigma12, err12, sigma23, err23, sigma13, err13)    
-    return { "sRef": (sRef, err_sRef), "sL": (sL, err_sL), "sR": (sR, err_sR)}
+    return { "sRef_triplet": (sRef, err_sRef), "sL_triplet": (sL, err_sL), "sR_triplet": (sR, err_sR)}
 
 def compute_sigma_differences(data1, qt1, data2, qt2, thr, bar):
     sigma_dut_ref = data1[qt1][thr][bar]["sigma"]
@@ -59,6 +59,7 @@ def plot_vs_bar(outdir, series_dict, title, plotlabel, ykey, ekey, ylabel=r"$\si
         os.makedirs(plot_dir, exist_ok=True)
     else:
         plot_dir = outdir
+    graphs = []
     fig, ax = plt.subplots(figsize=(12,10))
     for label, values_dict in series_dict.items():
         bars = sorted(values_dict.keys())
@@ -71,7 +72,8 @@ def plot_vs_bar(outdir, series_dict, title, plotlabel, ykey, ekey, ylabel=r"$\si
     ax.grid()
     if ylim:
         ax.set_ylim(*ylim)
-    if label != "":
+    handles, labels = ax.get_legend_handles_labels()
+    if labels:
         ax.legend()
     # Stats 
     text_lines = []
@@ -79,8 +81,26 @@ def plot_vs_bar(outdir, series_dict, title, plotlabel, ykey, ekey, ylabel=r"$\si
         yvals = np.array([values_dict[b][ykey] for b in sorted(values_dict.keys())])
         mean = np.nanmean(yvals)
         rms  = np.nanstd(yvals)
-        text_lines.append(f"{label}: mean={mean:.0f}, RMS={rms:.0f}")
+        if ylim:
+            precision = max(0, -int(math.floor(math.log10(ylim[1]))) )
+            precision = min(3, precision)
+            fmt = f"{{:.{precision}f}}"
+            text_lines.append(f"{label}: mean={fmt.format(mean)}, RMS={fmt.format(rms)}")
+        else:
+            text_lines.append(f"{label}: mean={mean:.0f}, RMS={rms:.0f}")
     text = "\n\n".join(text_lines)        
     ax.text( 0.55, 0.65, text, transform=ax.transAxes, fontsize=20, bbox=dict(facecolor='white', alpha=0.7, edgecolor='none') )
     plt.savefig(os.path.join(plot_dir, f"{plotlabel}.png"))
     plt.close()
+
+def save_graph(root_file, values_dict, ykey, ekey, graph_name):    
+    bars = sorted(values_dict.keys())
+    y = np.array([values_dict[b][ykey] for b in bars])
+    yerr = np.array([values_dict[b][ekey] for b in bars])
+    gr = ROOT.TGraphErrors(len(bars))
+    for i, b in enumerate(bars):
+        gr.SetPoint(i, b, y[i])
+        gr.SetPointError(i, 0, yerr[i])
+    gr.SetName(graph_name)
+    root_file.cd()
+    gr.Write()
