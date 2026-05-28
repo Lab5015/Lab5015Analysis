@@ -69,6 +69,50 @@ void SaveHisto2ToCanvas(TFile* outFile, TH2* histo, const std::string& plotdirec
   c->SaveAs(Form("%s/%s.png", plotdirectory.c_str(), c->GetName()));
   delete c;
 }
+void SaveProfileToCanvas(TFile* outFile, TProfile* prof, const std::string& plotdirectory) {
+  if (!prof) {
+    std::cerr << "[SKIP] Profile null: " << std::endl;
+    return;
+  }
+  if (prof->GetEntries() < 10) {
+    std::cerr << "[SKIP] Few entries (" << prof->GetEntries() << "): " <<prof->GetName() << std::endl;
+    return;
+  }
+  // - compute global Y mean/RMS to identify bulk region
+  double meanY = prof->GetMean(2);
+  double rmsY  = prof->GetRMS(2);
+  double nsigma = 2.0;
+  int firstFitBin = -1;
+  int lastFitBin  = -1;
+  int goodBins    = 0;
+  for (int i = 1; i <= prof->GetNbinsX(); ++i) {
+    if (prof->GetBinEntries(i) < 5)
+      continue;
+    double y = prof->GetBinContent(i);
+    if (fabs(y - meanY) > nsigma * rmsY)
+      continue;
+    if (firstFitBin == -1)
+      firstFitBin = i;
+    lastFitBin = i;
+    goodBins++;
+  }
+  if (goodBins < 3) {
+    std::cerr << "[SKIP] Too few valid bins after selection: " << prof->GetName() << std::endl;
+    return;
+  }
+  double xmin = prof->GetXaxis()->GetBinLowEdge(firstFitBin);
+  double xmax = prof->GetXaxis()->GetBinUpEdge(lastFitBin);
+  if (xmin >= xmax) {
+    std::cerr << "[SKIP] Bad fit range for " << prof->GetName() << std::endl;
+    return;
+  }
+  TCanvas* c = new TCanvas(Form("c_%s", prof->GetName()), prof->GetName(), 600, 500);
+  prof->Draw();
+  c->SaveAs(Form("%s/%s.png", plotdirectory.c_str(), c->GetName()));
+  outFile->cd();
+  prof->Write();
+  delete c;
+}
 
 TF1* FitAndSaveHisto(TFile* outFile, TH1F* histo, const std::string& plotdirectory, double nSigmaLow, double nSigmaUp, int saveFlag, FitType fitType) {
   if (!histo){
@@ -133,20 +177,32 @@ TF1* FitAndSaveProfile(TFile* outFile, TProfile* prof, const std::string& plotdi
     std::cerr << "[SKIP] Few entries (" << prof->GetEntries() << "): " <<prof->GetName() << std::endl;
     return nullptr;
   }
-  int firstBin = -1;
-  int lastBin  = -1;
-  int goodBins = 0;
+  // - compute global Y mean/RMS to identify bulk region
+  double meanY = prof->GetMean(2);
+  double rmsY  = prof->GetRMS(2);
+  double nsigma = 2.0;
+  int firstFitBin = -1;
+  int lastFitBin  = -1;
+  int goodBins    = 0;
   for (int i = 1; i <= prof->GetNbinsX(); ++i) {
-    if (prof->GetBinEntries(i) >= 4) {
-      if (firstBin == -1) firstBin = i;
-      lastBin = i;
-      goodBins++;
-    }
+    if (prof->GetBinEntries(i) < 5)
+      continue;
+    double y = prof->GetBinContent(i);
+    if (fabs(y - meanY) > nsigma * rmsY)
+      continue;
+    if (firstFitBin == -1)
+      firstFitBin = i;
+    lastFitBin = i;
+    goodBins++;
   }
-  double xmin = prof->GetXaxis()->GetBinLowEdge(firstBin);
-  double xmax = prof->GetXaxis()->GetBinUpEdge(lastBin);
+  if (goodBins < 3) {
+    std::cerr << "[SKIP] Too few valid bins after selection: " << prof->GetName() << std::endl;
+    return nullptr;
+  }
+  double xmin = prof->GetXaxis()->GetBinLowEdge(firstFitBin);
+  double xmax = prof->GetXaxis()->GetBinUpEdge(lastFitBin);
   if (xmin >= xmax) {
-    std::cerr << "[SKIP] Bad range: " << prof->GetNbinsX() << std::endl;
+    std::cerr << "[SKIP] Bad fit range for " << prof->GetName() << std::endl;
     return nullptr;
   }
   TCanvas* c = new TCanvas(Form("c_%s", prof->GetName()), prof->GetName(), 600, 500);
@@ -157,12 +213,13 @@ TF1* FitAndSaveProfile(TFile* outFile, TProfile* prof, const std::string& plotdi
   if (saveFlag == 1) {
     outFile->cd();
     prof->Write();
-    f->Write(); }
+    f->Write();
+  }
   delete c;
   return f;
 }
 
-bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double deltaTR, double deltaTL_AveRef, double deltaTR_AveRef, std::map<std::string, std::map<int, std::vector<float>*> > ranges, int index1, double energyAve)
+bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double deltaTR, double deltaTL_AveRef, double deltaTR_AveRef, std::map<std::string, std::map<int, std::vector<float>*> > ranges, int index1, double energyL, double energyR)
 {
     if (std::abs(deltaTL) > 5000 || std::abs(deltaTR) > 5000 || std::abs(deltaTL_AveRef) > 5000 || std::abs(deltaTR_AveRef) > 5000)
         return false;
@@ -176,6 +233,7 @@ bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double delt
     int energyBinAverage = FindBin(0.5 * (anEvent->energyL + anEvent->energyR), ranges.at("L-R")[index1]) + 1;
     if (energyBinAverage < 1)
         return false;
+    double energyAve = 0.5*(energyL+energyR);   
     if (energyAve < ranges.at("L-R")[index1]->at(0) || energyAve > ranges.at("L-R")[index1]->at(1))
         return false;
     return true;

@@ -191,7 +191,7 @@ int main(int argc, char** argv)
   stepLabels.erase(std::unique(stepLabels.begin(),stepLabels.end()),stepLabels.end());
   // - define output files
   std::string outFileName = opts.GetOpt<std::string>("Output.outFileNameStep2");
-  TFile* outFile = TFile::Open(outFileName.c_str(),"RECREATE");
+  TFile* outFile = TFile::Open(outFileName.c_str(),"UPDATE");
   outFile->cd();
   
   // ========================
@@ -265,8 +265,7 @@ int main(int argc, char** argv)
 	  double tAve_ref       = 0.5*( anEvent->timeL_ref     +  anEvent->timeR_ref     );
 	  double deltaTL_AveRef = anEvent->timeL - tAve_ref;
 	  double deltaTR_AveRef = anEvent->timeR - tAve_ref;
-	  float energyAve = 0.5*(anEvent->energyL + anEvent->energyR);
-	  bool pass = PassSelection(anEvent, deltaTL, deltaTR, deltaTL_AveRef, deltaTR_AveRef, ranges, index1, energyAve);
+	  bool pass = PassSelection(anEvent, deltaTL, deltaTR, deltaTL_AveRef, deltaTR_AveRef, ranges, index1, anEvent->energyL, anEvent->energyR);
 	  if (pass==false) continue;
 	  accept[index1][entry] = true;
 	  // =================================
@@ -383,8 +382,8 @@ int main(int argc, char** argv)
   //  - derive phase corrections
   // =========================
   // 1. DUT - corrected REF
-  std::map<double,TH1F*> h1_deltaT_tLCor_tAveRefCor;
-  std::map<double,TH1F*> h1_deltaT_tRCor_tAveRefCor;
+  std::map<double,TH1F*> h1_deltaT_tL_tAveRefCor_eCor;
+  std::map<double,TH1F*> h1_deltaT_tR_tAveRefCor_eCor;
 
   // 2. check residual dependence on energy DUT and energy REF
   std::map<double,TH2F*> h2_deltaT_tL_tAveRefCor_eCor_vs_eL;
@@ -394,10 +393,14 @@ int main(int argc, char** argv)
   std::map<double,TProfile*> p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL;
   std::map<double,TProfile*> p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve;
   std::map<double,TProfile*> p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR;  
+  std::map<double,TH2F*> h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL;
+  std::map<double,TH2F*> h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve;
+  std::map<double,TH2F*> h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR;  
 
   // 4. time difference TW corrected and derive phase corrections
   std::map<double,TH1F*>     h1_deltaT_tL_tR_eRatioCor;
   std::map<double,TProfile*> p1_deltaT_tL_tR_eRatioCor_vs_phaseMean;  
+  std::map<double,TH2F*> h2_deltaT_tL_tR_eRatioCor_vs_phaseMean;  
 
   for(auto mapIt : trees)
     {
@@ -419,24 +422,28 @@ int main(int argc, char** argv)
 	    accept[index1][entry] = false;
 	    continue;
 	  }	  
-	  if(h1_deltaT_tLCor_tAveRefCor[index2] == NULL)
+	  if(h1_deltaT_tL_tAveRefCor_eCor[index2] == NULL)
 	    {
 	      std::string labelLR_energyBin(Form("bar%02d_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth,energyBinAverage));
 	      // --- 1. DUT - corrected REF
-	      h1_deltaT_tLCor_tAveRefCor[index2] = new TH1F(Form("h1_deltaT_tLCor_tAveRefCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor} - t_{avg}^{REF,cor}; Events", nbins, maxT, -minT);
-	      h1_deltaT_tRCor_tAveRefCor[index2] = new TH1F(Form("h1_deltaT_tRCor_tAveRefCor_%s",labelLR_energyBin.c_str()), ";t_{R}^{cor} - t_{avg}^{REF,cor}; Events", nbins, maxT, -minT);
+	      h1_deltaT_tL_tAveRefCor_eCor[index2] = new TH1F(Form("h1_deltaT_tL_tAveRefCor_eCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor} - t_{avg}^{REF,cor}; Events", nbins, maxT, -minT);
+	      h1_deltaT_tR_tAveRefCor_eCor[index2] = new TH1F(Form("h1_deltaT_tR_tAveRefCor_eCor_%s",labelLR_energyBin.c_str()), ";t_{R}^{cor} - t_{avg}^{REF,cor}; Events", nbins, maxT, -minT);
 
 	      // --- 2. check residual dependence on energy DUT and energy REF
 	      h2_deltaT_tL_tAveRefCor_eCor_vs_eL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_eL_%s",labelLR_energyBin.c_str()), ";energy_{L};t_{L}^{cor} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
 	      h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef_%s",labelLR_energyBin.c_str()), ";energy_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
 
 	      // --- 3. derive phase corrections
-	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]    = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL_%s",labelLR_energyBin.c_str()),";phase_{L};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);
-	      p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]    = new TProfile(Form("p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR_%s",labelLR_energyBin.c_str()),";phase_{R};t_{R}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);
-	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2] = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);	      
+	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]       = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL_%s",labelLR_energyBin.c_str()),";phase_{L};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);
+	      p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]       = new TProfile(Form("p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR_%s",labelLR_energyBin.c_str()),";phase_{R};t_{R}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);
+	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2]  = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);	      
+	      h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]      = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL_%s",labelLR_energyBin.c_str()),";phase_{L};t_{L}^{cor} - t_{avg}^{REF, cor};Events",nbins2d,100,1000, nbins2d,maxT,-minT);
+	      h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]      = new TH2F(Form("h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR_%s",labelLR_energyBin.c_str()),";phase_{R};t_{R}^{cor} - t_{avg}^{REF, cor};Events",nbins2d,100,1000, nbins2d,maxT,-minT);
+	      h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF, cor}",nbins2d,100,1000, nbins2d,maxT,-minT);
 	      // --- 4. time difference TW corrected and derive phase corrections 
 	      h1_deltaT_tL_tR_eRatioCor[index2] = new TH1F(Form("h1_deltaT_tL_tR_eRatioCor_%s",labelLR_energyBin.c_str()),";(t_{L} - t_{R})^{cor}; Events",nbins, -1000, 1000);
 	      p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] = new TProfile(Form("p1_deltaT_tL_tR_eRatioCor_vs_phaseMean_%s",labelLR_energyBin.c_str()), ";phase_{avg};t_{L}^{cor} - t_{R}^{cor}",nbinsProf, 100, 1000);
+	      h2_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] = new TH2F(Form("h2_deltaT_tL_tR_eRatioCor_vs_phaseMean_%s",labelLR_energyBin.c_str()), ";phase_{avg};t_{L}^{cor} - t_{R}^{cor}",nbins2d, 100, 1000, nbins2d,maxT,-minT);
 	    }
 	  // -- define quantities
 	  double tAve_ref_cor   = 0.5*( anEvent->timeL_ref_cor +  anEvent->timeR_ref_cor );
@@ -453,8 +460,8 @@ int main(int argc, char** argv)
 	  
 	  // --- fill histograms
 	  // 1. DUT - corrected REF
-	  h1_deltaT_tLCor_tAveRefCor[index2] -> Fill( deltaTL_eLCor );
-	  h1_deltaT_tRCor_tAveRefCor[index2] -> Fill( deltaTR_eRCor );
+	  h1_deltaT_tL_tAveRefCor_eCor[index2] -> Fill( deltaTL_eLCor );
+	  h1_deltaT_tR_tAveRefCor_eCor[index2] -> Fill( deltaTR_eRCor );
 
 	  // 2. check residual dependence on energy DUT and energy REF
 	  h2_deltaT_tL_tAveRefCor_eCor_vs_eL[index2]      -> Fill( anEvent->energyL ,  deltaTL_eLCor );
@@ -464,33 +471,41 @@ int main(int argc, char** argv)
 	  p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2] -> Fill( anEvent->t1fineL, deltaTL_eLCor );
 	  p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2] -> Fill( anEvent->t1fineR, deltaTR_eRCor );
 	  p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2] -> Fill( phaseRefAve, deltaTL_eLCor );
+	  h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2] -> Fill( anEvent->t1fineL, deltaTL_eLCor );
+	  h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2] -> Fill( anEvent->t1fineR, deltaTR_eRCor );
+	  h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2] -> Fill( phaseRefAve, deltaTL_eLCor );
 
 	  // 4. time difference TW corrected and derive phase corrections 
 	  h1_deltaT_tL_tR_eRatioCor[index2]      -> Fill(deltaTLR_eRatioCor);
 	  p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] -> Fill( 0.5*(anEvent->t1fineL + anEvent->t1fineR), deltaTLR_eRatioCor);
+	  h2_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] -> Fill( 0.5*(anEvent->t1fineL + anEvent->t1fineR), deltaTLR_eRatioCor);
 	}
     }
   // - save and draw objects  2nd loop
-  for(auto& it : h1_deltaT_tLCor_tAveRefCor)
+  for(auto& it : h1_deltaT_tL_tAveRefCor_eCor)
     {
       double index2 = it.first;
       outFile->cd();
       // 1. DUT - corrected REF
-      f = FitAndSaveHisto(outFile, h1_deltaT_tLCor_tAveRefCor[index2], plotDir);
-      f = FitAndSaveHisto(outFile, h1_deltaT_tRCor_tAveRefCor[index2], plotDir);
+      f = FitAndSaveHisto(outFile, h1_deltaT_tL_tAveRefCor_eCor[index2], plotDir);
+      f = FitAndSaveHisto(outFile, h1_deltaT_tR_tAveRefCor_eCor[index2], plotDir);
 
       // 2. check residual dependence on energy DUT and energy REF
       SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_eCor_vs_eL[index2], plotDir);
       SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef[index2], plotDir);
 
       // 3. derive phase corrections
-      f = FitAndSaveProfile(outFile, p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2], plotDir);
-      f = FitAndSaveProfile(outFile, p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2], plotDir);
-      f = FitAndSaveProfile(outFile, p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2], plotDir);
+      SaveProfileToCanvas(outFile, p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2], plotDir);
+      SaveProfileToCanvas(outFile, p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2], plotDir);
+      SaveProfileToCanvas(outFile, p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2], plotDir);
+      SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2], plotDir);
+      SaveHisto2ToCanvas(outFile, h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2], plotDir);
+      SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2], plotDir);
 
       // 4. time difference TW corrected and derive phase corrections
       f = FitAndSaveHisto(outFile, h1_deltaT_tL_tR_eRatioCor[index2], plotDir);
-      f = FitAndSaveProfile(outFile, p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] , plotDir);      
+      SaveProfileToCanvas(outFile, p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] , plotDir);
+      SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2], plotDir);
     }
 
   // ========================
@@ -499,8 +514,8 @@ int main(int argc, char** argv)
   // =================
 
   // 1. apply phase corrections
-  std::map<double,TH1F*> h1_deltaT_tLCor_tAveRefCor_phaseCor;
-  std::map<double,TH1F*> h1_deltaT_tRCor_tAveRefCor_phaseCor;
+  std::map<double,TH1F*> h1_deltaT_tL_tAveRefCor_eCor_phaseCor;
+  std::map<double,TH1F*> h1_deltaT_tR_tAveRefCor_eCor_phaseCor;
   std::map<double,TH1F*> h1_deltaT_tAve_tAveRefCor_eCor_phaseCor;
   std::map<double,TH1F*> h1_deltaT_tL_tR_eRatioCor_phaseMeanCor;
 
@@ -526,12 +541,12 @@ int main(int argc, char** argv)
 	  if( !accept[index1][entry] ) continue ;
 	  int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
 	  double  index2( 10000000*energyBinAverage+index1 );
-	  if(h1_deltaT_tLCor_tAveRefCor_phaseCor[index2] == NULL)
+	  if(h1_deltaT_tL_tAveRefCor_eCor_phaseCor[index2] == NULL)
 	    {
 	      std::string labelLR_energyBin(Form("bar%02d_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth,energyBinAverage));
 	      // --- 1. apply phase corrections
-	      h1_deltaT_tLCor_tAveRefCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tLCor_tAveRefCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
-	      h1_deltaT_tRCor_tAveRefCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tRCor_tAveRefCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{R}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
+	      h1_deltaT_tL_tAveRefCor_eCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tL_tAveRefCor_eCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
+	      h1_deltaT_tR_tAveRefCor_eCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tR_tAveRefCor_eCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{R}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
 	      h1_deltaT_tAve_tAveRefCor_eCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tAve_tAveRefCor_eCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{avg}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
 	      h1_deltaT_tL_tR_eRatioCor_phaseMeanCor[index2] = new TH1F(Form("h1_deltaT_tL_tR_eRatioCor_phaseMeanCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor, ph} - t_{R}^{cor, ph}; Events", nbins, -1000,1000);
 
@@ -573,8 +588,8 @@ int main(int argc, char** argv)
 
 	  // -- fill histograms
 	  // 1. apply phase corrections
-	  h1_deltaT_tLCor_tAveRefCor_phaseCor[index2] -> Fill( deltaTL_eLCor_phaseLCor );
-	  h1_deltaT_tRCor_tAveRefCor_phaseCor[index2] -> Fill( deltaTR_eRCor_phaseRCor );	  
+	  h1_deltaT_tL_tAveRefCor_eCor_phaseCor[index2] -> Fill( deltaTL_eLCor_phaseLCor );
+	  h1_deltaT_tR_tAveRefCor_eCor_phaseCor[index2] -> Fill( deltaTR_eRCor_phaseRCor );	  
 	  h1_deltaT_tAve_tAveRefCor_eCor_phaseCor[index2] -> Fill( deltaT_tAve_tAveRefCor_eCor_phaseCor );
 	  h1_deltaT_tL_tR_eRatioCor_phaseMeanCor[index2]  -> Fill( deltaTLR_eRatioCor_phaseMeanCor);
 	  
@@ -585,13 +600,13 @@ int main(int argc, char** argv)
     } // end loop tree
 
   // draw 3rd loop 
-  for(auto& it : h1_deltaT_tLCor_tAveRefCor_phaseCor)
+  for(auto& it : h1_deltaT_tL_tAveRefCor_eCor_phaseCor)
     {
       double index2 = it.first;
       outFile->cd();
       // 1. apply phase corrections
-      f = FitAndSaveHisto(outFile, h1_deltaT_tLCor_tAveRefCor_phaseCor[index2], plotDir);      
-      f = FitAndSaveHisto(outFile, h1_deltaT_tRCor_tAveRefCor_phaseCor[index2], plotDir);
+      f = FitAndSaveHisto(outFile, h1_deltaT_tL_tAveRefCor_eCor_phaseCor[index2], plotDir);      
+      f = FitAndSaveHisto(outFile, h1_deltaT_tR_tAveRefCor_eCor_phaseCor[index2], plotDir);
       f = FitAndSaveHisto(outFile, h1_deltaT_tAve_tAveRefCor_eCor_phaseCor[index2], plotDir);
       f = FitAndSaveHisto(outFile, h1_deltaT_tL_tR_eRatioCor_phaseMeanCor[index2], plotDir);
       

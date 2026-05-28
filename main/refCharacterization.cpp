@@ -35,7 +35,7 @@ int main(int argc, char** argv)
   std::cout.precision(dbl::max_digits10);
   if( argc < 2 )
   {
-    std::cout << ">>> moduleCharacterization_step2::usage:   " << argv[0] << " configFile.cfg" << std::endl;
+    std::cout << ">>> refCharacterization::usage:   " << argv[0] << " configFile.cfg" << std::endl;
     return -1;
   }
 
@@ -53,6 +53,9 @@ int main(int argc, char** argv)
   std::vector<float> Vov = opts.GetOpt<std::vector<float> >("Plots.Vov");
   std::vector<int> energyMins = opts.GetOpt<std::vector<int> >("Plots.energyMins");
   std::vector<int> energyMaxs = opts.GetOpt<std::vector<int> >("Plots.energyMaxs");
+  // - options defining which amp walk functions to use: either each DUT bar computing its own for the same REF bar, or the refDUTbar for all DUT bars
+  bool usePerBarAmpWalk = opts.GetOpt<bool>("Reference.useAmpWalkPerBar");
+  int fixedAmpBar = opts.GetOpt<int>("Reference.ampWalkFixedDUTBar");
   std::map<float,int> map_energyMins;
   std::map<float,int> map_energyMaxs;
   for(unsigned int ii = 0; ii < Vov.size(); ++ii) {
@@ -136,7 +139,9 @@ int main(int argc, char** argv)
   // - define output files
   std::string outTreeFileName = opts.GetOpt<std::string>("Output.refFileName");
   TFile* outFile = TFile::Open(outTreeFileName.c_str(), "RECREATE");
-
+  std::string step2FileName= opts.GetOpt<std::string>("Output.outFileNameStep2");
+  TFile* step2File = TFile::Open(step2FileName.c_str(), "RECREATE");
+  
   // - define histograms and TProfiles
   // 0b. reference energy
   std::map<double,TH1F*> h1_eLRef;
@@ -155,6 +160,7 @@ int main(int argc, char** argv)
   std::map<int,TF1*>  f_landau; 
 
   // - energy ranges (window around the MPV) are stored in a dedicated tree
+  outFile->cd();
   TTree* rangeTree = new TTree("ranges","ranges");
   int tree_bar;
   int tree_vth;
@@ -302,14 +308,14 @@ int main(int argc, char** argv)
 	  double deltaTL        = anEvent->timeL_ref - (0.5*(anEvent->timeL     + anEvent->timeR));
 	  double deltaTR        = anEvent->timeR_ref - (0.5*(anEvent->timeL     + anEvent->timeR));
 	  double deltaTL_AveRef = anEvent->timeL     - (0.5*(anEvent->timeL_ref + anEvent->timeR_ref));
-	  double deltaTR_AveRef = anEvent->timeR     - (0.5*(anEvent->timeL_ref + anEvent->timeR_ref));
-	  float energyAve = 0.5*(anEvent->energyL + anEvent->energyR);
-	  bool pass = PassSelection(anEvent, deltaTL, deltaTR, deltaTL_AveRef, deltaTR_AveRef, ranges, index1, energyAve);
+	  double deltaTR_AveRef = anEvent->timeR     - (0.5*(anEvent->timeL_ref + anEvent->timeR_ref));	  
+	  bool pass = PassSelection(anEvent, deltaTL, deltaTR, deltaTL_AveRef, deltaTR_AveRef, ranges, index1, anEvent->energyL, anEvent->energyR);
 	  if (pass==false) continue;	   
 	  accept[index1][entry] = true;
 	  int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
 
 	  // --- for the first loop we require the DUT events to have kinda fixed energy so that tDUT dependency on amplitude is reduced
+	  float energyAve = 0.5*(anEvent->energyL + anEvent->energyR);
 	  if (energyAve < narrow_ranges["L-R"][index1]->at(0) || energyAve> narrow_ranges["L-R"][index1]->at(1)) continue;	  
 	  // =================================
 	  double index2( (10000000*energyBinAverage+10000*int(anEvent->Vov*100.)) + (100*anEvent->vth) + anEvent->barID );
@@ -335,13 +341,15 @@ int main(int argc, char** argv)
   for(auto& it : p1_deltaT_tLRef_tAve_vs_eLRef)
     {      
       double index2 = it.first;
+      outFile->cd();
       f_eLRef[index2]    = FitAndSaveHisto(outFile, h1_eLRef[index2], plotDir,1.0,0.5, 0);
       f_eRRef[index2]    = FitAndSaveHisto(outFile, h1_eRRef[index2], plotDir,1.0,0.5, 0);
-      
-      f_LAve_eLRef[index2]    = FitAndSaveProfile(outFile, p1_deltaT_tLRef_tAve_vs_eLRef[index2], plotDir, 0);
-      f_RAve_eRRef[index2]    = FitAndSaveProfile(outFile, p1_deltaT_tRRef_tAve_vs_eRRef[index2], plotDir, 0);
-    }
 
+      step2File->cd();
+      f_LAve_eLRef[index2]    = FitAndSaveProfile(step2File, p1_deltaT_tLRef_tAve_vs_eLRef[index2], plotDir);
+      f_RAve_eRRef[index2]    = FitAndSaveProfile(step2File, p1_deltaT_tRRef_tAve_vs_eRRef[index2], plotDir);
+    }
+  
   // ====================================
   // - 3rd LOOP -
   //   correct ref time and store to tree
@@ -357,11 +365,20 @@ int main(int argc, char** argv)
       for(int entry = 0; entry < nEntries; ++entry)
 	{
 	  tree->GetEntry(entry);
+	  if( entry%100000 == 0 ) {
+	    std::cout << ">>> 3rd loop: " << mapIt.first << " reading entry " << entry << " / " << nEntries << " (" << 100.*entry/nEntries << "%)" << "\r" << std::flush;
+	  }
 	  if (!barSet.count(anEvent->barID)) continue;
 	  int index1( (10000*int(anEvent->Vov*100.)) + (100*anEvent->vth) + anEvent->barID );
 	  if( !accept[index1][entry] ) continue;
 	  int energyBinAverage = FindBin(0.5*(anEvent->energyL+anEvent->energyR),ranges["L-R"][index1])+1;
-	  double  index2( 10000000*energyBinAverage+index1 );
+	  int barForAmpWalk = usePerBarAmpWalk ? fixedAmpBar : anEvent->barID;
+	  double index2 = 10000000*energyBinAverage + 10000*int(anEvent->Vov*100.) + 100*anEvent->vth + barForAmpWalk;
+	  if (!f_LAve_eLRef[index2]) {
+	    std::cout << "NULL f_LAve at index2=" << index2 << std::endl;
+	    continue;
+	  }
+	  if (!f_LAve_eLRef[index2] || !f_eLRef[index2]) continue;
 	  double eLRefCor    = f_LAve_eLRef[index2] -> Eval( anEvent->energyL_ref ) - f_LAve_eLRef[index2] -> Eval( f_eLRef[index2]->GetParameter(1) );
 	  double eRRefCor    = f_RAve_eRRef[index2] -> Eval( anEvent->energyR_ref ) - f_RAve_eRRef[index2] -> Eval( f_eRRef[index2]->GetParameter(1) );
 	  anEvent->timeL_ref_cor = anEvent->timeL_ref - eLRefCor;
@@ -375,6 +392,7 @@ int main(int argc, char** argv)
   outFile->cd();
   rangeTree->Write();
   outFile->Close();
+  step2File->Close();
   std::cout << "============================================"  << std::endl;
   std::cout << "============================================"  << std::endl;
 }

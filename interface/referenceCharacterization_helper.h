@@ -57,11 +57,12 @@ void  AutoRangeRMS(TH1F* h, double nSigma = 5.);
 
 void SaveHistoToCanvas(TFile* outFile, TH1F* histo, const std::string& plotdirectory);
 void SaveHisto2ToCanvas(TFile* outFile, TH2* histo, const std::string& plotdirectory);
+void SaveProfileToCanvas(TFile* outFile, TProfile* prof, const std::string& plotdirectory);
 
 TF1* FitAndSaveHisto(TFile* outFile, TH1F* histo, const std::string& plotdirectory, double nSigmaLow = 1., double nSigmaUp = 1., int saveFlag=1, FitType fitType = kGaussian);
 TF1* FitAndSaveProfile(TFile* outFile, TProfile* prof, const std::string& plotdirectory, int saveFlag=1);
 
-bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double deltaTR, double deltaTL_AveRef, double deltaTR_AveRef, std::map<std::string, std::map<int, std::vector<float>*> > ranges, int index1, double energyAve);
+bool PassSelection(ModuleEventWithRefClass* anEvent, double deltaTL, double deltaTR, double deltaTL_AveRef, double deltaTR_AveRef, std::map<std::string, std::map<int, std::vector<float>*> > ranges, int index1, double energyL, double energyR);
 
 std::string GetQuantityFromFilename(const std::string& name);
 void SortPlotsByQuantity(const std::string& plotDir);

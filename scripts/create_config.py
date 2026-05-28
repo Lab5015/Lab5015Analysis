@@ -28,8 +28,10 @@ parser.add_argument("--whichEnergyIntercalib", required=False,  default="", type
 parser.add_argument("--dutASIC", required=False, default=7, type=int, help="the DUT ASIC position (default set to 7)")
 parser.add_argument("--refASIC", required=False, default=4, type=int, help="the REF ASIC position (default set to 4)")
 parser.add_argument("--refBar",  required=False, type=int, help="the REF bar on which ask for coincidence (default set to 7 in the code)")
+parser.add_argument("--calibBar",  required=False, type=int, help="the REF bar on which coincidence was required to derive calib factors (default = refBar)")
 parser.add_argument("--saveRefInfoFlag", required=False, type=int, default=0, help="0 or 1: flag to set if reference info should be saved")
-parser.add_argument("--refCalibPath",    required=False, type=str, default="DM_348_Vov3.00_T18C", help="REF module label used to get the energy intercalibration factors (default: DM_348_Vov3.00_T18C)")
+parser.add_argument("--refCalibPath",    required=False, type=str, default="DM_348_Vov3.00_T18C_conf87_refBar9", help="REF module label used to get the energy intercalibration factors (default: DM_348_Vov3.00_T18C_conf87_refBar9)")
+parser.add_argument("--refAmpWalkPerBar", required=False, default=0, type=bool, help="do you want to compute REF amp walk correction per DUT bar? (default=0)")
 args = parser.parse_args()
 
 if args.whichEnergyIntercalib != "":
@@ -52,6 +54,9 @@ else:
     else:
         args.extraLabel = "refBar"+str(args.refBar)
 
+if args.calibBar is None:
+    args.calibBar = args.refBar
+    
 # base label
 # ----------------------------
 Vov_float = float(args.Vov)
@@ -67,7 +72,7 @@ print("\n-- Ref ch: \tchannel left ", chL, "   channel right ", chR)
 # intercalib labels
 # -------------------------
 # the intercalib label is the one of the energy intercalibration csv files
-intercalib_label = f"{base_label}_refBar"+str(args.refBar)
+intercalib_label = f"{base_label}_refBar{str(args.calibBar)}"
 
 # when applying the energy intercalibrations, use the TOFHIR or TOFHIR_LO label to keep the info in the name of the file
 if args.whichEnergyIntercalib != "":
@@ -148,22 +153,8 @@ replacements_module = {
     "saveReferenceModuleInfoFlag" : args.saveRefInfoFlag,
     "channelMapping_list_from_bar0_to_bar15" : get_TOFHIR_channel_mapping(),
     "whichCalibration" : args.whichEnergyIntercalib,
-    "intercalibLabel" : intercalib_label
+    "intercalibLabel" : intercalib_label,
+    "useAmpWalkPerBarFlag" : args.refAmpWalkPerBar
 }
 
 write_cfg(base_module_cfg, out_module_cfg, replacements_module, check_Vov=True)
-
-
-# drawPulseShapeTB.cpp needs few adjustments for the new structure with DUT and REF ASIC settings
-
-# # drawPulseShapeTB cfg
-# # ----------------------------
-# base_pulse_cfg = cfgFolder / "drawPulseShapeTB_base.cfg"
-# out_pulse_cfg = cfgFolder / f"drawPulseShapeTB_{label}.cfg"
-# print(f"writing \t {out_pulse_cfg.name}")
-
-# replacements_pulse = {
-#     "runNumbers": args.runs,
-#     "generalLabel": label,
-#     "moduleLabel": args.modulelabel,
-#     "confNumber": args.config
