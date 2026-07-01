@@ -51,14 +51,19 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  // fixed values
+  // - fixed range values for visualization ---- to be FIXED, temporary patch
   float minEnergyRatio = 0.5;
   float maxEnergyRatio = 1.5;
   int nbins = 400;
   int nbins2d = 100;
+  int nbins2d_phase = 70;
   int nbinsProf = 50;
-  float minT = -3.0e3;
-  float maxT = 0.;
+  float minT = 500.;
+  float maxT = 2500;
+  float minPhase = 100;
+  float maxPhase = 1000;
+  float minDeltaT = -1000;
+  float maxDeltaT = 1000;
   
   // - parse the config file
   CfgManager opts;
@@ -279,24 +284,24 @@ int main(int argc, char** argv)
 	      h1_eR[index2] = new TH1F(Form("h1_eR_%s",labelLR_energyBin.c_str()),";energy_{R};Events",nbins, 0.,1024.);
 	      // --- 0a. DUT time difference
 	      h1_eRatio[index2] = new TH1F(Form("h1_eRatio_%s",labelLR_energyBin.c_str()),";energy_{L}/energy_{R};Events",nbins, minEnergyRatio, maxEnergyRatio);
-	      h1_deltaT_tL_tR[index2] = new TH1F(Form("h1_deltaT_tL_tR_%s",labelLR_energyBin.c_str()),";t_{L} - t_{R}; Events",nbins, -1000, 1000);
+	      h1_deltaT_tL_tR[index2] = new TH1F(Form("h1_deltaT_tL_tR_%s",labelLR_energyBin.c_str()),";t_{L} - t_{R}; Events",nbins, minDeltaT, maxDeltaT);
 	      p1_deltaT_tL_tR_vs_eRatio[index2] = new TProfile(Form("p1_deltaT_tL_tR_vs_eRatio_%s",labelLR_energyBin.c_str()),";energy_{L}/energy_{R};t_{L} - t_{R}", nbinsProf, minEnergyRatio, maxEnergyRatio);	      
 	      // --- 0c. DUT phase
-	      h1_phaseL[index2]   = new TH1F(Form("h1_phaseL_%s",     labelLR_energyBin.c_str()), ";phase_{L};Events"  ,nbins, 100.,1000.);
-	      h1_phaseR[index2]   = new TH1F(Form("h1_phaseR_%s",     labelLR_energyBin.c_str()), ";phase_{R};Events"  ,nbins, 100.,1000.);
-	      h1_phaseAve[index2] = new TH1F(Form("h1_phaseAve_%s",labelLR_energyBin.c_str()),    ";phase_{avg};Events",nbins, 100.,1000.);
+	      h1_phaseL[index2]   = new TH1F(Form("h1_phaseL_%s",     labelLR_energyBin.c_str()), ";phase_{L};Events"  ,nbins, minPhase, maxPhase);
+	      h1_phaseR[index2]   = new TH1F(Form("h1_phaseR_%s",     labelLR_energyBin.c_str()), ";phase_{R};Events"  ,nbins, minPhase, maxPhase);
+	      h1_phaseAve[index2] = new TH1F(Form("h1_phaseAve_%s",labelLR_energyBin.c_str()),    ";phase_{avg};Events",nbins, minPhase, maxPhase);
 
 	      // --- 1. DUT - REF raw
-	      h1_deltaT_tL_tAveRef[index2] = new TH1F(Form("h1_deltaT_tL_tAveRef_%s",labelLR_energyBin.c_str()),";t_{L} - t_{avg}^{REF}; Events",nbins, maxT,-minT);
-	      h1_deltaT_tR_tAveRef[index2] = new TH1F(Form("h1_deltaT_tR_tAveRef_%s",labelLR_energyBin.c_str()),";t_{R} - t_{avg}^{REF}; Events",nbins, maxT,-minT);
-	      h2_deltaT_tL_tAveRef_vs_eL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRef_vs_eL_%s",labelLR_energyBin.c_str()), ";energy_{L};t_{L} - t_{avg}^{REF};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
-	      h2_deltaT_tL_tAveRef_vs_eAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRef_vs_eAveRef_%s",labelLR_energyBin.c_str()), ";energy_{avg}^{REF};t_{L} - t_{avg}^{REF};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
+	      h1_deltaT_tL_tAveRef[index2] = new TH1F(Form("h1_deltaT_tL_tAveRef_%s",labelLR_energyBin.c_str()),";t_{L} - t_{avg}^{REF}; Events",nbins, minT, maxT);
+	      h1_deltaT_tR_tAveRef[index2] = new TH1F(Form("h1_deltaT_tR_tAveRef_%s",labelLR_energyBin.c_str()),";t_{R} - t_{avg}^{REF}; Events",nbins, minT, maxT);
+	      h2_deltaT_tL_tAveRef_vs_eL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRef_vs_eL_%s",labelLR_energyBin.c_str()), ";energy_{L};t_{L} - t_{avg}^{REF};Events", nbins2d, 0, 1024, nbins2d, minT, maxT);
+	      h2_deltaT_tL_tAveRef_vs_eAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRef_vs_eAveRef_%s",labelLR_energyBin.c_str()), ";energy_{avg}^{REF};t_{L} - t_{avg}^{REF};Events", nbins2d, 0, 1024, nbins2d, minT,maxT);
 
 	      // --- 2. DUT - REF_cor 
-	      h1_deltaT_tL_tAveRefCor[index2] = new TH1F(Form("h1_deltaT_tL_tAveRefCor_%s",labelLR_energyBin.c_str()),";t_{L} - t_{avg}^{REF, cor}; Events",nbins, maxT,-minT);
-	      h1_deltaT_tR_tAveRefCor[index2] = new TH1F(Form("h1_deltaT_tR_tAveRefCor_%s",labelLR_energyBin.c_str()),";t_{R} - t_{avg}^{REF, cor}; Events",nbins, maxT,-minT);
-	      h2_deltaT_tL_tAveRefCor_vs_eL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_vs_eL_%s",labelLR_energyBin.c_str()), ";energy_{L};t_{L} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
-	      h2_deltaT_tL_tAveRefCor_vs_eAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_vs_eAveRef_%s",labelLR_energyBin.c_str()), ";energy_{avg}^{REF};t_{L} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
+	      h1_deltaT_tL_tAveRefCor[index2] = new TH1F(Form("h1_deltaT_tL_tAveRefCor_%s",labelLR_energyBin.c_str()),";t_{L} - t_{avg}^{REF, cor}; Events",nbins, minT, maxT);
+	      h1_deltaT_tR_tAveRefCor[index2] = new TH1F(Form("h1_deltaT_tR_tAveRefCor_%s",labelLR_energyBin.c_str()),";t_{R} - t_{avg}^{REF, cor}; Events",nbins, minT, maxT);
+	      h2_deltaT_tL_tAveRefCor_vs_eL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_vs_eL_%s",labelLR_energyBin.c_str()), ";energy_{L};t_{L} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d, minT, maxT);
+	      h2_deltaT_tL_tAveRefCor_vs_eAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_vs_eAveRef_%s",labelLR_energyBin.c_str()), ";energy_{avg}^{REF};t_{L} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d, minT, maxT);
 
 	      // --- 3. get DUT TW 	      
 	      p1_deltaT_tL_tAveRefCor_vs_eL[index2] = new TProfile(Form("p1_deltaT_tL_tAveRefCor_vs_eL_%s",labelLR_energyBin.c_str()),";energy_{L};t_{L} - t_{avg}^{REF, cor}",nbinsProf,0,1024);
@@ -372,6 +377,8 @@ int main(int argc, char** argv)
       SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_vs_eAveRef[index2], plotDir);
       
       // --- 3. get DUT TW
+      p1_deltaT_tL_tAveRefCor_vs_eL[index2]->GetYaxis()->SetRangeUser(minT, maxT);
+      p1_deltaT_tR_tAveRefCor_vs_eR[index2]->GetYaxis()->SetRangeUser(minT, maxT);
       f_LAve_eL[index2] = FitAndSaveProfile(outFile, p1_deltaT_tL_tAveRefCor_vs_eL[index2], plotDir);
       f_RAve_eR[index2]	= FitAndSaveProfile(outFile, p1_deltaT_tR_tAveRefCor_vs_eR[index2], plotDir);
     }
@@ -387,6 +394,7 @@ int main(int argc, char** argv)
 
   // 2. check residual dependence on energy DUT and energy REF
   std::map<double,TH2F*> h2_deltaT_tL_tAveRefCor_eCor_vs_eL;
+  std::map<double,TH2F*> h2_deltaT_tR_tAveRefCor_eCor_vs_eR;
   std::map<double,TH2F*> h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef;
 
   // 3. derive phase corrections 
@@ -399,8 +407,9 @@ int main(int argc, char** argv)
 
   // 4. time difference TW corrected and derive phase corrections
   std::map<double,TH1F*>     h1_deltaT_tL_tR_eRatioCor;
+  std::map<double,TH2F*>     h2_deltaT_tL_tR_eRatioCor_vs_eRatio;
   std::map<double,TProfile*> p1_deltaT_tL_tR_eRatioCor_vs_phaseMean;  
-  std::map<double,TH2F*> h2_deltaT_tL_tR_eRatioCor_vs_phaseMean;  
+  std::map<double,TH2F*>     h2_deltaT_tL_tR_eRatioCor_vs_phaseMean;  
 
   for(auto mapIt : trees)
     {
@@ -426,24 +435,26 @@ int main(int argc, char** argv)
 	    {
 	      std::string labelLR_energyBin(Form("bar%02d_Vov%.02f_th%02d_energyBin%02d",anEvent->barID,anEvent->Vov,anEvent->vth,energyBinAverage));
 	      // --- 1. DUT - corrected REF
-	      h1_deltaT_tL_tAveRefCor_eCor[index2] = new TH1F(Form("h1_deltaT_tL_tAveRefCor_eCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor} - t_{avg}^{REF,cor}; Events", nbins, maxT, -minT);
-	      h1_deltaT_tR_tAveRefCor_eCor[index2] = new TH1F(Form("h1_deltaT_tR_tAveRefCor_eCor_%s",labelLR_energyBin.c_str()), ";t_{R}^{cor} - t_{avg}^{REF,cor}; Events", nbins, maxT, -minT);
+	      h1_deltaT_tL_tAveRefCor_eCor[index2] = new TH1F(Form("h1_deltaT_tL_tAveRefCor_eCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
+	      h1_deltaT_tR_tAveRefCor_eCor[index2] = new TH1F(Form("h1_deltaT_tR_tAveRefCor_eCor_%s",labelLR_energyBin.c_str()), ";t_{R}^{cor} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
 
 	      // --- 2. check residual dependence on energy DUT and energy REF
-	      h2_deltaT_tL_tAveRefCor_eCor_vs_eL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_eL_%s",labelLR_energyBin.c_str()), ";energy_{L};t_{L}^{cor} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
-	      h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef_%s",labelLR_energyBin.c_str()), ";energy_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d,maxT,-minT);
+	      h2_deltaT_tL_tAveRefCor_eCor_vs_eL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_eL_%s",labelLR_energyBin.c_str()), ";energy_{L};t_{L}^{cor} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d, minT, maxT);
+	      h2_deltaT_tR_tAveRefCor_eCor_vs_eR[index2] = new TH2F(Form("h2_deltaT_tR_tAveRefCor_eCor_vs_eR_%s",labelLR_energyBin.c_str()), ";energy_{R};t_{R}^{cor} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d, minT, maxT);
+	      h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef_%s",labelLR_energyBin.c_str()), ";energy_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF,cor};Events", nbins2d, 0, 1024, nbins2d, minT, maxT);
 
 	      // --- 3. derive phase corrections
-	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]       = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL_%s",labelLR_energyBin.c_str()),";phase_{L};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);
-	      p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]       = new TProfile(Form("p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR_%s",labelLR_energyBin.c_str()),";phase_{R};t_{R}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);
-	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2]  = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,100,1000);	      
-	      h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]      = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL_%s",labelLR_energyBin.c_str()),";phase_{L};t_{L}^{cor} - t_{avg}^{REF, cor};Events",nbins2d,100,1000, nbins2d,maxT,-minT);
-	      h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]      = new TH2F(Form("h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR_%s",labelLR_energyBin.c_str()),";phase_{R};t_{R}^{cor} - t_{avg}^{REF, cor};Events",nbins2d,100,1000, nbins2d,maxT,-minT);
-	      h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF, cor}",nbins2d,100,1000, nbins2d,maxT,-minT);
+	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]       = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL_%s",labelLR_energyBin.c_str()),";phase_{L};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,minPhase, maxPhase);
+	      p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]       = new TProfile(Form("p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR_%s",labelLR_energyBin.c_str()),";phase_{R};t_{R}^{cor} - t_{avg}^{REF, cor}",nbinsProf,minPhase, maxPhase);
+	      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2]  = new TProfile(Form("p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF, cor}",nbinsProf,minPhase, maxPhase);	      
+	      h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]      = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_phaseL_%s",labelLR_energyBin.c_str()),";phase_{L};t_{L}^{cor} - t_{avg}^{REF, cor};Events",nbins2d_phase,minPhase, maxPhase, nbins2d_phase, minT, maxT);
+	      h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]      = new TH2F(Form("h2_deltaT_tR_tAveRefCor_eCor_vs_phaseR_%s",labelLR_energyBin.c_str()),";phase_{R};t_{R}^{cor} - t_{avg}^{REF, cor};Events",nbins2d_phase,minPhase, maxPhase, nbins2d_phase, minT, maxT);
+	      h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF};t_{L}^{cor} - t_{avg}^{REF, cor}",nbins2d_phase,minPhase, maxPhase, nbins2d_phase, minT, maxT);
 	      // --- 4. time difference TW corrected and derive phase corrections 
 	      h1_deltaT_tL_tR_eRatioCor[index2] = new TH1F(Form("h1_deltaT_tL_tR_eRatioCor_%s",labelLR_energyBin.c_str()),";(t_{L} - t_{R})^{cor}; Events",nbins, -1000, 1000);
-	      p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] = new TProfile(Form("p1_deltaT_tL_tR_eRatioCor_vs_phaseMean_%s",labelLR_energyBin.c_str()), ";phase_{avg};t_{L}^{cor} - t_{R}^{cor}",nbinsProf, 100, 1000);
-	      h2_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] = new TH2F(Form("h2_deltaT_tL_tR_eRatioCor_vs_phaseMean_%s",labelLR_energyBin.c_str()), ";phase_{avg};t_{L}^{cor} - t_{R}^{cor}",nbins2d, 100, 1000, nbins2d,maxT,-minT);
+	      h2_deltaT_tL_tR_eRatioCor_vs_eRatio[index2] = new TH2F(Form("h2_deltaT_tL_tR_eRatioCor_vs_eRatio_%s",labelLR_energyBin.c_str()), ";energy_{L}/energy_{R};t_{L}^{cor} - t_{R}^{cor}",nbins2d, minEnergyRatio, maxEnergyRatio, nbins2d, minDeltaT, maxDeltaT);
+	      p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] = new TProfile(Form("p1_deltaT_tL_tR_eRatioCor_vs_phaseMean_%s",labelLR_energyBin.c_str()), ";phase_{avg};t_{L}^{cor} - t_{R}^{cor}",nbinsProf, minPhase, maxPhase);
+	      h2_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] = new TH2F(Form("h2_deltaT_tL_tR_eRatioCor_vs_phaseMean_%s",labelLR_energyBin.c_str()), ";phase_{avg};t_{L}^{cor} - t_{R}^{cor}",nbins2d_phase, minPhase, maxPhase, nbins2d_phase,minDeltaT, maxDeltaT);
 	    }
 	  // -- define quantities
 	  double tAve_ref_cor   = 0.5*( anEvent->timeL_ref_cor +  anEvent->timeR_ref_cor );
@@ -465,6 +476,7 @@ int main(int argc, char** argv)
 
 	  // 2. check residual dependence on energy DUT and energy REF
 	  h2_deltaT_tL_tAveRefCor_eCor_vs_eL[index2]      -> Fill( anEvent->energyL ,  deltaTL_eLCor );
+	  h2_deltaT_tR_tAveRefCor_eCor_vs_eR[index2]      -> Fill( anEvent->energyR ,  deltaTR_eRCor );
 	  h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef[index2] -> Fill( energyRefAve ,      deltaTL_eLCor );
 
 	  // 3. derive phase corrections
@@ -477,6 +489,7 @@ int main(int argc, char** argv)
 
 	  // 4. time difference TW corrected and derive phase corrections 
 	  h1_deltaT_tL_tR_eRatioCor[index2]      -> Fill(deltaTLR_eRatioCor);
+	  h2_deltaT_tL_tR_eRatioCor_vs_eRatio[index2] -> Fill(anEvent->energyL/anEvent->energyR , deltaTLR_eRatioCor);
 	  p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] -> Fill( 0.5*(anEvent->t1fineL + anEvent->t1fineR), deltaTLR_eRatioCor);
 	  h2_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] -> Fill( 0.5*(anEvent->t1fineL + anEvent->t1fineR), deltaTLR_eRatioCor);
 	}
@@ -492,9 +505,13 @@ int main(int argc, char** argv)
 
       // 2. check residual dependence on energy DUT and energy REF
       SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_eCor_vs_eL[index2], plotDir);
+      SaveHisto2ToCanvas(outFile, h2_deltaT_tR_tAveRefCor_eCor_vs_eR[index2], plotDir);
       SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_eCor_vs_eAveRef[index2], plotDir);
 
       // 3. derive phase corrections
+      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2]->GetYaxis()->SetRangeUser(minT, maxT);
+      p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2]->GetYaxis()->SetRangeUser(minT, maxT);
+      p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2]->GetYaxis()->SetRangeUser(minT, maxT);
       SaveProfileToCanvas(outFile, p1_deltaT_tL_tAveRefCor_eCor_vs_phaseL[index2], plotDir);
       SaveProfileToCanvas(outFile, p1_deltaT_tR_tAveRefCor_eCor_vs_phaseR[index2], plotDir);
       SaveProfileToCanvas(outFile, p1_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2], plotDir);
@@ -503,7 +520,9 @@ int main(int argc, char** argv)
       SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tAveRefCor_eCor_vs_phaseRefAve[index2], plotDir);
 
       // 4. time difference TW corrected and derive phase corrections
+      p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2]->GetYaxis()->SetRangeUser(minDeltaT, maxDeltaT);
       f = FitAndSaveHisto(outFile, h1_deltaT_tL_tR_eRatioCor[index2], plotDir);
+      SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tR_eRatioCor_vs_eRatio[index2], plotDir);
       SaveProfileToCanvas(outFile, p1_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2] , plotDir);
       SaveHisto2ToCanvas(outFile, h2_deltaT_tL_tR_eRatioCor_vs_phaseMean[index2], plotDir);
     }
@@ -523,8 +542,6 @@ int main(int argc, char** argv)
   std::map<double,TH2F*> h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseL;
   std::map<double,TH2F*> h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseAveRef;
   
-  minT = 0;
-  maxT = 3000;
   for(auto mapIt : trees)
     {
       ModuleEventWithRefClass* anEvent = new ModuleEventWithRefClass();
@@ -548,11 +565,11 @@ int main(int argc, char** argv)
 	      h1_deltaT_tL_tAveRefCor_eCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tL_tAveRefCor_eCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
 	      h1_deltaT_tR_tAveRefCor_eCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tR_tAveRefCor_eCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{R}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
 	      h1_deltaT_tAve_tAveRefCor_eCor_phaseCor[index2] = new TH1F(Form("h1_deltaT_tAve_tAveRefCor_eCor_phaseCor_%s",labelLR_energyBin.c_str()), ";t_{avg}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins, minT, maxT);
-	      h1_deltaT_tL_tR_eRatioCor_phaseMeanCor[index2] = new TH1F(Form("h1_deltaT_tL_tR_eRatioCor_phaseMeanCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor, ph} - t_{R}^{cor, ph}; Events", nbins, -1000,1000);
+	      h1_deltaT_tL_tR_eRatioCor_phaseMeanCor[index2] = new TH1F(Form("h1_deltaT_tL_tR_eRatioCor_phaseMeanCor_%s",labelLR_energyBin.c_str()), ";t_{L}^{cor, ph} - t_{R}^{cor, ph}; Events", nbins, minDeltaT, maxDeltaT);
 
 	      // --- 2. check residual dependence on phase
-	      h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseAveRef_%s",labelLR_energyBin.c_str()), ";t1fine_{avg}^{REF}; t_{L}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins2d, 100,1000, nbins2d,minT,maxT);
-	      h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseL_%s",labelLR_energyBin.c_str()), ";t1fine_{L}; t_{L}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins2d, 100,1000, nbins2d, minT, maxT);
+	      h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseAveRef[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseAveRef_%s",labelLR_energyBin.c_str()), ";phase_{avg}^{REF}; t_{L}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins2d_phase, minPhase, maxPhase, nbins2d_phase,minT,maxT);
+	      h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseL[index2] = new TH2F(Form("h2_deltaT_tL_tAveRefCor_eCor_phaseCor_vs_phaseL_%s",labelLR_energyBin.c_str()), ";phase_{L}; t_{L}^{cor, ph} - t_{avg}^{REF,cor}; Events", nbins2d_phase, minPhase, maxPhase, nbins2d_phase, minT, maxT);
 	    }
 	  // -- define quantities
 	  double tAve_ref_cor   = 0.5*( anEvent->timeL_ref_cor +  anEvent->timeR_ref_cor );
