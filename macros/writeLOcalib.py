@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from utils import *
+from ALDOcor_PDE import *
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptFit(0)
 
@@ -10,18 +11,33 @@ eos_path = "/eos/home-s/spalluot/MTD/TB_CERN_Sep25/Lab5015Analysis"
 
 # ------- parser -------
 parser = argparse.ArgumentParser(description="Energy spectra calibration")
-parser.add_argument("-sm", "--sensorModuleID", required=True, type=str, help="Sensor module ID for QAQC ROOT file")
+parser.add_argument("-sm", "--sensorModuleID", required=True, type=str, help="Sensor module ID for QAQC ROOT file, i.e. 3211002000XXXX")
 parser.add_argument("--extraLabel", required=False, type=str, default=None, help="Input file has a name like module_{sensor_module_id}_analysis_{extraLabel}. default=None")
 parser.add_argument("--draw", required=False, action="store_true", help="Produce calibration plots vs bar")
+parser.add_argument("--GainPDEcor", required=False, action="store_true", help="Apply GainxPDE correction factor to account for different OVs at the two sides of the SM")
+parser.add_argument("--ov", required=False, type=float, help="Overvoltage is used if GainxPDEcor argument is specified")
 args = parser.parse_args()
-sensor_module_id = args.sensorModuleID
-LO_dir = "/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2025/SMs_QAQC/"
-LO_csv = f"{eos_path}/plots/module_{sensor_module_id}_LO_calibration_factors.csv"
 
+# -- check arguments compatibility
+if args.GainPDEcor and not args.ov:
+    print("[ERROR] For GainxPDE correction factors to be included, you need to specify the overvoltage")
+    sys.exit()
+elif args.ov and not args.GainPDEcor:
+    print("[ERROR] Overvoltage argument is only used if GainPDEcor argument is specified. It's used only for GainPDE corrections.")
+    sys.exit()
+
+sensor_module_id = args.sensorModuleID
+# -- define paths
+LO_dir = "/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2025/SMs_QAQC/"
+if args.GainPDEcor:
+    LO_csv = f"{eos_path}/plots/module_{sensor_module_id}_Vov{args.ov:.2f}_LO_calibration_factors.csv"
+else:
+    LO_csv = f"{eos_path}/plots/module_{sensor_module_id}_LO_calibration_factors.csv"
 if args.extraLabel is not None:
     extra_label = f"_{args.extraLabel}"
 else:
     extra_label = ""
+    
 # ------------------------------------------------------- 
 # STEP 1: LO calibration
 #  produces a LO_calibration csv
@@ -44,9 +60,24 @@ for i in range(g_LO_r.GetN()):
 LO_LR = list(LO_L.values()) + list(LO_R.values())
 mean_LO = sum(LO_LR) / len(LO_LR)
 calib_LO = {}
-for bar in LO_L:
-    calib_LO[(bar,"L")] = mean_LO / LO_L[bar]
-    calib_LO[(bar,"R")] = mean_LO / LO_R[bar]
+mean_LO_L = sum(LO_L.values()) / len(LO_L)
+mean_LO_R = sum(LO_R.values()) / len(LO_R)
+
+if not args.GainPDEcor:
+    for bar in LO_L:
+        calib_LO[(bar,"L")] = mean_LO / LO_L[bar]
+        calib_LO[(bar,"R")] = mean_LO / LO_R[bar]
+else:
+    corr = getCorrectionFactors(sensor_module_id, args.ov)
+    left_corr = corr["left_factor"]
+    right_corr = corr["right_factor"]
+    mean_LO_L = sum(LO_L.values()) / len(LO_L)
+    mean_LO_R = sum(LO_R.values()) / len(LO_R)
+    for bar in LO_L:
+        calib_LO[(bar,"L")] = (mean_LO_L / LO_L[bar]) * left_corr
+    for bar in LO_R:
+        calib_LO[(bar,"R")] = (mean_LO_R / LO_R[bar]) * right_corr
+        
 # save LO calibration factor in a csv file
 with open(LO_csv, "w", newline="") as f:
     writer = csv.writer(f)

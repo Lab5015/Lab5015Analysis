@@ -2,6 +2,8 @@ import ROOT
 import argparse
 from utils import *
 
+plotdir = "/eos/home-s/spalluot/www/MTD/MTDTB_CERN_Sep25/check_occupancy/"
+
 # argparse
 parser = argparse.ArgumentParser(description="2D Ref vs DUT with energy cuts")
 parser.add_argument("--run", type=str, default="4140")
@@ -88,4 +90,4 @@ h2 = df5.Histo2D(("h2", ";Ref bar;DUT bar", 16,0,16,16,0,16),"refVec","barD")
 c = ROOT.TCanvas("c", "", 700,600)
 ROOT.gStyle.SetOptStat(0)
 h2.Draw("COLZ")
-c.SaveAs(f"beam_profile_modules_occupancy_run{run_number}.png")
+c.SaveAs(f"{plotdir}/beam_profile_modules_occupancy_run{run_number}.png")

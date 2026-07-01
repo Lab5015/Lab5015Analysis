@@ -260,7 +260,7 @@ def fit_landau_langaus(h, emin, emax, landau_only=False):
         f_lg.SetParLimits(2, 0.5*integral, 25*integral)
         f_lg.SetParLimits(3, 0.01*mpv_landau, 0.15*mpv_landau)   # Gaussian sigma
         f_lg.SetParameters(w_landau, mpv_landau, integral, 0.04*mpv_landau)
-        h.Fit(f_lg, "QR")
+        h.Fit(f_lg, "QRS")
         mpv_lang = f_lg.GetParameter(1)
         sigma    = f_lg.GetParameter(3)
         mpv_lang_err = f_lg.GetParError(1)
