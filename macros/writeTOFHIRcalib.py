@@ -21,7 +21,19 @@ parser.add_argument("--writeOutFile", required=False, action="store_true", help=
 parser.add_argument("--drawComparison", required=False, action="store_true", help="Draw comparison: raw vs LO vs LO+TOFHIR")
 parser.add_argument("--fitCheck", required=False, action="store_true", help="Check energy spectrum fit")
 parser.add_argument("--drawMPVvsBar", required=False, action="store_true", help="Draw MPV vs bar at different calibration stages")
+parser.add_argument("--GainPDEcor", required=False, action="store_true", help="Apply GainxPDE correction factor to account for different OVs at the two sides of the SM")
+parser.add_argument("--ov", required=False, type=float, help="Overvoltage is used if GainxPDEcor argument is specified")
 args = parser.parse_args()
+
+# -- check arguments compatibility
+if args.GainPDEcor and not args.ov:
+    print("[ERROR] For GainxPDE correction factors to be included, you need to specify the overvoltage")
+    sys.exit()
+elif args.ov and not args.GainPDEcor:
+    print("[ERROR] Overvoltage argument is only used if GainPDEcor argument is specified. It's used only for GainPDE corrections.")
+    sys.exit()
+
+# -- define arguments
 input_file = args.inputFile
 sensor_module_id = args.sensorModuleID
 if args.outFolder == None:
@@ -36,7 +48,10 @@ if args.fitCheck:
     os.makedirs(outdir_check, exist_ok=True)
 
 # -- csv files
-LO_csv = f"{inputdir}/module_{sensor_module_id}_LO_calibration_factors.csv"
+if args.GainPDEcor:
+    LO_csv = f"{eos_path}/plots/module_{sensor_module_id}_Vov{args.ov:.2f}_LO_calibration_factors.csv"
+else:
+    LO_csv = f"{eos_path}/plots/module_{sensor_module_id}_LO_calibration_factors.csv"
 TOFHIR_csv = f"{outdir}/TOFHIR_calibration_factors.csv"
 TOFHIR_LO_csv = f"{outdir}/TOFHIR_LO_calibration_factors.csv"
 # -- min energy values for the fit range 
